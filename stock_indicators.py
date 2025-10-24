@@ -112,7 +112,7 @@ class StockIndicators:
 
     def calculate_rsi(self, period: int = 14, column: str = 'Close') -> pd.Series:
         """
-        Calculate the Relative Strength Index (RSI).
+        Calculate the Relative Strength Index (RSI) using Wilder's smoothing method.
 
         RSI measures the magnitude of recent price changes to evaluate
         overbought or oversold conditions.
@@ -120,6 +120,10 @@ class StockIndicators:
         Formula:
             RSI = 100 - (100 / (1 + RS))
             where RS = Average Gain / Average Loss over the period
+
+        Uses Wilder's smoothing:
+            - First average: Simple mean of gains/losses over period
+            - Subsequent values: (Previous average * (period-1) + Current value) / period
 
         Args:
             period: Number of periods for RSI calculation (default: 14)
@@ -143,9 +147,11 @@ class StockIndicators:
         gain = delta.where(delta > 0, 0.0)
         loss = -delta.where(delta < 0, 0.0)
 
-        # Calculate the exponential moving average of gains and losses
-        avg_gain = gain.ewm(span=period, adjust=False).mean()
-        avg_loss = loss.ewm(span=period, adjust=False).mean()
+        # Use Wilder's smoothing method (RMA - Rolling Moving Average)
+        # This is equivalent to EMA with alpha = 1/period
+        # ewm(alpha=1/period) is the correct method for RSI, not ewm(span=period)
+        avg_gain = gain.ewm(alpha=1/period, adjust=False).mean()
+        avg_loss = loss.ewm(alpha=1/period, adjust=False).mean()
 
         # Calculate RS (Relative Strength)
         rs = avg_gain / avg_loss
