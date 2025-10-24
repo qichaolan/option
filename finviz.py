@@ -24,7 +24,7 @@ class StockDownloader:
         output_file (str, optional): Path to save downloaded data
     """
 
-    DEFAULT_TIMEOUT = 30  # seconds
+    DEFAULT_TIMEOUT = 300  # seconds
 
     def __init__(self, auth_file: str, output_file: Optional[str] = None):
         """
