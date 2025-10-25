@@ -6,7 +6,7 @@ Connects to OpenAI API to analyze stock indicator data and provide insights.
 
 Features:
 - Loads API key from config file
-- Loads prompts from prompts file
+- Loads prompts from prompts/ folder (individual .txt files)
 - Sends indicator data to OpenAI for analysis
 - Returns AI-generated insights and recommendations
 
@@ -14,12 +14,13 @@ Usage:
     from openai_analyzer import OpenAIAnalyzer
 
     # Initialize
-    analyzer = OpenAIAnalyzer('openai_config.yaml', 'prompts.yaml')
+    analyzer = OpenAIAnalyzer('openai_config.yaml', 'prompts')
 
     # Analyze stock data
     analysis = analyzer.analyze_stock_indicators(
         ticker='AAPL',
-        latest_data={'close': 150.0, 'rsi_14': 65.5, ...}
+        latest_data={'close': 150.0, 'rsi_14': 65.5, ...},
+        prompt_name='default_analysis'
     )
 
     print(analysis)
@@ -44,7 +45,7 @@ class OpenAIAnalyzer:
     def __init__(
         self,
         config_file: str = 'openai_config.yaml',
-        prompts_file: str = 'prompts.yaml',
+        prompts_folder: str = 'prompts',
         model: str = 'gpt-4'
     ):
         """
@@ -52,20 +53,19 @@ class OpenAIAnalyzer:
 
         Args:
             config_file: Path to YAML config file with API key
-            prompts_file: Path to YAML file with prompt templates
+            prompts_folder: Path to folder containing prompt .txt files
             model: OpenAI model to use (default: gpt-4)
 
         Raises:
-            FileNotFoundError: If config or prompts file not found
+            FileNotFoundError: If config file not found
             KeyError: If required keys missing in config
         """
         self.config_file = config_file
-        self.prompts_file = prompts_file
+        self.prompts_folder = prompts_folder
         self.model = model
 
         # Load configuration
         self.api_key = self._load_api_key()
-        self.prompts = self._load_prompts()
 
         # Initialize OpenAI client
         self._init_openai_client()
@@ -99,26 +99,55 @@ class OpenAIAnalyzer:
 
         return config['openai_api_key']
 
-    def _load_prompts(self) -> Dict[str, str]:
+    def _load_prompt(self, prompt_name: str) -> str:
         """
-        Load prompt templates from file.
+        Load a specific prompt from the prompts folder.
+
+        Args:
+            prompt_name: Name of the prompt file (without .txt extension)
 
         Returns:
-            Dictionary of prompt templates
+            Prompt text string
 
         Raises:
-            FileNotFoundError: If prompts file not found
+            FileNotFoundError: If prompt file not found
         """
-        if not os.path.exists(self.prompts_file):
+        # Add .txt extension if not present
+        if not prompt_name.endswith('.txt'):
+            prompt_file = f"{prompt_name}.txt"
+        else:
+            prompt_file = prompt_name
+
+        # Full path to prompt file
+        prompt_path = os.path.join(self.prompts_folder, prompt_file)
+
+        if not os.path.exists(prompt_path):
             raise FileNotFoundError(
-                f"Prompts file '{self.prompts_file}' not found. "
-                f"Create it with your analysis prompts."
+                f"Prompt file '{prompt_path}' not found. "
+                f"Available prompts in '{self.prompts_folder}/' folder."
             )
 
-        with open(self.prompts_file, 'r') as f:
-            prompts = yaml.safe_load(f)
+        with open(prompt_path, 'r') as f:
+            prompt_text = f.read()
 
-        return prompts
+        return prompt_text
+
+    def list_available_prompts(self) -> list:
+        """
+        List all available prompt files in the prompts folder.
+
+        Returns:
+            List of available prompt names (without .txt extension)
+        """
+        if not os.path.exists(self.prompts_folder):
+            return []
+
+        prompts = []
+        for file in os.listdir(self.prompts_folder):
+            if file.endswith('.txt'):
+                prompts.append(file[:-4])  # Remove .txt extension
+
+        return sorted(prompts)
 
     def _init_openai_client(self):
         """Initialize OpenAI client."""
@@ -201,7 +230,7 @@ class OpenAIAnalyzer:
         ticker: str,
         latest_data: Dict[str, Any],
         historical_summary: Optional[Dict[str, Any]] = None,
-        prompt_type: str = 'default_analysis'
+        prompt_name: str = 'default_analysis'
     ) -> Optional[str]:
         """
         Send stock indicator data to OpenAI for analysis.
@@ -210,22 +239,34 @@ class OpenAIAnalyzer:
             ticker: Stock ticker symbol
             latest_data: Dictionary with latest indicator values
             historical_summary: Optional historical statistics
-            prompt_type: Type of analysis prompt to use (default: 'default_analysis')
+            prompt_name: Name of prompt file to use (default: 'default_analysis')
 
         Returns:
             AI-generated analysis text, or None if failed
         """
         print(f"\nAnalyzing {ticker} with OpenAI ({self.model})...")
+        print(f"  Using prompt: {prompt_name}")
 
         # Format the data
         data_text = self.format_indicator_data(ticker, latest_data, historical_summary)
 
-        # Get the prompt template
-        if prompt_type not in self.prompts:
-            print(f"Warning: Prompt type '{prompt_type}' not found. Using 'default_analysis'.")
-            prompt_type = 'default_analysis'
-
-        prompt_template = self.prompts.get(prompt_type, '')
+        # Load the prompt from file
+        try:
+            prompt_template = self._load_prompt(prompt_name)
+        except FileNotFoundError as e:
+            print(f"✗ {e}")
+            available = self.list_available_prompts()
+            if available:
+                print(f"  Available prompts: {', '.join(available)}")
+                print(f"  Using default_analysis instead")
+                try:
+                    prompt_template = self._load_prompt('default_analysis')
+                except FileNotFoundError:
+                    print("✗ default_analysis prompt not found")
+                    return None
+            else:
+                print("✗ No prompts found in prompts folder")
+                return None
 
         # Build the full prompt
         full_prompt = f"{prompt_template}\n\n{data_text}"
@@ -295,7 +336,8 @@ def quick_analyze_with_ai(
     ticker: str,
     latest_data: Dict[str, Any],
     config_file: str = 'openai_config.yaml',
-    prompts_file: str = 'prompts.yaml',
+    prompts_folder: str = 'prompts',
+    prompt_name: str = 'default_analysis',
     save_to_file: bool = True
 ) -> Optional[str]:
     """
@@ -305,7 +347,8 @@ def quick_analyze_with_ai(
         ticker: Stock ticker symbol
         latest_data: Dictionary with latest indicator values
         config_file: Path to OpenAI config file
-        prompts_file: Path to prompts file
+        prompts_folder: Path to folder containing prompt files
+        prompt_name: Name of prompt file to use (without .txt)
         save_to_file: Whether to save analysis to file
 
     Returns:
@@ -323,8 +366,8 @@ def quick_analyze_with_ai(
         >>> print(analysis)
     """
     try:
-        analyzer = OpenAIAnalyzer(config_file, prompts_file)
-        analysis = analyzer.analyze_stock_indicators(ticker, latest_data)
+        analyzer = OpenAIAnalyzer(config_file, prompts_folder)
+        analysis = analyzer.analyze_stock_indicators(ticker, latest_data, prompt_name=prompt_name)
 
         if analysis and save_to_file:
             analyzer.save_analysis(analysis, ticker)
@@ -341,7 +384,7 @@ if __name__ == '__main__':
     """
     Example usage of OpenAI Analyzer.
 
-    Note: Requires openai_config.yaml and prompts.yaml files.
+    Note: Requires openai_config.yaml and prompts/ folder with .txt files.
     """
     print("OpenAI Stock Analyzer - Example Usage")
     print("=" * 70)

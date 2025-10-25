@@ -185,8 +185,8 @@ class StockAnalyzer:
         output_csv: Optional[str] = None,
         use_ai: bool = False,
         ai_config: str = 'openai_config.yaml',
-        ai_prompts: str = 'prompts.yaml',
-        ai_prompt_type: str = 'default_analysis'
+        ai_prompts_folder: str = 'prompts',
+        ai_prompt_name: str = 'default_analysis'
     ) -> Optional[Dict[str, Any]]:
         """
         Download stock data and calculate indicators, saving results to CSV.
@@ -201,8 +201,8 @@ class StockAnalyzer:
             output_csv: Path to export results CSV (default: {ticker}_indicators.csv)
             use_ai: Whether to use OpenAI for analysis (default: False)
             ai_config: Path to OpenAI config file (default: openai_config.yaml)
-            ai_prompts: Path to prompts file (default: prompts.yaml)
-            ai_prompt_type: Type of AI analysis prompt (default: default_analysis)
+            ai_prompts_folder: Path to prompts folder (default: prompts)
+            ai_prompt_name: Name of AI analysis prompt file (default: default_analysis)
 
         Returns:
             Dictionary containing:
@@ -266,13 +266,13 @@ class StockAnalyzer:
                 print("=" * 70)
 
                 # Initialize AI analyzer
-                ai_analyzer = OpenAIAnalyzer(ai_config, ai_prompts)
+                ai_analyzer = OpenAIAnalyzer(ai_config, ai_prompts_folder)
 
                 # Perform analysis
                 ai_analysis = ai_analyzer.analyze_stock_indicators(
                     ticker=stock_name,
                     latest_data=latest,
-                    prompt_type=ai_prompt_type
+                    prompt_name=ai_prompt_name
                 )
 
                 if ai_analysis:
@@ -460,7 +460,7 @@ Output:
             output_csv=args.output,
             use_ai=args.ai,
             ai_config=args.ai_config,
-            ai_prompt_type=args.ai_prompt
+            ai_prompt_name=args.ai_prompt
         )
 
         if results:

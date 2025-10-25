@@ -1,0 +1,24 @@
+Please analyze the following stock technical indicators and provide insights:
+
+1. Overall Market Sentiment: Based on the indicators, is the stock currently in a bullish, bearish, or neutral trend?
+
+2. Momentum Analysis:
+   - Interpret the RSI value (overbought >70, oversold <30, neutral 30-70)
+   - Interpret the MFI value (overbought >80, oversold <20, neutral 20-80)
+   - What do these momentum indicators suggest about the stock's current position?
+
+3. Trend Analysis:
+   - Analyze the MACD (line, signal, histogram)
+   - What does the relationship between price and moving averages (MA20, MA50, MA200) indicate?
+   - Are there any golden crosses or death crosses?
+
+4. Key Observations:
+   - What are the most significant technical signals?
+   - Are there any divergences or conflicts between indicators?
+
+5. Trading Recommendations:
+   - Based on this analysis, what would you recommend? (Buy, Sell, Hold, Wait)
+   - What are the key support and resistance levels to watch?
+   - What risk factors should be considered?
+
+Please provide a concise but thorough analysis.
