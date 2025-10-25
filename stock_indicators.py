@@ -37,33 +37,44 @@ from pathlib import Path
 
 class StockIndicators:
     """
-    A class for parsing stock CSV data and calculating technical indicators.
+    A class for parsing stock data and calculating technical indicators.
 
-    The CSV file should contain columns: Date, Open, High, Low, Close, Volume
+    Can accept either a CSV file path or a pandas DataFrame directly.
+    The data should contain columns: Date, Open, High, Low, Close, Volume
 
     Attributes:
         data (pd.DataFrame): Parsed stock data with calculated indicators
-        csv_file (str): Path to the CSV file
+        source (str): Description of data source (file path or "DataFrame")
     """
 
-    def __init__(self, csv_file: str):
+    def __init__(self, data_source: Union[str, pd.DataFrame]):
         """
-        Initialize the StockIndicators with a CSV file.
+        Initialize the StockIndicators with a CSV file or DataFrame.
 
         Args:
-            csv_file: Path to CSV file containing stock data
+            data_source: Either a path to CSV file or a pandas DataFrame
 
         Raises:
-            FileNotFoundError: If the CSV file does not exist
-            ValueError: If required columns are missing
+            FileNotFoundError: If CSV file path is provided but doesn't exist
+            ValueError: If required columns are missing or invalid data type
         """
-        self.csv_file = csv_file
-        self.data = self._load_csv()
+        if isinstance(data_source, pd.DataFrame):
+            self.source = "DataFrame"
+            self.data = self._prepare_dataframe(data_source)
+        elif isinstance(data_source, str):
+            self.source = data_source
+            self.data = self._load_csv(data_source)
+        else:
+            raise ValueError("data_source must be either a file path (str) or pandas DataFrame")
+
         self._validate_data()
 
-    def _load_csv(self) -> pd.DataFrame:
+    def _load_csv(self, csv_file: str) -> pd.DataFrame:
         """
         Load stock data from CSV file.
+
+        Args:
+            csv_file: Path to CSV file
 
         Returns:
             DataFrame containing the stock data
@@ -71,12 +82,12 @@ class StockIndicators:
         Raises:
             FileNotFoundError: If the CSV file does not exist
         """
-        if not Path(self.csv_file).exists():
-            raise FileNotFoundError(f"CSV file '{self.csv_file}' not found.")
+        if not Path(csv_file).exists():
+            raise FileNotFoundError(f"CSV file '{csv_file}' not found.")
 
         try:
             # Read CSV and parse dates
-            df = pd.read_csv(self.csv_file, parse_dates=['Date'])
+            df = pd.read_csv(csv_file, parse_dates=['Date'])
 
             # Strip whitespace from column names
             df.columns = df.columns.str.strip()
@@ -87,6 +98,33 @@ class StockIndicators:
             return df
         except Exception as e:
             raise ValueError(f"Error loading CSV file: {e}")
+
+    def _prepare_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Prepare a DataFrame for analysis (clean and validate).
+
+        Args:
+            df: Input DataFrame
+
+        Returns:
+            Cleaned and sorted DataFrame
+        """
+        # Create a copy to avoid modifying the original
+        df = df.copy()
+
+        # Strip whitespace from column names
+        df.columns = df.columns.str.strip()
+
+        # Ensure Date column is datetime
+        if 'Date' in df.columns:
+            if not pd.api.types.is_datetime64_any_dtype(df['Date']):
+                df['Date'] = pd.to_datetime(df['Date'])
+
+        # Sort by date (oldest to newest)
+        if 'Date' in df.columns:
+            df = df.sort_values('Date').reset_index(drop=True)
+
+        return df
 
     def _validate_data(self) -> None:
         """
