@@ -280,34 +280,98 @@ def quick_analyze(
 # Example usage
 if __name__ == '__main__':
     """
-    Example usage of StockAnalyzer.
+    Command-line interface for StockAnalyzer.
 
-    Note: Requires valid Finviz Elite authentication file.
+    Usage:
+        python stock_analyzer.py TICKER [OPTIONS]
+
+    Arguments:
+        TICKER              Stock ticker symbol (required)
+
+    Options:
+        --days DAYS         Number of days of historical data (default: 365)
+        --auth AUTH_FILE    Path to authentication YAML file (default: auth.yaml)
+        --output FILE       Output CSV filename (default: {TICKER}_indicators.csv)
+        -h, --help          Show this help message
+
+    Examples:
+        python stock_analyzer.py AAPL
+        python stock_analyzer.py AAPL --days 180
+        python stock_analyzer.py AAPL --auth my_auth.yaml
+        python stock_analyzer.py AAPL --output my_analysis.csv
+        python stock_analyzer.py AAPL --days 90 --auth finviz_auth.yaml --output aapl_90d.csv
     """
     import sys
+    import argparse
 
-    # Check if auth file exists
-    auth_file = 'auth.yaml'
+    # Set up argument parser
+    parser = argparse.ArgumentParser(
+        description='Download stock data and calculate technical indicators',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''
+Examples:
+  python stock_analyzer.py AAPL
+  python stock_analyzer.py AAPL --days 180
+  python stock_analyzer.py AAPL --auth my_auth.yaml
+  python stock_analyzer.py AAPL --output my_analysis.csv
+  python stock_analyzer.py AAPL --days 90 --auth finviz_auth.yaml --output aapl_90d.csv
 
-    if len(sys.argv) > 1:
-        stock_ticker = sys.argv[1]
+Output:
+  Creates a CSV file with all stock data and calculated indicators:
+    - Original data: Date, Open, High, Low, Close, Volume
+    - Indicators: RSI_14, MFI_14, MACD, MACD_Signal, MACD_Histogram, MA20, MA50, MA200
+        '''
+    )
+
+    parser.add_argument(
+        'ticker',
+        type=str,
+        help='Stock ticker symbol (e.g., AAPL, QQQ, MSFT)'
+    )
+
+    parser.add_argument(
+        '--days',
+        type=int,
+        default=365,
+        help='Number of days of historical data (default: 365)'
+    )
+
+    parser.add_argument(
+        '--auth',
+        type=str,
+        default='auth.yaml',
+        metavar='FILE',
+        help='Path to authentication YAML file (default: auth.yaml)'
+    )
+
+    parser.add_argument(
+        '--output',
+        type=str,
+        default=None,
+        metavar='FILE',
+        help='Output CSV filename (default: {TICKER}_indicators.csv)'
+    )
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Display configuration
+    print(f"Stock Analyzer Configuration:")
+    print(f"  Ticker: {args.ticker}")
+    print(f"  Days: {args.days}")
+    print(f"  Auth file: {args.auth}")
+    if args.output:
+        print(f"  Output file: {args.output}")
     else:
-        stock_ticker = 'QQQ'  # Default to QQQ
-
-    if len(sys.argv) > 2:
-        days = int(sys.argv[2])
-    else:
-        days = 365  # Default to 1 year
-
-    print(f"Analyzing {stock_ticker} for the last {days} days...")
-    print(f"Using auth file: {auth_file}")
+        print(f"  Output file: {args.ticker}_indicators.csv (auto-generated)")
     print()
 
     try:
         results = quick_analyze(
-            stock_ticker,
-            auth_file=auth_file,
-            days=days
+            stock_name=args.ticker,
+            auth_file=args.auth,
+            days=args.days,
+            output_csv=args.output
         )
 
         if results:
@@ -316,11 +380,15 @@ if __name__ == '__main__':
             print(f"   Output file: {results['output_file']}")
         else:
             print("\n✗ Analysis failed")
+            sys.exit(1)
 
     except FileNotFoundError as e:
         print(f"\n✗ Error: {e}")
-        print("\nTo use this script:")
-        print("1. Create an auth.yaml file with your Finviz Elite token:")
+        print(f"\nMake sure '{args.auth}' exists with your Finviz Elite token:")
         print("   auth_token: your_token_here")
-        print("2. Run: python stock_analyzer.py TICKER [DAYS]")
-        print("   Example: python stock_analyzer.py AAPL 365")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n✗ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
