@@ -10,19 +10,23 @@ Features:
 - Limit data to specified time period (default: 1 year)
 - Calculate technical indicators (RSI, MFI, MACD, MA)
 - Work entirely in memory without CSV files
-- Export results if needed
+- Export results to CSV or return as DataFrame
+- Two analysis modes: save to CSV or work with DataFrame in memory
 
 Usage:
     from stock_analyzer import StockAnalyzer
 
-    # Initialize with auth file
-    analyzer = StockAnalyzer('auth.yaml')
+    # Initialize with Finviz auth file
+    analyzer = StockAnalyzer('finviz_auth.yaml')
 
-    # Download and analyze (default: 1 year of data)
+    # Option 1: Analyze and save to CSV (default behavior)
     results = analyzer.analyze_stock('AAPL')
+    print(f"Data saved to: {results['output_file']}")
 
-    # Custom time period
-    results = analyzer.analyze_stock('AAPL', days=365)
+    # Option 2: Analyze and return DataFrame (no CSV)
+    results = analyzer.analyze_stock_to_dataframe('AAPL', days=365)
+    df = results['data']  # Get the DataFrame for further processing
+    print(df.head())
 """
 
 import io
@@ -41,19 +45,19 @@ class StockAnalyzer:
     working entirely in memory.
     """
 
-    def __init__(self, auth_file: str):
+    def __init__(self, finviz_auth_file: str):
         """
         Initialize the StockAnalyzer.
 
         Args:
-            auth_file: Path to YAML file containing Finviz authentication token
+            finviz_auth_file: Path to YAML file containing Finviz Elite authentication token
 
         Raises:
-            FileNotFoundError: If auth_file doesn't exist
-            KeyError: If auth_file doesn't contain required keys
+            FileNotFoundError: If finviz_auth_file doesn't exist
+            KeyError: If finviz_auth_file doesn't contain required keys
         """
         # Initialize the downloader (without output file, returns CSV reader)
-        self.downloader = StockDownloader(auth_file, output_file=None)
+        self.downloader = StockDownloader(finviz_auth_file, output_file=None)
 
     def download_stock_data(
         self,
@@ -313,10 +317,73 @@ class StockAnalyzer:
 
         return results
 
+    def analyze_stock_to_dataframe(
+        self,
+        stock_name: str,
+        days: int = 365,
+        rsi_period: int = 14,
+        mfi_period: int = 14,
+        ma_periods: Optional[list] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Download stock data and calculate indicators, returning results as DataFrame.
+
+        This method is similar to analyze_stock but does NOT save to CSV.
+        It returns the data in memory as a DataFrame for further processing.
+
+        Args:
+            stock_name: Stock ticker symbol (e.g., 'AAPL')
+            days: Number of days of historical data (default: 365)
+            rsi_period: Period for RSI calculation (default: 14)
+            mfi_period: Period for MFI calculation (default: 14)
+            ma_periods: Periods for MA calculation (default: [20, 50, 200])
+
+        Returns:
+            Dictionary containing:
+                - 'stock': StockIndicators object
+                - 'latest': Latest indicator values
+                - 'data': Full DataFrame with indicators
+                - 'ticker': Stock ticker symbol
+            Returns None if download or calculation fails
+        """
+        print(f"Analyzing {stock_name} (in-memory)...")
+
+        # Download data
+        df = self.download_stock_data(stock_name, days=days)
+
+        if df is None or df.empty:
+            print(f"✗ Failed to download stock data for {stock_name}")
+            return None
+
+        # Calculate indicators
+        stock = self.calculate_indicators(
+            df,
+            rsi_period=rsi_period,
+            mfi_period=mfi_period,
+            ma_periods=ma_periods
+        )
+
+        if stock is None:
+            print(f"✗ Failed to calculate indicators for {stock_name}")
+            return None
+
+        # Get latest values
+        latest = stock.get_latest_indicators()
+
+        print(f"✓ Analysis complete: {len(stock.data)} records with indicators in DataFrame")
+
+        # Return results (no CSV export)
+        return {
+            'stock': stock,
+            'latest': latest,
+            'data': stock.data,
+            'ticker': stock_name
+        }
+
 
 def quick_analyze(
     stock_name: str,
-    auth_file: str = 'auth.yaml',
+    finviz_auth_file: str = 'finviz_auth.yaml',
     days: int = 365,
     output_csv: Optional[str] = None
 ) -> Optional[Dict[str, Any]]:
@@ -325,7 +392,7 @@ def quick_analyze(
 
     Args:
         stock_name: Stock ticker symbol (e.g., 'AAPL')
-        auth_file: Path to authentication file (default: 'auth.yaml')
+        finviz_auth_file: Path to Finviz authentication file (default: 'finviz_auth.yaml')
         days: Number of days of historical data (default: 365)
         output_csv: Output CSV filename (default: {ticker}_indicators.csv)
 
@@ -337,7 +404,7 @@ def quick_analyze(
         >>> # Creates AAPL_indicators.csv with all data and indicators
         >>> print(f"Data saved to: {results['output_file']}")
     """
-    analyzer = StockAnalyzer(auth_file)
+    analyzer = StockAnalyzer(finviz_auth_file)
 
     return analyzer.analyze_stock(
         stock_name,
@@ -346,49 +413,44 @@ def quick_analyze(
     )
 
 
+def quick_analyze_to_dataframe(
+    stock_name: str,
+    finviz_auth_file: str = 'finviz_auth.yaml',
+    days: int = 365
+) -> Optional[Dict[str, Any]]:
+    """
+    Convenience function for quick stock analysis returning DataFrame.
+
+    This function does NOT save to CSV - it returns the data in memory.
+
+    Args:
+        stock_name: Stock ticker symbol (e.g., 'AAPL')
+        finviz_auth_file: Path to Finviz authentication file (default: 'finviz_auth.yaml')
+        days: Number of days of historical data (default: 365)
+
+    Returns:
+        Analysis results dictionary or None if failed
+
+    Example:
+        >>> results = quick_analyze_to_dataframe('AAPL', days=365)
+        >>> df = results['data']  # Get the DataFrame
+        >>> print(df.head())
+        >>> print(f"Latest RSI: {results['latest']['rsi_14']}")
+    """
+    analyzer = StockAnalyzer(finviz_auth_file)
+
+    return analyzer.analyze_stock_to_dataframe(
+        stock_name,
+        days=days
+    )
+
+
 # Example usage
 if __name__ == '__main__':
     """
     Command-line interface for StockAnalyzer.
-
-    Usage:
-        python stock_analyzer.py TICKER [OPTIONS]
-
-    Arguments:
-        TICKER              Stock ticker symbol (required)
-
-    Options:
-        --days DAYS         Number of days of historical data (default: 365)
-        --auth AUTH_FILE    Path to authentication YAML file (default: auth.yaml)
-        --output FILE       Output CSV filename (default: {TICKER}_indicators.csv)
-        -h, --help          Show this help message
-
-    Examples:
-        python stock_analyzer.py AAPL
-        python stock_analyzer.py AAPL --days 180
-        python stock_analyzer.py AAPL --auth my_auth.yaml
-        python stock_analyzer.py AAPL --output my_analysis.csv
-        python stock_analyzer.py AAPL --days 90 --auth finviz_auth.yaml --output aapl_90d.csv
     """
     import sys
-    import argparse
-
-    # Set up argument parser
-    parser = argparse.ArgumentParser(
-        description='Download stock data and calculate technical indicators',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog='''
-Examples:
-  python stock_analyzer.py AAPL
-  python stock_analyzer.py AAPL --days 180
-  python stock_analyzer.py AAPL --auth my_auth.yaml
-  python stock_analyzer.py AAPL --output my_analysis.csv
-  python stock_analyzer.py AAPL --days 90 --auth finviz_auth.yaml --output aapl_90d.csv
-
-Output:
-  Creates a CSV file with all stock data and calculated indicators:
-    - Original data: Date, Open, High, Low, Close, Volume
-    - Indicators: RSI_14, MFI_14, MACD, MACD_Signal, MACD_Histogram, MA20, MA50, MA200
     import argparse
 
     # Create argument parser
@@ -397,10 +459,10 @@ Output:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 Examples:
-  %(prog)s AAPL                      # Analyze AAPL with defaults (365 days, auth.yaml)
-  %(prog)s AAPL --days 180           # Analyze AAPL for last 180 days
-  %(prog)s AAPL --auth custom.yaml   # Use custom auth file
-  %(prog)s QQQ --days 90 --auth my_auth.yaml  # Full custom options
+  %(prog)s AAPL                                  # Analyze AAPL with defaults
+  %(prog)s AAPL --days 180                       # Analyze AAPL for last 180 days
+  %(prog)s AAPL --finviz-auth custom_finviz.yaml # Use custom Finviz auth file
+  %(prog)s QQQ --days 90 --finviz-auth my_auth.yaml --output qqq.csv
         '''
     )
 
@@ -418,11 +480,12 @@ Examples:
     )
 
     parser.add_argument(
-        '--auth',
+        '--finviz-auth',
         type=str,
-        default='auth.yaml',
+        default='finviz_auth.yaml',
         metavar='FILE',
-        help='Path to authentication YAML file (default: auth.yaml)'
+        dest='finviz_auth_file',
+        help='Path to Finviz authentication YAML file (default: finviz_auth.yaml)'
     )
 
     parser.add_argument(
@@ -436,7 +499,7 @@ Examples:
     parser.add_argument(
         '--ai',
         action='store_true',
-        help='Enable OpenAI analysis of indicators'
+        help='Enable OpenAI analysis of indicators (DEPRECATED - use openai_analyzer.py instead)'
     )
 
     parser.add_argument(
@@ -455,26 +518,27 @@ Examples:
         help='Type of AI analysis prompt (default: default_analysis)'
     )
 
-    # Parse arguments
     args = parser.parse_args()
 
     # Display configuration
-    print(f"Stock Analyzer Configuration:")
-    print(f"  Ticker: {args.ticker}")
-    print(f"  Days: {args.days}")
-    print(f"  Auth file: {args.auth}")
+    print("Stock Analyzer")
+    print("=" * 70)
+    print(f"Ticker: {args.ticker}")
+    print(f"Period: {args.days} days")
+    print(f"Finviz auth: {args.finviz_auth_file}")
     if args.output:
-        print(f"  Output file: {args.output}")
+        print(f"Output file: {args.output}")
     else:
-        print(f"  Output file: {args.ticker}_indicators.csv (auto-generated)")
+        print(f"Output file: {args.ticker}_indicators.csv (auto-generated)")
     if args.ai:
-        print(f"  AI Analysis: Enabled")
-        print(f"  AI Config: {args.ai_config}")
-        print(f"  AI Prompt Type: {args.ai_prompt}")
+        print(f"AI Analysis: Enabled (DEPRECATED)")
+        print(f"AI Config: {args.ai_config}")
+        print(f"AI Prompt: {args.ai_prompt}")
+    print("=" * 70)
     print()
 
     try:
-        analyzer = StockAnalyzer(args.auth)
+        analyzer = StockAnalyzer(args.finviz_auth_file)
 
         results = analyzer.analyze_stock(
             stock_name=args.ticker,
@@ -483,37 +547,6 @@ Examples:
             use_ai=args.ai,
             ai_config=args.ai_config,
             ai_prompt_name=args.ai_prompt
-        nargs='?',
-        default='QQQ',
-        help='Stock ticker symbol (default: QQQ)'
-    )
-
-    parser.add_argument(
-        '--days',
-        type=int,
-        default=365,
-        help='Number of days of historical data to retrieve (default: 365)'
-    )
-
-    parser.add_argument(
-        '--auth',
-        '--auth-file',
-        dest='auth_file',
-        default='auth.yaml',
-        help='Path to YAML file containing Finviz authentication token (default: auth.yaml)'
-    )
-
-    args = parser.parse_args()
-
-    print(f"Analyzing {args.ticker} for the last {args.days} days...")
-    print(f"Using auth file: {args.auth_file}")
-    print()
-
-    try:
-        results = quick_analyze(
-            args.ticker,
-            auth_file=args.auth_file,
-            days=args.days
         )
 
         if results:
@@ -529,7 +562,7 @@ Examples:
 
     except FileNotFoundError as e:
         print(f"\n✗ Error: {e}")
-        print(f"\nMake sure '{args.auth}' exists with your Finviz Elite token:")
+        print(f"\nMake sure '{args.finviz_auth_file}' exists with your Finviz Elite token:")
         print("   auth_token: your_token_here")
         sys.exit(1)
     except Exception as e:
@@ -537,7 +570,3 @@ Examples:
         import traceback
         traceback.print_exc()
         sys.exit(1)
-        print("2. Run: python stock_analyzer.py TICKER --days DAYS --auth AUTH_FILE")
-        print("   Example: python stock_analyzer.py AAPL")
-        print("   Example: python stock_analyzer.py AAPL --days 365 --auth custom_auth.yaml")
-        print("\nFor more options, run: python stock_analyzer.py --help")
