@@ -182,10 +182,15 @@ class StockAnalyzer:
         rsi_period: int = 14,
         mfi_period: int = 14,
         ma_periods: Optional[list] = None,
-        output_csv: Optional[str] = None
+        output_csv: Optional[str] = None,
+        use_ai: bool = False,
+        ai_config: str = 'openai_config.yaml',
+        ai_prompts: str = 'prompts.yaml',
+        ai_prompt_type: str = 'default_analysis'
     ) -> Optional[Dict[str, Any]]:
         """
         Download stock data and calculate indicators, saving results to CSV.
+        Optionally analyze with OpenAI.
 
         Args:
             stock_name: Stock ticker symbol (e.g., 'AAPL')
@@ -194,6 +199,10 @@ class StockAnalyzer:
             mfi_period: Period for MFI calculation (default: 14)
             ma_periods: Periods for MA calculation (default: [20, 50, 200])
             output_csv: Path to export results CSV (default: {ticker}_indicators.csv)
+            use_ai: Whether to use OpenAI for analysis (default: False)
+            ai_config: Path to OpenAI config file (default: openai_config.yaml)
+            ai_prompts: Path to prompts file (default: prompts.yaml)
+            ai_prompt_type: Type of AI analysis prompt (default: default_analysis)
 
         Returns:
             Dictionary containing:
@@ -202,6 +211,8 @@ class StockAnalyzer:
                 - 'data': Full DataFrame with indicators
                 - 'ticker': Stock ticker symbol
                 - 'output_file': Path to CSV file
+                - 'ai_analysis': AI analysis text (if use_ai=True)
+                - 'ai_analysis_file': Path to AI analysis file (if use_ai=True)
             Returns None if download or calculation fails
         """
         print(f"Analyzing {stock_name}...")
@@ -236,13 +247,61 @@ class StockAnalyzer:
         stock.export_to_csv(output_csv)
         print(f"✓ Analysis complete: {len(stock.data)} records with indicators saved to {output_csv}")
 
-        return {
+        # Prepare results
+        results = {
             'stock': stock,
             'latest': latest,
             'data': stock.data,
             'ticker': stock_name,
             'output_file': output_csv
         }
+
+        # Optional AI analysis
+        if use_ai:
+            try:
+                from openai_analyzer import OpenAIAnalyzer
+
+                print("\n" + "=" * 70)
+                print("AI Analysis (OpenAI)")
+                print("=" * 70)
+
+                # Initialize AI analyzer
+                ai_analyzer = OpenAIAnalyzer(ai_config, ai_prompts)
+
+                # Perform analysis
+                ai_analysis = ai_analyzer.analyze_stock_indicators(
+                    ticker=stock_name,
+                    latest_data=latest,
+                    prompt_type=ai_prompt_type
+                )
+
+                if ai_analysis:
+                    # Save analysis to file
+                    ai_file = ai_analyzer.save_analysis(ai_analysis, stock_name)
+
+                    # Add to results
+                    results['ai_analysis'] = ai_analysis
+                    results['ai_analysis_file'] = ai_file
+
+                    # Display summary
+                    print("\n" + "=" * 70)
+                    print("AI Analysis Preview:")
+                    print("=" * 70)
+                    # Show first 500 characters
+                    preview = ai_analysis[:500] + "..." if len(ai_analysis) > 500 else ai_analysis
+                    print(preview)
+                    print("\n" + "=" * 70)
+                else:
+                    print("✗ AI analysis failed")
+
+            except ImportError:
+                print("\n✗ OpenAI analyzer not available. Install with: pip install openai")
+            except FileNotFoundError as e:
+                print(f"\n✗ {e}")
+            except Exception as e:
+                print(f"\n✗ AI analysis error: {e}")
+
+        return results
 
 
 def quick_analyze(
@@ -352,6 +411,28 @@ Output:
         help='Output CSV filename (default: {TICKER}_indicators.csv)'
     )
 
+    parser.add_argument(
+        '--ai',
+        action='store_true',
+        help='Enable OpenAI analysis of indicators'
+    )
+
+    parser.add_argument(
+        '--ai-config',
+        type=str,
+        default='openai_config.yaml',
+        metavar='FILE',
+        help='Path to OpenAI config file (default: openai_config.yaml)'
+    )
+
+    parser.add_argument(
+        '--ai-prompt',
+        type=str,
+        default='default_analysis',
+        metavar='TYPE',
+        help='Type of AI analysis prompt (default: default_analysis)'
+    )
+
     # Parse arguments
     args = parser.parse_args()
 
@@ -364,20 +445,31 @@ Output:
         print(f"  Output file: {args.output}")
     else:
         print(f"  Output file: {args.ticker}_indicators.csv (auto-generated)")
+    if args.ai:
+        print(f"  AI Analysis: Enabled")
+        print(f"  AI Config: {args.ai_config}")
+        print(f"  AI Prompt Type: {args.ai_prompt}")
     print()
 
     try:
-        results = quick_analyze(
+        analyzer = StockAnalyzer(args.auth)
+
+        results = analyzer.analyze_stock(
             stock_name=args.ticker,
-            auth_file=args.auth,
             days=args.days,
-            output_csv=args.output
+            output_csv=args.output,
+            use_ai=args.ai,
+            ai_config=args.ai_config,
+            ai_prompt_type=args.ai_prompt
         )
 
         if results:
             print(f"\n✓ Analysis completed successfully!")
             print(f"   Total records: {len(results['data'])}")
             print(f"   Output file: {results['output_file']}")
+
+            if 'ai_analysis_file' in results:
+                print(f"   AI Analysis file: {results['ai_analysis_file']}")
         else:
             print("\n✗ Analysis failed")
             sys.exit(1)

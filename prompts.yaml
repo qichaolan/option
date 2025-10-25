@@ -1,0 +1,128 @@
+# Stock Analysis Prompts for OpenAI
+#
+# Define different types of analysis prompts here.
+# Each prompt is used to instruct the AI on how to analyze the stock data.
+
+default_analysis: |
+  Please analyze the following stock technical indicators and provide insights:
+
+  1. Overall Market Sentiment: Based on the indicators, is the stock currently in a bullish, bearish, or neutral trend?
+
+  2. Momentum Analysis:
+     - Interpret the RSI value (overbought >70, oversold <30, neutral 30-70)
+     - Interpret the MFI value (overbought >80, oversold <20, neutral 20-80)
+     - What do these momentum indicators suggest about the stock's current position?
+
+  3. Trend Analysis:
+     - Analyze the MACD (line, signal, histogram)
+     - What does the relationship between price and moving averages (MA20, MA50, MA200) indicate?
+     - Are there any golden crosses or death crosses?
+
+  4. Key Observations:
+     - What are the most significant technical signals?
+     - Are there any divergences or conflicts between indicators?
+
+  5. Trading Recommendations:
+     - Based on this analysis, what would you recommend? (Buy, Sell, Hold, Wait)
+     - What are the key support and resistance levels to watch?
+     - What risk factors should be considered?
+
+  Please provide a concise but thorough analysis.
+
+short_summary: |
+  Provide a brief 3-4 sentence summary of the stock's technical position based on the indicators below.
+  Focus on: current trend, momentum, and a simple buy/sell/hold recommendation.
+
+detailed_report: |
+  Please provide a comprehensive technical analysis report for this stock with the following sections:
+
+  EXECUTIVE SUMMARY:
+  - One paragraph overview of the current technical position
+
+  TECHNICAL INDICATORS ANALYSIS:
+  1. Momentum Indicators (RSI, MFI):
+     - Current readings and interpretation
+     - Overbought/oversold conditions
+     - Historical context
+
+  2. Trend Indicators (MACD, Moving Averages):
+     - MACD signals and crossovers
+     - Moving average relationships
+     - Trend strength assessment
+
+  MARKET POSITION:
+  - Current trend direction (bullish/bearish/neutral)
+  - Trend strength (weak/moderate/strong)
+  - Key support and resistance levels
+
+  TRADING SIGNALS:
+  - Entry points
+  - Exit points
+  - Stop-loss recommendations
+  - Price targets
+
+  RISK ASSESSMENT:
+  - Current risk level (low/medium/high)
+  - Key risk factors
+  - Volatility assessment
+
+  RECOMMENDATION:
+  - Clear buy/sell/hold recommendation
+  - Time horizon (short-term/medium-term/long-term)
+  - Confidence level
+
+risk_assessment: |
+  Analyze the technical indicators below and provide a risk assessment:
+
+  1. What is the current risk level? (Low/Medium/High)
+  2. What are the main risk factors based on these indicators?
+  3. Is the stock showing signs of:
+     - Overextension (overbought conditions)?
+     - Weakness (oversold conditions)?
+     - Divergences that might signal reversals?
+  4. What would trigger a stop-loss based on these indicators?
+  5. What is the reward-to-risk ratio at current levels?
+
+  Please be specific and actionable.
+
+entry_exit_signals: |
+  Based on the technical indicators below, identify specific entry and exit signals:
+
+  ENTRY SIGNALS:
+  - What conditions would make this a good entry point?
+  - What price levels should trigger a buy?
+  - What confirmation signals should be waited for?
+
+  EXIT SIGNALS:
+  - What conditions would trigger a sell?
+  - What price levels represent profit-taking opportunities?
+  - What stop-loss levels should be set?
+
+  TIME HORIZON:
+  - Is this better suited for day trading, swing trading, or position trading?
+
+  Provide specific, actionable recommendations.
+
+trend_confirmation: |
+  Analyze whether the technical indicators confirm or contradict each other:
+
+  1. Do momentum indicators (RSI, MFI) confirm the trend shown by moving averages?
+  2. Does MACD confirm the price action?
+  3. Are there any divergences between indicators?
+  4. What is the probability that the current trend will continue?
+  5. What signals would indicate a trend reversal?
+
+  Focus on indicator alignment and reliability of the current signals.
+
+comparative_analysis: |
+  Compare this stock's technical position to typical market conditions:
+
+  1. Is this stock showing unusual strength or weakness?
+  2. How do these indicator values compare to historical norms?
+  3. Are the indicators showing extreme readings?
+  4. What percentile is this stock in terms of:
+     - Momentum (RSI/MFI)
+     - Trend strength (MACD)
+     - Price position relative to moving averages
+
+  Provide context for the current readings.
