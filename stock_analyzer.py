@@ -91,6 +91,16 @@ class StockAnalyzer:
                 print(f"No data returned for {stock_name}")
                 return None
 
+            # Check if response contains HTML (error page) instead of CSV data
+            if '<!DOCTYPE html>' in df.columns or '<html>' in str(df.columns).lower():
+                print(f"\n✗ Error: Received HTML response instead of CSV data")
+                print(f"   This usually indicates an authentication or API access issue:")
+                print(f"   - Check that your Finviz Elite authentication token is valid")
+                print(f"   - Verify that your Finviz Elite subscription is active")
+                print(f"   - Ensure the stock ticker '{stock_name}' is valid")
+                print(f"\n   Response preview: {df.columns.tolist()[:3]}")
+                return None
+
             print(f"Downloaded {len(df)} records")
 
             # Check if we have the required columns
@@ -98,10 +108,10 @@ class StockAnalyzer:
             missing_cols = [col for col in required_cols if col not in df.columns]
 
             if missing_cols:
-                print(f"Warning: Missing columns {missing_cols}")
-                print(f"Available columns: {df.columns.tolist()}")
-                # Return the data anyway so user can see what's available
-                return df
+                print(f"\n✗ Error: Missing required columns {missing_cols}")
+                print(f"   Available columns: {df.columns.tolist()}")
+                print(f"   This may indicate the API endpoint is not returning stock detail data")
+                return None
 
             # Convert Date column to datetime if it exists
             if 'Date' in df.columns:
@@ -284,30 +294,54 @@ if __name__ == '__main__':
 
     Note: Requires valid Finviz Elite authentication file.
     """
-    import sys
+    import argparse
 
-    # Check if auth file exists
-    auth_file = 'auth.yaml'
+    # Create argument parser
+    parser = argparse.ArgumentParser(
+        description='Download stock data from Finviz and calculate technical indicators',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''
+Examples:
+  %(prog)s AAPL                      # Analyze AAPL with defaults (365 days, auth.yaml)
+  %(prog)s AAPL --days 180           # Analyze AAPL for last 180 days
+  %(prog)s AAPL --auth custom.yaml   # Use custom auth file
+  %(prog)s QQQ --days 90 --auth my_auth.yaml  # Full custom options
+        '''
+    )
 
-    if len(sys.argv) > 1:
-        stock_ticker = sys.argv[1]
-    else:
-        stock_ticker = 'QQQ'  # Default to QQQ
+    parser.add_argument(
+        'ticker',
+        nargs='?',
+        default='QQQ',
+        help='Stock ticker symbol (default: QQQ)'
+    )
 
-    if len(sys.argv) > 2:
-        days = int(sys.argv[2])
-    else:
-        days = 365  # Default to 1 year
+    parser.add_argument(
+        '--days',
+        type=int,
+        default=365,
+        help='Number of days of historical data to retrieve (default: 365)'
+    )
 
-    print(f"Analyzing {stock_ticker} for the last {days} days...")
-    print(f"Using auth file: {auth_file}")
+    parser.add_argument(
+        '--auth',
+        '--auth-file',
+        dest='auth_file',
+        default='auth.yaml',
+        help='Path to YAML file containing Finviz authentication token (default: auth.yaml)'
+    )
+
+    args = parser.parse_args()
+
+    print(f"Analyzing {args.ticker} for the last {args.days} days...")
+    print(f"Using auth file: {args.auth_file}")
     print()
 
     try:
         results = quick_analyze(
-            stock_ticker,
-            auth_file=auth_file,
-            days=days
+            args.ticker,
+            auth_file=args.auth_file,
+            days=args.days
         )
 
         if results:
@@ -322,5 +356,7 @@ if __name__ == '__main__':
         print("\nTo use this script:")
         print("1. Create an auth.yaml file with your Finviz Elite token:")
         print("   auth_token: your_token_here")
-        print("2. Run: python stock_analyzer.py TICKER [DAYS]")
-        print("   Example: python stock_analyzer.py AAPL 365")
+        print("2. Run: python stock_analyzer.py TICKER --days DAYS --auth AUTH_FILE")
+        print("   Example: python stock_analyzer.py AAPL")
+        print("   Example: python stock_analyzer.py AAPL --days 365 --auth custom_auth.yaml")
+        print("\nFor more options, run: python stock_analyzer.py --help")

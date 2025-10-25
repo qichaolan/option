@@ -73,7 +73,7 @@ class StockDownloader:
         Make HTTP request to Finviz API with proper error handling.
 
         Args:
-            url: Complete URL to request
+            url: Complete URL to request (should already include auth token)
             data_type: Type of data being downloaded (for error messages)
 
         Returns:
@@ -81,7 +81,6 @@ class StockDownloader:
             None if request failed
         """
         headers = {
-            "Authorization": f"Bearer {self.auth_token}",
             "User-Agent": "StockDownloader/1.0"
         }
 
@@ -102,7 +101,7 @@ class StockDownloader:
             print(f"Error: Failed to download {data_type}: {e}")
             return None
 
-    def _handle_response(self, response: requests.Response, data_type: str) -> Union[csv.DictReader, bool]:
+    def _handle_response(self, response: requests.Response, data_type: str) -> Union[csv.DictReader, bool, None]:
         """
         Handle successful API response by saving to file or returning CSV reader.
 
@@ -111,8 +110,20 @@ class StockDownloader:
             data_type: Type of data being downloaded (for success messages)
 
         Returns:
-            csv.DictReader if no output_file is set, True if file written successfully
+            csv.DictReader if no output_file is set, True if file written successfully,
+            None if response contains HTML instead of CSV
         """
+        content = response.content.decode('utf-8')
+
+        # Check if response is HTML instead of CSV
+        if content.strip().startswith('<!DOCTYPE html>') or content.strip().startswith('<html'):
+            print(f"Error: Received HTML response instead of CSV data for {data_type}")
+            print("This usually indicates:")
+            print("  - Invalid or expired authentication token")
+            print("  - Inactive Finviz Elite subscription")
+            print("  - Incorrect API endpoint or parameters")
+            return None
+
         if self.output_file:
             if os.path.exists(self.output_file):
                 print(f"Warning: {self.output_file} already exists and will be replaced.")
@@ -121,7 +132,7 @@ class StockDownloader:
             print(f"Success: {data_type.capitalize()} downloaded to {self.output_file}.")
             return True
         else:
-            return csv.DictReader(io.StringIO(response.content.decode('utf-8')))
+            return csv.DictReader(io.StringIO(content))
 
     def download_option_price_data(
         self,
@@ -149,9 +160,9 @@ class StockDownloader:
             raise ValueError("stock_name must be a non-empty string.")
 
         if expiry_date:
-            filters = f"t={stock_name}&p=d&ty=oc&e={expiry_date}"
+            filters = f"t={stock_name}&p=d&ty=oc&e={expiry_date}&auth={self.auth_token}"
         elif strike_price:
-            filters = f"t={stock_name}&p=d&ty=oc&ov=chain_strike&s={strike_price}"
+            filters = f"t={stock_name}&p=d&ty=oc&ov=chain_strike&s={strike_price}&auth={self.auth_token}"
         else:
             raise ValueError("Either expiry_date or strike_price must be provided.")
 
@@ -184,9 +195,9 @@ class StockDownloader:
             raise ValueError("stock_name must be a non-empty string.")
 
         if expiry_date:
-            filters = f"t={stock_name}&p=d&ty=ocv&e={expiry_date}"
+            filters = f"t={stock_name}&p=d&ty=ocv&e={expiry_date}&auth={self.auth_token}"
         elif strike_price:
-            filters = f"t={stock_name}&p=d&ty=ocv&ov=chain_strike&s={strike_price}"
+            filters = f"t={stock_name}&p=d&ty=ocv&ov=chain_strike&s={strike_price}&auth={self.auth_token}"
         else:
             raise ValueError("Either expiry_date or strike_price must be provided.")
 
@@ -210,5 +221,10 @@ class StockDownloader:
         if not stock_name or not isinstance(stock_name, str) or not stock_name.strip():
             raise ValueError("stock_name must be a non-empty string.")
 
-        url = f"{self.base_url}quote.ashx?t={stock_name}&p=d"
+        url = f"{self.base_url}quote_export.ashx?t={stock_name}&p=d&auth={self.auth_token}"
+
+        # Mask auth token in debug output for security
+        masked_url = url.replace(self.auth_token, "***")
+        print(f"Downloading data from {masked_url} ...")
+
         return self._make_request(url, "stock detail data")
