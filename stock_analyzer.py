@@ -182,10 +182,10 @@ class StockAnalyzer:
         rsi_period: int = 14,
         mfi_period: int = 14,
         ma_periods: Optional[list] = None,
-        export_csv: Optional[str] = None
+        output_csv: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """
-        Download stock data and calculate indicators in one operation.
+        Download stock data and calculate indicators, saving results to CSV.
 
         Args:
             stock_name: Stock ticker symbol (e.g., 'AAPL')
@@ -193,24 +193,24 @@ class StockAnalyzer:
             rsi_period: Period for RSI calculation (default: 14)
             mfi_period: Period for MFI calculation (default: 14)
             ma_periods: Periods for MA calculation (default: [20, 50, 200])
-            export_csv: Optional path to export results to CSV
+            output_csv: Path to export results CSV (default: {ticker}_indicators.csv)
 
         Returns:
             Dictionary containing:
                 - 'stock': StockIndicators object
                 - 'latest': Latest indicator values
                 - 'data': Full DataFrame with indicators
+                - 'ticker': Stock ticker symbol
+                - 'output_file': Path to CSV file
             Returns None if download or calculation fails
         """
-        print("=" * 70)
-        print(f"Stock Analysis: {stock_name}")
-        print("=" * 70)
+        print(f"Analyzing {stock_name}...")
 
         # Download data
         df = self.download_stock_data(stock_name, days=days)
 
         if df is None or df.empty:
-            print("Failed to download stock data")
+            print(f"✗ Failed to download stock data for {stock_name}")
             return None
 
         # Calculate indicators
@@ -222,58 +222,26 @@ class StockAnalyzer:
         )
 
         if stock is None:
-            print("Failed to calculate indicators")
+            print(f"✗ Failed to calculate indicators for {stock_name}")
             return None
 
         # Get latest values
         latest = stock.get_latest_indicators()
 
-        # Display results
-        print("\n" + "=" * 70)
-        print("Latest Indicator Values")
-        print("=" * 70)
+        # Generate output filename if not provided
+        if output_csv is None:
+            output_csv = f"{stock_name}_indicators.csv"
 
-        if 'date' in latest:
-            print(f"\nDate: {latest['date']}")
-        if 'close' in latest:
-            print(f"Close Price: ${latest['close']:.2f}")
-        if 'volume' in latest:
-            print(f"Volume: {latest['volume']:,.0f}")
-
-        print("\n--- Momentum Indicators ---")
-        if 'rsi_14' in latest and latest['rsi_14'] is not None:
-            print(f"RSI ({rsi_period}): {latest['rsi_14']:.2f}")
-        if 'mfi_14' in latest and latest['mfi_14'] is not None:
-            print(f"MFI ({mfi_period}): {latest['mfi_14']:.2f}")
-
-        print("\n--- Trend Indicators ---")
-        if 'macd' in latest and latest['macd'] is not None:
-            print(f"MACD: {latest['macd']:.4f}")
-        if 'macd_signal' in latest and latest['macd_signal'] is not None:
-            print(f"Signal: {latest['macd_signal']:.4f}")
-        if 'macd_histogram' in latest and latest['macd_histogram'] is not None:
-            print(f"Histogram: {latest['macd_histogram']:.4f}")
-
-        print("\n--- Moving Averages ---")
-        if 'ma20' in latest and latest['ma20'] is not None:
-            print(f"MA20: ${latest['ma20']:.2f}")
-        if 'ma50' in latest and latest['ma50'] is not None:
-            print(f"MA50: ${latest['ma50']:.2f}")
-        if 'ma200' in latest and latest['ma200'] is not None:
-            print(f"MA200: ${latest['ma200']:.2f}")
-
-        # Export if requested
-        if export_csv:
-            stock.export_to_csv(export_csv)
-            print(f"\n✓ Results exported to {export_csv}")
-
-        print("\n" + "=" * 70)
+        # Always export to CSV
+        stock.export_to_csv(output_csv)
+        print(f"✓ Analysis complete: {len(stock.data)} records with indicators saved to {output_csv}")
 
         return {
             'stock': stock,
             'latest': latest,
             'data': stock.data,
-            'ticker': stock_name
+            'ticker': stock_name,
+            'output_file': output_csv
         }
 
 
@@ -281,32 +249,31 @@ def quick_analyze(
     stock_name: str,
     auth_file: str = 'auth.yaml',
     days: int = 365,
-    export: bool = False
+    output_csv: Optional[str] = None
 ) -> Optional[Dict[str, Any]]:
     """
-    Convenience function for quick stock analysis.
+    Convenience function for quick stock analysis with CSV export.
 
     Args:
         stock_name: Stock ticker symbol (e.g., 'AAPL')
         auth_file: Path to authentication file (default: 'auth.yaml')
         days: Number of days of historical data (default: 365)
-        export: Whether to export results to CSV (default: False)
+        output_csv: Output CSV filename (default: {ticker}_indicators.csv)
 
     Returns:
         Analysis results dictionary or None if failed
 
     Example:
         >>> results = quick_analyze('AAPL', days=365)
-        >>> print(f"Latest RSI: {results['latest']['rsi_14']}")
+        >>> # Creates AAPL_indicators.csv with all data and indicators
+        >>> print(f"Data saved to: {results['output_file']}")
     """
     analyzer = StockAnalyzer(auth_file)
-
-    export_path = f"{stock_name}_indicators.csv" if export else None
 
     return analyzer.analyze_stock(
         stock_name,
         days=days,
-        export_csv=export_path
+        output_csv=output_csv
     )
 
 
@@ -340,13 +307,13 @@ if __name__ == '__main__':
         results = quick_analyze(
             stock_ticker,
             auth_file=auth_file,
-            days=days,
-            export=True
+            days=days
         )
 
         if results:
-            print("\n✓ Analysis completed successfully!")
-            print(f"Total records analyzed: {len(results['data'])}")
+            print(f"\n✓ Analysis completed successfully!")
+            print(f"   Total records: {len(results['data'])}")
+            print(f"   Output file: {results['output_file']}")
         else:
             print("\n✗ Analysis failed")
 
