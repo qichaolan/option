@@ -58,6 +58,7 @@ Usage:
 
 import os
 import yaml
+import pypandoc
 from typing import Dict, Any, Optional
 
 class OpenAIAnalyzer:
@@ -438,17 +439,117 @@ class OpenAIAnalyzer:
         Returns:
             Path to saved file
         """
+        # Determine format from output_file or default to PDF
         if output_file is None:
-            output_file = f"{ticker}_analysis.txt"
+            output_file = f"{ticker}_analysis.pdf"
+            format = 'pdf'
+        else:
+            # Detect format from extension
+            format = 'pdf' if output_file.endswith('.pdf') else 'txt'
 
-        with open(output_file, 'w') as f:
-            f.write(f"AI Analysis for {ticker}\n")
-            f.write("=" * 70 + "\n\n")
-            f.write(analysis)
-            f.write("\n\n" + "=" * 70 + "\n")
-            f.write(f"Generated using {self.model}\n")
+        if format == 'pdf':
+            # Use reportlab for PDF generation (no external dependencies needed)
+            try:
+                from reportlab.lib.pagesizes import letter
+                from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+                from reportlab.lib.units import inch
+                from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+                from reportlab.lib.enums import TA_CENTER
+                from datetime import datetime
 
-        print(f"✓ Analysis saved to {output_file}")
+                # Create PDF
+                doc = SimpleDocTemplate(output_file, pagesize=letter,
+                                      topMargin=0.75*inch, bottomMargin=0.75*inch)
+
+                styles = getSampleStyleSheet()
+
+                # Custom styles
+                title_style = ParagraphStyle(
+                    'CustomTitle',
+                    parent=styles['Heading1'],
+                    fontSize=24,
+                    textColor='#1a1a1a',
+                    spaceAfter=30,
+                    alignment=TA_CENTER
+                )
+
+                heading_style = ParagraphStyle(
+                    'CustomHeading',
+                    parent=styles['Heading2'],
+                    fontSize=14,
+                    textColor='#333333',
+                    spaceAfter=12,
+                    spaceBefore=12
+                )
+
+                body_style = ParagraphStyle(
+                    'CustomBody',
+                    parent=styles['BodyText'],
+                    fontSize=11,
+                    leading=16,
+                    textColor='#444444'
+                )
+
+                footer_style = ParagraphStyle(
+                    'Footer',
+                    parent=styles['Normal'],
+                    fontSize=9,
+                    textColor='#666666',
+                    alignment=TA_CENTER
+                )
+
+                # Build PDF content
+                story = []
+
+                # Title
+                story.append(Paragraph(f"AI Stock Analysis: {ticker}", title_style))
+                story.append(Spacer(1, 0.2*inch))
+
+                # Metadata
+                metadata = f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                story.append(Paragraph(metadata, footer_style))
+                story.append(Spacer(1, 0.3*inch))
+
+                # Analysis content - split by paragraphs and format
+                paragraphs = analysis.split('\n\n')
+                for para in paragraphs:
+                    if para.strip():
+                        # Check if it looks like a heading
+                        if para.strip().isupper() or para.strip().startswith('#'):
+                            story.append(Paragraph(para.strip().replace('#', ''), heading_style))
+                        else:
+                            # Replace newlines with <br/> for proper formatting
+                            formatted_para = para.replace('\n', '<br/>')
+                            story.append(Paragraph(formatted_para, body_style))
+                        story.append(Spacer(1, 0.15*inch))
+
+                # Footer
+                story.append(Spacer(1, 0.5*inch))
+                story.append(Paragraph("=" * 70, footer_style))
+                story.append(Paragraph(f"Generated using {self.model}", footer_style))
+
+                # Build PDF
+                doc.build(story)
+
+                print(f"✓ Analysis saved to {output_file} (PDF)")
+
+            except ImportError:
+                print("⚠ reportlab not installed. Falling back to TXT format.")
+                print("  Install with: pip install reportlab")
+                # Fallback to text format
+                output_file = output_file.replace('.pdf', '.txt')
+                format = 'txt'
+
+        if format == 'txt':
+            # Save as plain text
+            with open(output_file, 'w') as f:
+                f.write(f"AI Analysis for {ticker}\n")
+                f.write("=" * 70 + "\n\n")
+                f.write(analysis)
+                f.write("\n\n" + "=" * 70 + "\n")
+                f.write(f"Generated using {self.model}\n")
+
+            print(f"✓ Analysis saved to {output_file} (TXT)")
 
         return output_file
 
@@ -518,21 +619,22 @@ if __name__ == '__main__':
         description='Analyze stocks with technical indicators and AI insights',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
-            Examples:
-            %(prog)s AAPL                                      # Analyze AAPL with defaults
-            %(prog)s AAPL --days 180                           # Analyze last 180 days
-            %(prog)s TSLA --finviz-auth custom_finviz.yaml     # Use custom Finviz auth
-            %(prog)s QQQ --days 90 --openai-config my_config.yaml
+Examples:
+  %(prog)s --ticker AAPL                                      # Analyze AAPL with defaults
+  %(prog)s --ticker AAPL --days 180                           # Analyze last 180 days
+  %(prog)s --ticker TSLA --finviz-auth custom_finviz.yaml     # Use custom Finviz auth
+  %(prog)s --ticker QQQ --days 90 --openai-config my_config.yaml
 
-            Required Files:
-            - finviz_auth.yaml: Finviz Elite authentication token
-            - openai_config.yaml: OpenAI API configuration
-            - openai_prompts/stock_analysis.txt: OpenAI analysis prompt template
+Required Files:
+  - finviz_auth.yaml: Finviz Elite authentication token
+  - openai_config.yaml: OpenAI API configuration
+  - openai_prompts/stock_analysis.txt: OpenAI analysis prompt template
         '''
     )
 
     parser.add_argument(
-        'ticker',
+        '--ticker',
+        required=True,
         help='Stock ticker symbol (e.g., AAPL, TSLA, QQQ)'
     )
 

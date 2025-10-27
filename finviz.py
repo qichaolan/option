@@ -101,28 +101,37 @@ class StockDownloader:
             print(f"Error: Failed to download {data_type}: {e}")
             return None
 
-    def _handle_response(self, response: requests.Response, data_type: str) -> Union[csv.DictReader, bool, None]:
+    def _handle_response(self, response: requests.Response, data_type: str, allow_html: bool = False) -> Union[csv.DictReader, bool, str, None]:
         """
         Handle successful API response by saving to file or returning CSV reader.
 
         Args:
             response: Successful HTTP response object
             data_type: Type of data being downloaded (for success messages)
+            allow_html: If True, return HTML content instead of treating it as error
 
         Returns:
-            csv.DictReader if no output_file is set, True if file written successfully,
-            None if response contains HTML instead of CSV
+            csv.DictReader if no output_file is set and content is CSV,
+            True if file written successfully,
+            str (HTML content) if allow_html=True and response is HTML,
+            None if response contains HTML instead of CSV (when allow_html=False)
         """
         content = response.content.decode('utf-8')
 
         # Check if response is HTML instead of CSV
         if content.strip().startswith('<!DOCTYPE html>') or content.strip().startswith('<html'):
-            print(f"Error: Received HTML response instead of CSV data for {data_type}")
-            print("This usually indicates:")
-            print("  - Invalid or expired authentication token")
-            print("  - Inactive Finviz Elite subscription")
-            print("  - Incorrect API endpoint or parameters")
-            return None
+            if allow_html:
+                # For filings, HTML is expected - return it directly
+                print(f"Success: {data_type.capitalize()} downloaded (HTML format).")
+                return content
+            else:
+                # For CSV endpoints, HTML indicates an error
+                print(f"Error: Received HTML response instead of CSV data for {data_type}")
+                print("This usually indicates:")
+                print("  - Invalid or expired authentication token")
+                print("  - Inactive Finviz Elite subscription")
+                print("  - Incorrect API endpoint or parameters")
+                return None
 
         if self.output_file:
             if os.path.exists(self.output_file):
@@ -228,3 +237,128 @@ class StockDownloader:
         print(f"Downloading data from {masked_url} ...")
 
         return self._make_request(url, "stock detail data")
+
+    def download_latest_filings(
+        self,
+        stock_name: str
+    ) -> Optional[csv.DictReader]:
+        """
+        Download company's latest SEC filings list from Finviz and return as CSV.
+
+        This method downloads an HTML page from Finviz Elite that contains
+        a list of all SEC filings (10-K, 10-Q, 8-K, etc.) for the specified ticker,
+        parses the embedded JSON data, and returns it in CSV format with columns:
+        - filing_date: Date the filing was submitted to SEC
+        - report_date: Period end date (if applicable)
+        - form: Form type (10-K, 10-Q, 8-K, etc.)
+        - document_url: Full SEC.gov URL to the filing document
+
+        Args:
+            stock_name: Stock ticker symbol (e.g., 'AAPL', 'MSFT')
+
+        Returns:
+            csv.DictReader with filing data, or None if request failed
+
+        Raises:
+            ValueError: If stock_name is empty or invalid
+
+        Example:
+            >>> downloader = StockDownloader('config/finviz_auth.yaml')
+            >>> filings = downloader.download_latest_filings('AAPL')
+            >>> for filing in filings:
+            >>>     print(f"{filing['form']} - {filing['filing_date']} - {filing['document_url']}")
+        """
+        if not stock_name or not isinstance(stock_name, str) or not stock_name.strip():
+            raise ValueError("stock_name must be a non-empty string.")
+
+        import re
+        import json
+
+        # Construct URL for latest filings (all types: annual, quarterly, current)
+        # f=annual-quarterly-current includes 10-K, 10-Q, and 8-K filings
+        url = f"{self.base_url}quote.ashx?t={stock_name}&p=d&ty=lf&f=annual-quarterly-current&auth={self.auth_token}"
+
+        # Mask auth token in debug output for security
+        masked_url = url.replace(self.auth_token, "***")
+        print(f"Downloading latest filings list from {masked_url} ...")
+
+        # Filings endpoint returns HTML with embedded JSON data
+        headers = {
+            "User-Agent": "StockDownloader/1.0"
+        }
+
+        try:
+            response = requests.get(url, headers=headers, timeout=self.DEFAULT_TIMEOUT)
+            response.raise_for_status()
+
+            html_content = response.content.decode('utf-8')
+
+            # Parse JSON from HTML
+            match = re.search(
+                r'<script id="route-init-data" type="application/json">(.+?)</script>',
+                html_content,
+                re.DOTALL
+            )
+
+            if not match:
+                print("Error: Could not find filing data in Finviz response")
+                return None
+
+            json_str = match.group(1)
+            data = json.loads(json_str)
+
+            items = data.get('items', [])
+            if not items:
+                print(f"Warning: No filings found for {stock_name}")
+                return None
+
+            # Convert JSON items to CSV format
+            csv_rows = []
+            for item in items:
+                # Extract relevant fields
+                filing_date = item.get('filingDate', '')[:10]  # Extract YYYY-MM-DD
+                report_date = item.get('reportDate', '')[:10] if 'reportDate' in item else ''
+                form = item.get('form', '')
+                primary_doc_url = item.get('primaryDocumentUrl', '')
+
+                # Construct full SEC.gov URL
+                document_url = f"https://www.sec.gov/Archives/edgar/data/{primary_doc_url}" if primary_doc_url else ''
+
+                csv_rows.append({
+                    'filing_date': filing_date,
+                    'report_date': report_date,
+                    'form': form,
+                    'document_url': document_url
+                })
+
+            # Convert to CSV format using DictReader
+            csv_string = io.StringIO()
+            if csv_rows:
+                fieldnames = ['filing_date', 'report_date', 'form', 'document_url']
+                writer = csv.DictWriter(csv_string, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(csv_rows)
+
+                # Reset to beginning for reading
+                csv_string.seek(0)
+
+                print(f"Success: Latest filings list downloaded ({len(csv_rows)} filings).")
+                return csv.DictReader(csv_string)
+            else:
+                return None
+
+        except requests.exceptions.Timeout:
+            print(f"Error: Request timed out after {self.DEFAULT_TIMEOUT} seconds.")
+            return None
+        except requests.exceptions.ConnectionError:
+            print(f"Error: Failed to connect to {self.base_url}")
+            return None
+        except requests.exceptions.HTTPError as e:
+            print(f"Error: HTTP {response.status_code} - {e}")
+            return None
+        except json.JSONDecodeError as e:
+            print(f"Error: Failed to parse JSON from Finviz response: {e}")
+            return None
+        except requests.exceptions.RequestException as e:
+            print(f"Error: Failed to download latest filings list: {e}")
+            return None
