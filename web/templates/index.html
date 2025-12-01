@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LEAPS Ranker - Options Ranking & ROI Simulator</title>
+    <title>AI Recommended LEAPS - Options Ranking & ROI Simulator</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
     <header class="header">
         <div class="container">
             <div class="header-content">
-                <div class="logo">LEAPS Ranker <span>| Options Analysis</span></div>
+                <div class="logo">AI Recommended LEAPS</div>
             </div>
         </div>
     </header>
@@ -26,10 +26,7 @@
                         <option value="">Loading...</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="targetPct">Target % Move</label>
-                    <input type="number" id="targetPct" value="50" min="1" max="200" step="1">
-                </div>
+                <input type="hidden" id="targetPct" value="50">
                 <div class="form-group">
                     <label for="modeSelect">Scoring Mode</label>
                     <select id="modeSelect">
@@ -70,7 +67,7 @@
         <!-- LEAPS Table -->
         <section class="table-section">
             <div class="table-header">
-                <h2 class="table-title">LEAPS Ranking</h2>
+                <h2 class="table-title">AI Recommended LEAPS</h2>
                 <span style="color: var(--text-secondary); font-size: 0.875rem;">Click a row to load it in the simulator</span>
             </div>
 

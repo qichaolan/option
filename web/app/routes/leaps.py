@@ -48,8 +48,8 @@ def get_config_path() -> Path:
 
 # Supported tickers with default target percentages
 SUPPORTED_TICKERS = {
-    "SPY": {"name": "S&P 500 ETF", "default_target_pct": 0.44},
-    "QQQ": {"name": "Nasdaq 100 ETF", "default_target_pct": 0.50},
+    "SPY": {"name": "S&P 500 ETF", "default_target_pct": 0.32},
+    "QQQ": {"name": "Nasdaq 100 ETF", "default_target_pct": 0.45},
 }
 
 
