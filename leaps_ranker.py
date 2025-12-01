@@ -726,6 +726,13 @@ def _normalize_roi_score(df: pd.DataFrame) -> pd.DataFrame:
     """
     Normalize ROI into a 0-1 score.
 
+    Uses 50% ROI as the floor (score = 0) and normalizes linearly to
+    the highest ROI in the dataset (score = 1).
+
+    - ROI <= 50%: score = 0.0
+    - ROI = max ROI: score = 1.0
+    - ROI between 50% and max: linearly interpolated
+
     Args:
         df: Options DataFrame with 'roi_target' column.
 
@@ -736,13 +743,16 @@ def _normalize_roi_score(df: pd.DataFrame) -> pd.DataFrame:
 
     roi = df["roi_target"]
 
-    roi_min = roi.min()
+    # Floor at 50% ROI
+    ROI_FLOOR = 50.0
     roi_max = roi.max()
 
-    if roi_max == roi_min:
-        df["roi_score"] = 0.5
+    if roi_max <= ROI_FLOOR:
+        # All ROIs are at or below floor, give all 0
+        df["roi_score"] = 0.0
     else:
-        df["roi_score"] = (roi - roi_min) / (roi_max - roi_min)
+        # Normalize: 50% -> 0, max -> 1
+        df["roi_score"] = (roi - ROI_FLOOR) / (roi_max - ROI_FLOOR)
 
     # Clamp to [0, 1]
     df["roi_score"] = df["roi_score"].clip(0, 1)
@@ -869,8 +879,8 @@ def rank_leaps(
     if config is None:
         config = {
             "scoring_modes": {
-                "high_prob": {"ease_weight": 0.70, "roi_weight": 0.30},
-                "high_convexity": {"ease_weight": 0.30, "roi_weight": 0.70},
+                "high_prob": {"ease_weight": 0.75, "roi_weight": 0.25},
+                "high_convexity": {"ease_weight": 0.25, "roi_weight": 0.75},
             },
             "filtering": {"max_target_distance_pct": 0.5},
             "contract": {"contract_size": 100},
