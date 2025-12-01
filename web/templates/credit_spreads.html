@@ -139,7 +139,11 @@
                         <span class="ai-badge">AI</span> Recommended Put Credit Spreads (PCS)
                         <span class="spread-badge spread-badge-bullish">Bullish</span>
                     </h3>
-                    <p class="results-table-subtitle">Top 20 spreads ranked by AI Score - <span class="click-hint">Click a row to simulate P/L</span></p>
+                    <p class="results-table-subtitle">Top 20 spreads ranked by AI Score</p>
+                    <div class="simulator-hint-banner">
+                        <span class="simulator-hint-icon">👆</span>
+                        <span class="simulator-hint-text">Click any row to simulate P/L — results appear below the table</span>
+                    </div>
                 </div>
                 <div class="table-scroll-container">
                     <table class="data-table">
@@ -171,7 +175,11 @@
                         <span class="ai-badge">AI</span> Recommended Call Credit Spreads (CCS)
                         <span class="spread-badge spread-badge-bearish">Bearish</span>
                     </h3>
-                    <p class="results-table-subtitle">Top 20 spreads ranked by AI Score - <span class="click-hint">Click a row to simulate P/L</span></p>
+                    <p class="results-table-subtitle">Top 20 spreads ranked by AI Score</p>
+                    <div class="simulator-hint-banner">
+                        <span class="simulator-hint-icon">👆</span>
+                        <span class="simulator-hint-text">Click any row to simulate P/L — results appear below the table</span>
+                    </div>
                 </div>
                 <div class="table-scroll-container">
                     <table class="data-table">
@@ -244,6 +252,12 @@
                         <div class="spread-info-value" id="simNetCredit">-</div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Action Summary - Natural language explanation -->
+            <div class="simulator-action-summary" id="simActionSummary">
+                <p class="action-profit-condition" id="simProfitCondition">-</p>
+                <p class="action-trade-explanation" id="simTradeExplanation">-</p>
             </div>
 
             <!-- Summary Metrics -->
