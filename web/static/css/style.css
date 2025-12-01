@@ -1863,3 +1863,468 @@ tr[data-contract] {
         justify-content: center;
     }
 }
+
+/* ============================================
+   CREDIT SPREAD SIMULATOR STYLES
+   Matches LEAPS Simulator look & feel
+   ============================================ */
+
+/* Simulator Section Container */
+.simulator-section {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 1.5rem;
+    border: 2px solid var(--primary-color);
+    position: relative;
+}
+
+.simulator-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.simulator-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.simulator-title::before {
+    content: "📊";
+}
+
+.simulator-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.simulator-close:hover {
+    background: var(--bg-color);
+    color: var(--danger-color);
+}
+
+/* Selected Spread Info Grid */
+.simulator-spread-info {
+    background: var(--bg-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.spread-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.spread-info-item {
+    text-align: center;
+}
+
+.spread-info-label {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.spread-info-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Simulator Summary Cards */
+.simulator-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.sim-summary-card {
+    background: var(--bg-color);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.sim-summary-gain {
+    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.sim-summary-loss {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.sim-summary-be {
+    border-color: rgba(37, 99, 235, 0.3);
+    background: rgba(37, 99, 235, 0.05);
+}
+
+.sim-summary-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    margin-bottom: 0.375rem;
+}
+
+.sim-summary-value {
+    font-size: 1.375rem;
+    font-weight: 700;
+}
+
+.sim-summary-value.positive {
+    color: var(--success-color);
+}
+
+.sim-summary-value.negative {
+    color: var(--danger-color);
+}
+
+.sim-summary-hint {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+/* P/L Chart Container */
+.simulator-chart-container {
+    margin-bottom: 1.5rem;
+}
+
+.simulator-chart-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.25rem 0;
+}
+
+.simulator-chart-subtitle {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    margin: 0 0 1rem 0;
+}
+
+.simulator-chart {
+    background: var(--bg-color);
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 200px;
+    position: relative;
+}
+
+/* P/L Bar Chart */
+.pl-chart-bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 180px;
+    padding: 0 0.5rem;
+    position: relative;
+}
+
+.pl-chart-bar-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    position: relative;
+}
+
+.pl-chart-bar {
+    width: 70%;
+    max-width: 40px;
+    min-width: 20px;
+    border-radius: 4px 4px 0 0;
+    transition: all 0.3s ease;
+    position: absolute;
+    bottom: 50%;
+}
+
+.pl-chart-bar.positive {
+    background: linear-gradient(180deg, var(--success-color) 0%, rgba(16, 185, 129, 0.7) 100%);
+    bottom: 50%;
+}
+
+.pl-chart-bar.negative {
+    background: linear-gradient(0deg, var(--danger-color) 0%, rgba(239, 68, 68, 0.7) 100%);
+    top: 50%;
+    border-radius: 0 0 4px 4px;
+}
+
+.pl-chart-bar:hover {
+    opacity: 0.8;
+    transform: scaleX(1.1);
+}
+
+.pl-chart-label {
+    position: absolute;
+    bottom: -20px;
+    font-size: 0.625rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.pl-chart-value {
+    position: absolute;
+    font-size: 0.625rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.pl-chart-value.positive {
+    color: var(--success-color);
+    bottom: calc(50% + 5px);
+}
+
+.pl-chart-value.negative {
+    color: var(--danger-color);
+    top: calc(50% + 5px);
+}
+
+/* Zero line */
+.pl-chart-zero-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    background: var(--border-color);
+    z-index: 1;
+}
+
+.pl-chart-zero-label {
+    position: absolute;
+    left: -25px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.625rem;
+    color: var(--text-secondary);
+}
+
+/* Simulator Table */
+.simulator-table-container {
+    margin-top: 1rem;
+}
+
+.simulator-table-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.75rem 0;
+}
+
+.simulator-data-table {
+    font-size: 0.8125rem;
+}
+
+.simulator-data-table th {
+    font-size: 0.6875rem;
+}
+
+.col-pct-move {
+    text-align: center !important;
+    min-width: 70px;
+}
+
+.col-price {
+    text-align: right !important;
+    min-width: 90px;
+}
+
+.col-pl {
+    text-align: right !important;
+    min-width: 100px;
+}
+
+/* Loading state for simulator */
+.sim-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    color: var(--text-secondary);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    z-index: 10;
+}
+
+/* Row selection indicator */
+tr.selected-for-sim {
+    background: rgba(37, 99, 235, 0.1) !important;
+    position: relative;
+}
+
+tr.selected-for-sim::after {
+    content: "▶";
+    position: absolute;
+    left: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary-color);
+    font-size: 0.75rem;
+}
+
+/* Clickable rows hint */
+.results-table-subtitle .click-hint {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+/* Mobile responsive for simulator */
+@media (max-width: 768px) {
+    .simulator-section {
+        padding: 1rem;
+        border-radius: 10px;
+    }
+
+    .simulator-header {
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+    }
+
+    .simulator-title {
+        font-size: 1.125rem;
+    }
+
+    .spread-info-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+    }
+
+    .spread-info-value {
+        font-size: 0.875rem;
+    }
+
+    .simulator-summary {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .sim-summary-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+    }
+
+    .sim-summary-label {
+        margin-bottom: 0;
+    }
+
+    .sim-summary-value {
+        font-size: 1.125rem;
+    }
+
+    .sim-summary-hint {
+        display: none;
+    }
+
+    .simulator-chart {
+        min-height: 160px;
+        padding: 0.75rem;
+    }
+
+    .pl-chart-bars {
+        height: 140px;
+    }
+
+    .pl-chart-bar {
+        width: 80%;
+        min-width: 15px;
+    }
+
+    .pl-chart-label {
+        font-size: 0.5625rem;
+    }
+
+    .pl-chart-value {
+        font-size: 0.5625rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .spread-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .pl-chart-bars {
+        height: 120px;
+    }
+
+    /* Hide some labels on very small screens */
+    .pl-chart-bar-container:nth-child(2n) .pl-chart-label {
+        display: none;
+    }
+}
+
+/* Clickable rows */
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.clickable-row:hover {
+    background: rgba(37, 99, 235, 0.06) !important;
+}
+
+/* Clickable mobile cards */
+.clickable-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clickable-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+.clickable-card.selected-for-sim {
+    border-color: var(--primary-color);
+    background: rgba(37, 99, 235, 0.05);
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+/* Mobile card action hint */
+.mobile-card-action {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--border-color);
+    text-align: center;
+}
+
+.tap-to-simulate {
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    font-weight: 500;
+}

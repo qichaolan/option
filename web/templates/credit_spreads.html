@@ -139,7 +139,7 @@
                         <span class="ai-badge">AI</span> Recommended Put Credit Spreads (PCS)
                         <span class="spread-badge spread-badge-bullish">Bullish</span>
                     </h3>
-                    <p class="results-table-subtitle">Top 20 spreads ranked by AI Score - Profit if underlying stays above short strike</p>
+                    <p class="results-table-subtitle">Top 20 spreads ranked by AI Score - <span class="click-hint">Click a row to simulate P/L</span></p>
                 </div>
                 <div class="table-scroll-container">
                     <table class="data-table">
@@ -171,7 +171,7 @@
                         <span class="ai-badge">AI</span> Recommended Call Credit Spreads (CCS)
                         <span class="spread-badge spread-badge-bearish">Bearish</span>
                     </h3>
-                    <p class="results-table-subtitle">Top 20 spreads ranked by AI Score - Profit if underlying stays below short strike</p>
+                    <p class="results-table-subtitle">Top 20 spreads ranked by AI Score - <span class="click-hint">Click a row to simulate P/L</span></p>
                 </div>
                 <div class="table-scroll-container">
                     <table class="data-table">
@@ -209,6 +209,93 @@
             </div>
         </section>
 
+        <!-- Credit Spread Simulator - Inline below selected spread -->
+        <section class="simulator-section" id="spreadSimulator" style="display: none;">
+            <div class="simulator-header">
+                <h2 class="simulator-title">P/L Simulator</h2>
+                <button class="simulator-close" id="closeSimulator" aria-label="Close simulator">&times;</button>
+            </div>
+
+            <!-- Selected Spread Info -->
+            <div class="simulator-spread-info" id="simSpreadInfo">
+                <div class="spread-info-grid">
+                    <div class="spread-info-item">
+                        <div class="spread-info-label">Symbol</div>
+                        <div class="spread-info-value" id="simSymbol">-</div>
+                    </div>
+                    <div class="spread-info-item">
+                        <div class="spread-info-label">Type</div>
+                        <div class="spread-info-value" id="simType">-</div>
+                    </div>
+                    <div class="spread-info-item">
+                        <div class="spread-info-label">Expiration</div>
+                        <div class="spread-info-value" id="simExpiration">-</div>
+                    </div>
+                    <div class="spread-info-item">
+                        <div class="spread-info-label">Short Strike</div>
+                        <div class="spread-info-value" id="simShortStrike">-</div>
+                    </div>
+                    <div class="spread-info-item">
+                        <div class="spread-info-label">Long Strike</div>
+                        <div class="spread-info-value" id="simLongStrike">-</div>
+                    </div>
+                    <div class="spread-info-item">
+                        <div class="spread-info-label">Net Credit</div>
+                        <div class="spread-info-value" id="simNetCredit">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Metrics -->
+            <div class="simulator-summary" id="simSummary">
+                <div class="sim-summary-card sim-summary-gain">
+                    <div class="sim-summary-label">Max Gain</div>
+                    <div class="sim-summary-value positive" id="simMaxGain">-</div>
+                </div>
+                <div class="sim-summary-card sim-summary-loss">
+                    <div class="sim-summary-label">Max Loss</div>
+                    <div class="sim-summary-value negative" id="simMaxLoss">-</div>
+                </div>
+                <div class="sim-summary-card sim-summary-be">
+                    <div class="sim-summary-label">Breakeven</div>
+                    <div class="sim-summary-value" id="simBreakeven">-</div>
+                    <div class="sim-summary-hint" id="simBreakevenPct">-</div>
+                </div>
+            </div>
+
+            <!-- P/L Chart -->
+            <div class="simulator-chart-container">
+                <h3 class="simulator-chart-title">P/L at Expiration by % Move</h3>
+                <p class="simulator-chart-subtitle">Shows profit/loss for 1 contract (100 shares) from -5% to +5% move</p>
+                <div class="simulator-chart" id="simChart">
+                    <!-- Chart will be rendered here -->
+                </div>
+            </div>
+
+            <!-- P/L Table -->
+            <div class="simulator-table-container">
+                <h3 class="simulator-table-title">P/L by Price Move</h3>
+                <div class="table-scroll-container">
+                    <table class="data-table simulator-data-table">
+                        <thead>
+                            <tr>
+                                <th class="col-pct-move">% Move</th>
+                                <th class="col-price">Price at Exp</th>
+                                <th class="col-pl">P/L per Spread</th>
+                            </tr>
+                        </thead>
+                        <tbody id="simTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Loading state for simulator -->
+            <div id="simLoadingState" class="sim-loading" style="display: none;">
+                <div class="loading-spinner"></div>
+                <span>Calculating P/L...</span>
+            </div>
+        </section>
+
         <!-- Legend Section - Cleaner layout -->
         <section class="legend-card" id="legendSection" style="display: none;">
             <div class="legend-header">
@@ -229,7 +316,7 @@
                 </div>
                 <div class="legend-item">
                     <span class="legend-term">BE</span>
-                    <span class="legend-def">Break-even price at expiration</span>
+                    <span class="legend-def">Break-even price (PCS: profit if price stays above BE, CCS: profit if price stays below BE)</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-term">AI Score</span>

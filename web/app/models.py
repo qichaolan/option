@@ -197,3 +197,56 @@ class CreditSpreadResponse(BaseModel):
     total_ccs: int
     spreads: List[CreditSpreadResult]
     timestamp: str
+
+
+# Credit Spread Simulator Models
+
+class CreditSpreadSimulatorRequest(BaseModel):
+    """Request model for credit spread P/L simulation."""
+
+    symbol: str = Field(..., description="Ticker symbol (e.g., SPY, QQQ)")
+    spread_type: Literal["PCS", "CCS"] = Field(
+        ..., description="Spread type: PCS (Put Credit Spread) or CCS (Call Credit Spread)"
+    )
+    expiration: str = Field(..., description="Expiration date (e.g., 2025-12-19)")
+    short_strike: float = Field(..., gt=0, description="Short leg strike price")
+    long_strike: float = Field(..., gt=0, description="Long leg strike price")
+    net_credit: float = Field(..., gt=0, description="Net credit received per share")
+    underlying_price_now: float = Field(..., gt=0, description="Current underlying price")
+
+    @field_validator("symbol")
+    @classmethod
+    def validate_symbol(cls, v: str) -> str:
+        """Validate symbol using shared validation function."""
+        return validate_ticker_symbol(v)
+
+
+class CreditSpreadSimulatorPoint(BaseModel):
+    """Single simulation point for credit spread P/L."""
+
+    pct_move: float  # Percentage move (e.g., -5.0, 0.0, 5.0)
+    underlying_price: float  # Price at expiration
+    pl_per_spread: float  # P/L for one spread (100 shares)
+
+
+class CreditSpreadSimulatorSummary(BaseModel):
+    """Summary metrics for credit spread simulation."""
+
+    max_gain: float  # Maximum gain (net credit * 100)
+    max_loss: float  # Maximum loss
+    breakeven_price: float  # Breakeven price at expiration
+    breakeven_pct: float  # Breakeven as % move from current price
+
+
+class CreditSpreadSimulatorResponse(BaseModel):
+    """Response model for credit spread P/L simulation."""
+
+    symbol: str
+    spread_type: str
+    expiration: str
+    short_strike: float
+    long_strike: float
+    net_credit: float
+    underlying_price_now: float
+    summary: CreditSpreadSimulatorSummary
+    points: List[CreditSpreadSimulatorPoint]

@@ -50,6 +50,10 @@ let state = {
     error: null,
     sortColumn: 'total_score',
     sortDirection: 'desc',
+    // Simulator state
+    selectedSpread: null,
+    simulatorData: null,
+    underlyingPrice: 0,
 };
 
 // ============================================
@@ -89,6 +93,23 @@ const elements = {
     noResultsState: document.getElementById('noResultsState'),
     errorDisplay: document.getElementById('errorDisplay'),
     legendSection: document.getElementById('legendSection'),
+
+    // Simulator elements
+    spreadSimulator: document.getElementById('spreadSimulator'),
+    closeSimulator: document.getElementById('closeSimulator'),
+    simSymbol: document.getElementById('simSymbol'),
+    simType: document.getElementById('simType'),
+    simExpiration: document.getElementById('simExpiration'),
+    simShortStrike: document.getElementById('simShortStrike'),
+    simLongStrike: document.getElementById('simLongStrike'),
+    simNetCredit: document.getElementById('simNetCredit'),
+    simMaxGain: document.getElementById('simMaxGain'),
+    simMaxLoss: document.getElementById('simMaxLoss'),
+    simBreakeven: document.getElementById('simBreakeven'),
+    simBreakevenPct: document.getElementById('simBreakevenPct'),
+    simChart: document.getElementById('simChart'),
+    simTableBody: document.getElementById('simTableBody'),
+    simLoadingState: document.getElementById('simLoadingState'),
 };
 
 // ============================================
@@ -121,6 +142,11 @@ function setupEventListeners() {
         });
     });
 
+    // Close simulator button
+    if (elements.closeSimulator) {
+        elements.closeSimulator.addEventListener('click', closeSimulator);
+    }
+
     // Re-render on window resize for mobile/desktop switch
     let resizeTimeout;
     window.addEventListener('resize', () => {
@@ -128,6 +154,10 @@ function setupEventListeners() {
         resizeTimeout = setTimeout(() => {
             if (state.spreads.length > 0) {
                 renderResults();
+            }
+            // Re-render simulator chart if visible
+            if (state.simulatorData && elements.spreadSimulator.style.display !== 'none') {
+                renderSimulatorChart(state.simulatorData.points);
             }
         }, 250);
     });
@@ -203,6 +233,10 @@ function updateUI(data) {
     state.spreads = data.spreads;
     state.pcsSpreads = data.spreads.filter(s => s.spread_type === 'PCS');
     state.ccsSpreads = data.spreads.filter(s => s.spread_type === 'CCS');
+    state.underlyingPrice = data.underlying_price;
+
+    // Close simulator when new data is loaded
+    closeSimulator();
 
     // Update summary cards
     elements.symbolDisplay.textContent = data.symbol;
@@ -264,7 +298,7 @@ function renderResults() {
 function renderTable(spreads, tbody) {
     const top20 = spreads.slice(0, 20);
     tbody.innerHTML = top20.map((s, idx) => `
-        <tr data-spread="${idx}">
+        <tr data-spread-idx="${idx}" data-spread-type="${s.spread_type}" class="clickable-row" title="Click to simulate P/L">
             <td class="col-exp">${escapeHtml(s.expiration)}</td>
             <td class="col-dte">${s.dte}</td>
             <td class="col-strike">${formatCurrency(s.short_strike, 0)}</td>
@@ -277,6 +311,16 @@ function renderTable(spreads, tbody) {
             <td class="col-score"><span class="score-badge ${getScoreClass(s.total_score)}">${formatNumber(s.total_score, 2)}</span></td>
         </tr>
     `).join('');
+
+    // Add click handlers for row selection
+    tbody.querySelectorAll('tr[data-spread-idx]').forEach(row => {
+        row.addEventListener('click', () => {
+            const idx = parseInt(row.dataset.spreadIdx);
+            const spreadType = row.dataset.spreadType;
+            const spread = spreadType === 'PCS' ? state.pcsSpreads[idx] : state.ccsSpreads[idx];
+            selectSpreadForSimulation(spread, row);
+        });
+    });
 }
 
 // Render mobile card view for better readability on small screens (limited to top 20 by score)
@@ -285,7 +329,7 @@ function renderMobileCards(spreads, container, type) {
 
     const top20 = spreads.slice(0, 20);
     container.innerHTML = top20.map((s, idx) => `
-        <div class="mobile-spread-card" data-spread="${idx}">
+        <div class="mobile-spread-card clickable-card" data-spread-idx="${idx}" data-spread-type="${s.spread_type}">
             <div class="mobile-card-header">
                 <div>
                     <div class="mobile-card-strikes">${formatCurrency(s.short_strike, 0)} / ${formatCurrency(s.long_strike, 0)}</div>
@@ -321,8 +365,21 @@ function renderMobileCards(spreads, container, type) {
                     <div class="mobile-metric-value">${formatCurrency(s.max_loss, 2)}</div>
                 </div>
             </div>
+            <div class="mobile-card-action">
+                <span class="tap-to-simulate">Tap to simulate P/L →</span>
+            </div>
         </div>
     `).join('');
+
+    // Add click handlers for card selection
+    container.querySelectorAll('.mobile-spread-card[data-spread-idx]').forEach(card => {
+        card.addEventListener('click', () => {
+            const idx = parseInt(card.dataset.spreadIdx);
+            const spreadType = card.dataset.spreadType;
+            const spread = spreadType === 'PCS' ? state.pcsSpreads[idx] : state.ccsSpreads[idx];
+            selectSpreadForSimulation(spread, card);
+        });
+    });
 }
 
 // Get CSS class for score badge styling
@@ -418,4 +475,158 @@ function showError(message) {
 
 function hideError() {
     elements.errorDisplay.style.display = 'none';
+}
+
+// ============================================
+// CREDIT SPREAD SIMULATOR
+// ============================================
+
+// Select a spread for simulation
+function selectSpreadForSimulation(spread, element) {
+    // Remove selection from all rows/cards
+    document.querySelectorAll('.selected-for-sim').forEach(el => {
+        el.classList.remove('selected-for-sim');
+    });
+
+    // Add selection to clicked element
+    element.classList.add('selected-for-sim');
+
+    // Store selected spread
+    state.selectedSpread = spread;
+
+    // Run simulation
+    runSpreadSimulation(spread);
+}
+
+// Close the simulator
+function closeSimulator() {
+    if (elements.spreadSimulator) {
+        elements.spreadSimulator.style.display = 'none';
+    }
+    state.selectedSpread = null;
+    state.simulatorData = null;
+
+    // Remove selection highlighting
+    document.querySelectorAll('.selected-for-sim').forEach(el => {
+        el.classList.remove('selected-for-sim');
+    });
+}
+
+// Run simulation for a spread
+async function runSpreadSimulation(spread) {
+    // Show simulator with loading state
+    elements.spreadSimulator.style.display = 'block';
+    elements.simLoadingState.style.display = 'flex';
+
+    // Update spread info display
+    elements.simSymbol.textContent = spread.symbol;
+    elements.simType.textContent = spread.spread_type === 'PCS' ? 'Put Credit Spread (Bullish)' : 'Call Credit Spread (Bearish)';
+    elements.simExpiration.textContent = spread.expiration;
+    elements.simShortStrike.textContent = formatCurrency(spread.short_strike, 0);
+    elements.simLongStrike.textContent = formatCurrency(spread.long_strike, 0);
+    elements.simNetCredit.textContent = formatCurrency(spread.credit, 2);
+
+    try {
+        const response = await fetch('/api/credit-spreads/simulate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                symbol: spread.symbol,
+                spread_type: spread.spread_type,
+                expiration: spread.expiration,
+                short_strike: spread.short_strike,
+                long_strike: spread.long_strike,
+                net_credit: spread.credit,
+                underlying_price_now: state.underlyingPrice,
+            }),
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || 'Failed to simulate spread');
+        }
+
+        const data = await response.json();
+        state.simulatorData = data;
+
+        // Update summary
+        elements.simMaxGain.textContent = '+' + formatCurrency(data.summary.max_gain, 0);
+        elements.simMaxLoss.textContent = '-' + formatCurrency(data.summary.max_loss, 0);
+        elements.simBreakeven.textContent = formatCurrency(data.summary.breakeven_price, 2);
+        elements.simBreakevenPct.textContent = (data.summary.breakeven_pct >= 0 ? '+' : '') + formatNumber(data.summary.breakeven_pct, 1) + '% from current';
+
+        // Render chart and table
+        renderSimulatorChart(data.points);
+        renderSimulatorTable(data.points);
+
+        // Scroll to simulator
+        elements.spreadSimulator.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (err) {
+        console.error('Error simulating spread:', err);
+        showError('Failed to simulate spread: ' + err.message);
+        closeSimulator();
+    } finally {
+        elements.simLoadingState.style.display = 'none';
+    }
+}
+
+// Render the P/L chart
+function renderSimulatorChart(points) {
+    if (!elements.simChart) return;
+
+    // Find max absolute P/L for scaling
+    const maxAbsPL = Math.max(...points.map(p => Math.abs(p.pl_per_spread)));
+    const chartHeight = isMobile() ? 120 : 180;
+    const halfHeight = chartHeight / 2;
+
+    // Generate bar chart HTML
+    let barsHtml = '<div class="pl-chart-zero-line"></div>';
+
+    points.forEach((point, idx) => {
+        const isPositive = point.pl_per_spread >= 0;
+        const barHeight = (Math.abs(point.pl_per_spread) / maxAbsPL) * halfHeight * 0.9; // 90% max to leave room for labels
+
+        const barStyle = isPositive
+            ? `height: ${barHeight}px; bottom: 50%;`
+            : `height: ${barHeight}px; top: 50%;`;
+
+        const valueClass = isPositive ? 'positive' : 'negative';
+        const valueStyle = isPositive
+            ? `bottom: calc(50% + ${barHeight + 3}px);`
+            : `top: calc(50% + ${barHeight + 3}px);`;
+
+        barsHtml += `
+            <div class="pl-chart-bar-container">
+                <div class="pl-chart-bar ${valueClass}" style="${barStyle}" title="${point.pct_move}%: ${formatCurrency(point.pl_per_spread, 0)}"></div>
+                <div class="pl-chart-value ${valueClass}" style="${valueStyle}">${formatCurrency(point.pl_per_spread, 0)}</div>
+                <div class="pl-chart-label">${point.pct_move >= 0 ? '+' : ''}${point.pct_move}%</div>
+            </div>
+        `;
+    });
+
+    elements.simChart.innerHTML = `
+        <div class="pl-chart-bars" style="height: ${chartHeight}px;">
+            ${barsHtml}
+        </div>
+    `;
+}
+
+// Render the P/L table
+function renderSimulatorTable(points) {
+    if (!elements.simTableBody) return;
+
+    elements.simTableBody.innerHTML = points.map(point => {
+        const plClass = point.pl_per_spread >= 0 ? 'positive' : 'negative';
+        const plPrefix = point.pl_per_spread >= 0 ? '+' : '';
+        const pctPrefix = point.pct_move >= 0 ? '+' : '';
+
+        return `
+            <tr>
+                <td class="col-pct-move">${pctPrefix}${point.pct_move}%</td>
+                <td class="col-price">${formatCurrency(point.underlying_price, 2)}</td>
+                <td class="col-pl ${plClass}">${plPrefix}${formatCurrency(point.pl_per_spread, 0)}</td>
+            </tr>
+        `;
+    }).join('');
 }

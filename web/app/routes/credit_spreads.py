@@ -29,6 +29,10 @@ from app.models import (
     CreditSpreadRequest,
     CreditSpreadResponse,
     CreditSpreadResult,
+    CreditSpreadSimulatorRequest,
+    CreditSpreadSimulatorResponse,
+    CreditSpreadSimulatorSummary,
+    CreditSpreadSimulatorPoint,
 )
 
 router = APIRouter(prefix="/api", tags=["credit_spreads"])
@@ -163,3 +167,108 @@ async def screen_credit_spreads(request: Request, spread_request: CreditSpreadRe
             status_code=500,
             detail="Unable to fetch options data. Please try again later.",
         )
+
+
+@router.post("/credit-spreads/simulate", response_model=CreditSpreadSimulatorResponse)
+@limiter.limit("30/minute")
+async def simulate_credit_spread(request: Request, sim_request: CreditSpreadSimulatorRequest):
+    """
+    Simulate P/L at expiration for a credit spread across different price moves.
+
+    Calculates P/L for every 1% move between -5% and +5% from current price.
+
+    For PCS (Put Credit Spread - Bullish):
+    - Max gain = net_credit * 100
+    - Max loss = (short_strike - long_strike - net_credit) * 100
+    - If S_T >= short_strike: P/L = +max_gain
+    - If long_strike < S_T < short_strike: P/L = net_credit*100 - (short_strike - S_T)*100
+    - If S_T <= long_strike: P/L = -max_loss
+
+    For CCS (Call Credit Spread - Bearish):
+    - Max gain = net_credit * 100
+    - Max loss = (long_strike - short_strike - net_credit) * 100
+    - If S_T <= short_strike: P/L = +max_gain
+    - If short_strike < S_T < long_strike: P/L = net_credit*100 - (S_T - short_strike)*100
+    - If S_T >= long_strike: P/L = -max_loss
+    """
+    symbol = sim_request.symbol.upper()
+    spread_type = sim_request.spread_type
+    short_strike = sim_request.short_strike
+    long_strike = sim_request.long_strike
+    net_credit = sim_request.net_credit
+    underlying_now = sim_request.underlying_price_now
+
+    # Validate strike relationship based on spread type
+    if spread_type == "PCS":
+        # For put credit spread: short_strike > long_strike
+        if short_strike <= long_strike:
+            raise HTTPException(
+                status_code=400,
+                detail="For PCS, short_strike must be greater than long_strike",
+            )
+        width = short_strike - long_strike
+        max_gain = net_credit * 100
+        max_loss = (width - net_credit) * 100
+        breakeven_price = short_strike - net_credit
+    else:  # CCS
+        # For call credit spread: short_strike < long_strike
+        if short_strike >= long_strike:
+            raise HTTPException(
+                status_code=400,
+                detail="For CCS, short_strike must be less than long_strike",
+            )
+        width = long_strike - short_strike
+        max_gain = net_credit * 100
+        max_loss = (width - net_credit) * 100
+        breakeven_price = short_strike + net_credit
+
+    # Calculate breakeven as percentage move from current price
+    breakeven_pct = ((breakeven_price - underlying_now) / underlying_now) * 100
+
+    # Generate simulation points for -5% to +5% in 1% increments
+    points = []
+    for pct_move in range(-5, 6):  # -5, -4, ..., 0, ..., 4, 5
+        price_at_expiry = underlying_now * (1 + pct_move / 100.0)
+
+        # Calculate P/L based on spread type
+        if spread_type == "PCS":
+            if price_at_expiry >= short_strike:
+                pl = max_gain
+            elif price_at_expiry <= long_strike:
+                pl = -max_loss
+            else:
+                # Between strikes: partial loss
+                pl = net_credit * 100 - (short_strike - price_at_expiry) * 100
+        else:  # CCS
+            if price_at_expiry <= short_strike:
+                pl = max_gain
+            elif price_at_expiry >= long_strike:
+                pl = -max_loss
+            else:
+                # Between strikes: partial loss
+                pl = net_credit * 100 - (price_at_expiry - short_strike) * 100
+
+        points.append(CreditSpreadSimulatorPoint(
+            pct_move=float(pct_move),
+            underlying_price=round(price_at_expiry, 2),
+            pl_per_spread=round(pl, 2),
+        ))
+
+    summary = CreditSpreadSimulatorSummary(
+        max_gain=round(max_gain, 2),
+        max_loss=round(max_loss, 2),
+        breakeven_price=round(breakeven_price, 2),
+        breakeven_pct=round(breakeven_pct, 2),
+    )
+
+    return CreditSpreadSimulatorResponse(
+        symbol=symbol,
+        spread_type=spread_type,
+        expiration=sim_request.expiration,
+        short_strike=short_strike,
+        long_strike=long_strike,
+        net_credit=net_credit,
+        underlying_price_now=underlying_now,
+        summary=summary,
+        points=points,
+    )
