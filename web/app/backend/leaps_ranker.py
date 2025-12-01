@@ -642,11 +642,14 @@ def _compute_ease_score(
     target_price: float,
 ) -> pd.DataFrame:
     """
-    Compute ease score based on strike proximity to the optimal range.
+    Compute ease score based on how likely the option is to be profitable.
 
-    The ease score measures how likely the option is to be profitable.
-    Best scores go to strikes near the midpoint between current and target price.
-    Deep ITM and far OTM strikes receive lower scores.
+    Uses three anchor points with linear interpolation:
+    - Deep ITM (strike << underlying): score = 1.00
+    - ATM (strike = underlying): score = 0.90
+    - Target price (strike = target): score = 0.85
+
+    For strikes beyond target, deduct 0.03 for every 1% farther from target.
 
     Args:
         df: Options DataFrame with 'strike' column.
@@ -658,37 +661,63 @@ def _compute_ease_score(
     """
     df = df.copy()
 
-    # Midpoint between current price and target price
-    midpoint = (underlying_price + target_price) / 2
+    # Anchor point scores
+    DEEP_ITM_SCORE = 1.00
+    ATM_SCORE = 0.90
+    TARGET_SCORE = 0.85
+    BEYOND_TARGET_PENALTY_PER_PCT = 0.03
 
-    # Maximum distance is from midpoint to either extreme
-    max_distance = max(
-        abs(target_price - midpoint),
-        abs(underlying_price - midpoint),
-    )
+    # Calculate position of each strike relative to underlying and target
+    strikes = df["strike"]
 
-    # Avoid division by zero
-    if max_distance == 0:
-        max_distance = 1.0
+    # Initialize ease_score column
+    df["ease_score"] = 0.0
 
-    # Distance from strike to midpoint
-    distance_from_midpoint = (df["strike"] - midpoint).abs()
+    # Case 1: Deep ITM (strike <= underlying) - linear interpolation from 1.0 to 0.9
+    # We consider "deep ITM" as strikes that are 10% or more below underlying
+    deep_itm_threshold = underlying_price * 0.90
 
-    # Ease score: 1.0 at midpoint, decreasing toward 0 at extremes
-    # Using a linear decay
-    df["ease_score"] = 1.0 - (distance_from_midpoint / max_distance)
+    # Strikes at or below deep ITM threshold get 1.0
+    mask_deep_itm = strikes <= deep_itm_threshold
+    df.loc[mask_deep_itm, "ease_score"] = DEEP_ITM_SCORE
+
+    # Strikes between deep ITM and ATM: linear interpolation 1.0 -> 0.9
+    mask_itm_to_atm = (strikes > deep_itm_threshold) & (strikes <= underlying_price)
+    if mask_itm_to_atm.any():
+        # Distance from deep ITM threshold to underlying
+        itm_range = underlying_price - deep_itm_threshold
+        if itm_range > 0:
+            # Position ratio: 0 at deep ITM threshold, 1 at underlying
+            position_in_itm = (strikes[mask_itm_to_atm] - deep_itm_threshold) / itm_range
+            # Linear interpolation: 1.0 -> 0.9
+            df.loc[mask_itm_to_atm, "ease_score"] = DEEP_ITM_SCORE - (DEEP_ITM_SCORE - ATM_SCORE) * position_in_itm
+        else:
+            df.loc[mask_itm_to_atm, "ease_score"] = ATM_SCORE
+
+    # Case 2: ATM to Target - linear interpolation from 0.9 to 0.85
+    mask_atm_to_target = (strikes > underlying_price) & (strikes <= target_price)
+    if mask_atm_to_target.any():
+        # Distance from underlying to target
+        otm_range = target_price - underlying_price
+        if otm_range > 0:
+            # Position ratio: 0 at underlying, 1 at target
+            position_in_otm = (strikes[mask_atm_to_target] - underlying_price) / otm_range
+            # Linear interpolation: 0.9 -> 0.85
+            df.loc[mask_atm_to_target, "ease_score"] = ATM_SCORE - (ATM_SCORE - TARGET_SCORE) * position_in_otm
+        else:
+            df.loc[mask_atm_to_target, "ease_score"] = TARGET_SCORE
+
+    # Case 3: Beyond target - start at 0.85 and deduct 0.03 per 1% beyond target
+    mask_beyond_target = strikes > target_price
+    if mask_beyond_target.any():
+        # Calculate how many percent beyond target each strike is
+        pct_beyond_target = ((strikes[mask_beyond_target] - target_price) / target_price) * 100
+        # Deduct 0.03 for each 1% beyond target
+        penalty = pct_beyond_target * BEYOND_TARGET_PENALTY_PER_PCT
+        df.loc[mask_beyond_target, "ease_score"] = TARGET_SCORE - penalty
 
     # Clamp to [0, 1]
     df["ease_score"] = df["ease_score"].clip(0, 1)
-
-    # Penalize deep ITM options (strike << underlying)
-    # They have high intrinsic value but low leverage
-    itm_penalty = np.where(
-        df["strike"] < underlying_price * 0.9,  # More than 10% ITM
-        0.8,  # Apply 20% penalty
-        1.0,
-    )
-    df["ease_score"] = df["ease_score"] * itm_penalty
 
     return df
 

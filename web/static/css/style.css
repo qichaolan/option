@@ -1954,39 +1954,65 @@ tr[data-contract] {
 
 /* Simulator Action Summary - Natural language explanation */
 .simulator-action-summary {
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.06) 0%, rgba(124, 58, 237, 0.06) 100%);
-    border: 1px solid rgba(37, 99, 235, 0.15);
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%);
+    border: 2px solid rgba(16, 185, 129, 0.4);
+    border-left: 4px solid var(--success-color);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
 }
 
 .action-profit-condition {
-    font-size: 0.9375rem;
-    font-weight: 600;
+    font-size: 1.125rem;
+    font-weight: 700;
     color: var(--text-primary);
-    margin: 0 0 0.5rem 0;
-    line-height: 1.4;
+    margin: 0 0 0.75rem 0;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.action-profit-condition::before {
+    content: "💡";
+    font-size: 1.25rem;
+    flex-shrink: 0;
 }
 
 .action-trade-explanation {
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-color);
     margin: 0;
-    line-height: 1.4;
+    line-height: 1.5;
+    padding-left: 2rem;
+    background: rgba(37, 99, 235, 0.06);
+    padding: 0.75rem 1rem 0.75rem 2rem;
+    border-radius: 6px;
+    border: 1px dashed rgba(37, 99, 235, 0.3);
+}
+
+.action-trade-explanation::before {
+    content: "📝 ";
 }
 
 @media (max-width: 768px) {
     .simulator-action-summary {
-        padding: 0.75rem 1rem;
+        padding: 1rem 1.25rem;
     }
 
     .action-profit-condition {
-        font-size: 0.875rem;
+        font-size: 1rem;
+    }
+
+    .action-profit-condition::before {
+        font-size: 1.125rem;
     }
 
     .action-trade-explanation {
-        font-size: 0.75rem;
+        font-size: 0.875rem;
+        padding: 0.625rem 0.875rem 0.625rem 1.75rem;
     }
 }
 
