@@ -1440,6 +1440,22 @@ tr[data-contract] {
     margin: 0.25rem 0 0 0;
 }
 
+/* AI Badge - Highlight AI recommendations */
+.ai-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 0.5rem;
+    background: linear-gradient(135deg, var(--primary-color) 0%, #7c3aed 100%);
+    color: white;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    margin-right: 0.375rem;
+    text-transform: uppercase;
+}
+
 /* Spread Badges - Enhanced */
 .spread-badge-bullish {
     background: rgba(16, 185, 129, 0.12);
@@ -1507,14 +1523,14 @@ tr[data-contract] {
     background: rgba(37, 99, 235, 0.04);
 }
 
-/* Column alignment */
-.col-exp { text-align: left; min-width: 80px; }
-.col-dte { text-align: center; min-width: 50px; }
-.col-strike { text-align: right; min-width: 70px; }
-.col-money { text-align: right; min-width: 70px; font-family: 'SF Mono', Monaco, monospace; }
-.col-pct { text-align: right; min-width: 60px; }
-.col-delta { text-align: center; min-width: 60px; }
-.col-score { text-align: center; min-width: 70px; }
+/* Column alignment - ensure header and data cells align */
+.col-exp { text-align: left !important; min-width: 80px; }
+.col-dte { text-align: center !important; min-width: 50px; }
+.col-strike { text-align: right !important; min-width: 70px; }
+.col-money { text-align: right !important; min-width: 70px; font-family: 'SF Mono', Monaco, monospace; }
+.col-pct { text-align: right !important; min-width: 60px; }
+.col-delta { text-align: center !important; min-width: 60px; }
+.col-score { text-align: center !important; min-width: 70px; }
 
 /* Mobile Cards Container - Alternative view */
 .mobile-cards-container {

@@ -136,10 +136,10 @@
             <div id="pcsTableContainer" class="results-table-container" style="display: none;">
                 <div class="results-table-header">
                     <h3 class="results-table-title">
-                        Put Credit Spreads (PCS)
+                        <span class="ai-badge">AI</span> Recommended Put Credit Spreads (PCS)
                         <span class="spread-badge spread-badge-bullish">Bullish</span>
                     </h3>
-                    <p class="results-table-subtitle">Profit if underlying stays above short strike</p>
+                    <p class="results-table-subtitle">Top 20 spreads ranked by AI Score - Profit if underlying stays above short strike</p>
                 </div>
                 <div class="table-scroll-container">
                     <table class="data-table">
@@ -154,7 +154,7 @@
                                 <th class="sortable col-delta hide-mobile" data-sort="short_delta">Delta</th>
                                 <th class="sortable col-pct" data-sort="prob_profit">Win%</th>
                                 <th class="sortable col-money hide-mobile" data-sort="break_even">BE</th>
-                                <th class="sortable col-score" data-sort="total_score">Score</th>
+                                <th class="sortable col-score" data-sort="total_score">AI Score</th>
                             </tr>
                         </thead>
                         <tbody id="pcsBody"></tbody>
@@ -168,10 +168,10 @@
             <div id="ccsTableContainer" class="results-table-container" style="display: none;">
                 <div class="results-table-header">
                     <h3 class="results-table-title">
-                        Call Credit Spreads (CCS)
+                        <span class="ai-badge">AI</span> Recommended Call Credit Spreads (CCS)
                         <span class="spread-badge spread-badge-bearish">Bearish</span>
                     </h3>
-                    <p class="results-table-subtitle">Profit if underlying stays below short strike</p>
+                    <p class="results-table-subtitle">Top 20 spreads ranked by AI Score - Profit if underlying stays below short strike</p>
                 </div>
                 <div class="table-scroll-container">
                     <table class="data-table">
@@ -186,7 +186,7 @@
                                 <th class="sortable col-delta hide-mobile" data-sort="short_delta">Delta</th>
                                 <th class="sortable col-pct" data-sort="prob_profit">Win%</th>
                                 <th class="sortable col-money hide-mobile" data-sort="break_even">BE</th>
-                                <th class="sortable col-score" data-sort="total_score">Score</th>
+                                <th class="sortable col-score" data-sort="total_score">AI Score</th>
                             </tr>
                         </thead>
                         <tbody id="ccsBody"></tbody>
@@ -232,8 +232,8 @@
                     <span class="legend-def">Break-even price at expiration</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-term">Score</span>
-                    <span class="legend-def">Composite ranking based on ROC, liquidity & slippage</span>
+                    <span class="legend-term">AI Score</span>
+                    <span class="legend-def">AI-powered composite ranking based on ROC, liquidity & slippage</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-term delta-estimated">*</span>

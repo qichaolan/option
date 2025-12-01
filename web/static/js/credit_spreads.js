@@ -260,9 +260,10 @@ function renderResults() {
     }
 }
 
-// Render desktop table view
+// Render desktop table view (limited to top 20 by score)
 function renderTable(spreads, tbody) {
-    tbody.innerHTML = spreads.map((s, idx) => `
+    const top20 = spreads.slice(0, 20);
+    tbody.innerHTML = top20.map((s, idx) => `
         <tr data-spread="${idx}">
             <td class="col-exp">${escapeHtml(s.expiration)}</td>
             <td class="col-dte">${s.dte}</td>
@@ -278,11 +279,12 @@ function renderTable(spreads, tbody) {
     `).join('');
 }
 
-// Render mobile card view for better readability on small screens
+// Render mobile card view for better readability on small screens (limited to top 20 by score)
 function renderMobileCards(spreads, container, type) {
     if (!container) return;
 
-    container.innerHTML = spreads.map((s, idx) => `
+    const top20 = spreads.slice(0, 20);
+    container.innerHTML = top20.map((s, idx) => `
         <div class="mobile-spread-card" data-spread="${idx}">
             <div class="mobile-card-header">
                 <div>
