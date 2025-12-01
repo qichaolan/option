@@ -57,8 +57,8 @@ gcloud services enable cloudbuild.googleapis.com run.googleapis.com
 
 3. **Build and deploy** (from the repository root):
 ```bash
-# Build the container
-gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/leaps-ranker
+# Build the container (Dockerfile is in repo root)
+gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/leaps-ranker .
 
 # Deploy to Cloud Run
 gcloud run deploy leaps-ranker \
@@ -77,8 +77,8 @@ gcloud run deploy leaps-ranker \
 ### Alternative: Deploy with Docker Locally
 
 ```bash
-# Build image (from repository root)
-docker build -f web/Dockerfile -t leaps-ranker .
+# Build image (from repository root where Dockerfile is located)
+docker build -t leaps-ranker .
 
 # Run container
 docker run -p 8080:8080 leaps-ranker
