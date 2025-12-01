@@ -29,6 +29,7 @@ const elements = {
     errorDisplay: document.getElementById('errorDisplay'),
     simContracts: document.getElementById('simContracts'),
     simUnderlying: document.getElementById('simUnderlying'),
+    simUnderlyingDisplay: document.getElementById('simUnderlyingDisplay'),
     simContractsInfo: document.getElementById('simContractsInfo'),
     simTargetInput: document.getElementById('simTargetInput'),
     runSimBtn: document.getElementById('runSimBtn'),
@@ -149,16 +150,16 @@ function updateUI(data) {
     elements.targetPrice.textContent = `$${data.target_price.toFixed(2)}`;
     elements.targetPctDisplay.textContent = `+${(data.target_pct * 100).toFixed(0)}%`;
 
-    // Update simulator underlying price
+    // Update simulator underlying price (display and hidden input)
     elements.simUnderlying.value = data.underlying_price.toFixed(2);
+    elements.simUnderlyingDisplay.textContent = `$${data.underlying_price.toFixed(2)}`;
 
-    // Set default target prices for simulation
+    // Set target prices for simulation (0% to 60%, every 5%)
     const underlying = data.underlying_price;
     const targets = [];
-    const pctSteps = [-10, 0, 10, 25, 50, 75, 100];
-    pctSteps.forEach(pct => {
+    for (let pct = 0; pct <= 60; pct += 5) {
         targets.push((underlying * (1 + pct / 100)).toFixed(2));
-    });
+    }
     elements.simTargetInput.value = targets.join(', ');
 
     // Update table
