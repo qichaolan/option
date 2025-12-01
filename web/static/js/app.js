@@ -393,10 +393,11 @@ function renderMultiContractResults(contracts, underlying, targets) {
             const payoff = intrinsic * 100;
             const profit = payoff - cost;
             const roiPct = (profit / cost) * 100;
+            const pctMove = Math.round(((target - underlying) / underlying) * 100);
 
             const colorClass = roiPct >= 0 ? 'positive' : 'negative';
             rowsHtml += `
-                <td class="sim-roi-cell">
+                <td class="sim-roi-cell" data-pct="+${pctMove}%">
                     <div class="sim-roi-value ${colorClass}">
                         ${roiPct >= 0 ? '+' : ''}${formatNumber(roiPct, 0)}%
                     </div>
