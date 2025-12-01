@@ -64,7 +64,7 @@ class ScreenerConfig:
 
 def fetch_current_price(symbol: str) -> float:
     """
-    Fetch current underlying price using OpenBB.
+    Fetch current underlying price using yfinance.
 
     Parameters
     ----------
@@ -81,23 +81,9 @@ def fetch_current_price(symbol: str) -> float:
     ValueError
         If price cannot be retrieved.
     """
-    from openbb import obb
+    import yfinance as yf
 
     try:
-        result = obb.equity.price.quote(symbol=symbol.upper(), provider="yfinance")
-        df = result.to_df()
-
-        for col in ["last_price", "close", "price", "regularMarketPrice", "previousClose"]:
-            if col in df.columns:
-                price = df[col].iloc[0]
-                if price is not None and not pd.isna(price):
-                    return float(price)
-    except Exception as exc:
-        logger.debug(f"OpenBB quote failed for {symbol}: {exc}")
-
-    # Fallback to yfinance directly
-    try:
-        import yfinance as yf
         stock = yf.Ticker(symbol.upper())
         info = stock.info
         price = info.get("regularMarketPrice") or info.get("currentPrice") or info.get("previousClose")
@@ -110,14 +96,14 @@ def fetch_current_price(symbol: str) -> float:
         if price is not None:
             return float(price)
     except Exception as exc:
-        logger.debug(f"yfinance fallback failed for {symbol}: {exc}")
+        logger.debug(f"yfinance failed for {symbol}: {exc}")
 
     raise ValueError(f"Could not fetch price for {symbol}")
 
 
 def fetch_option_chain(symbol: str, min_dte: int, max_dte: int) -> pd.DataFrame:
     """
-    Fetch options chain for a symbol within the DTE range.
+    Fetch options chain for a symbol within the DTE range using yfinance.
 
     Parameters
     ----------
@@ -134,14 +120,7 @@ def fetch_option_chain(symbol: str, min_dte: int, max_dte: int) -> pd.DataFrame:
         Options chain with columns: strike, bid, ask, volume, openInterest,
         impliedVolatility, delta, option_type, expiration, dte.
     """
-    from openbb import obb
-
-    try:
-        result = obb.derivatives.options.chains(symbol=symbol.upper(), provider="yfinance")
-        df = result.to_df()
-    except Exception as exc:
-        logger.warning(f"OpenBB chains failed for {symbol}: {exc}, trying yfinance directly")
-        df = _fetch_chain_yfinance(symbol)
+    df = _fetch_chain_yfinance(symbol)
 
     if df.empty:
         return pd.DataFrame()
@@ -254,10 +233,10 @@ def _fetch_chain_yfinance(symbol: str) -> pd.DataFrame:
 
 def fetch_iv_percentile(symbol: str) -> float:
     """
-    Fetch IV percentile for a symbol.
+    Fetch IV percentile for a symbol using yfinance.
 
-    Uses historical IV data to compute percentile. Falls back to a default
-    if historical data is unavailable.
+    Uses historical volatility data to compute percentile (as a proxy for IV percentile).
+    Falls back to a default if historical data is unavailable.
 
     Parameters
     ----------
@@ -269,18 +248,18 @@ def fetch_iv_percentile(symbol: str) -> float:
     float
         IV percentile (0-100).
     """
-    try:
-        from openbb import obb
+    import yfinance as yf
 
-        # Attempt to get historical volatility data
-        result = obb.equity.price.historical(symbol=symbol.upper(), period="1y")
-        df = result.to_df()
+    try:
+        # Fetch 1 year of historical data
+        stock = yf.Ticker(symbol.upper())
+        df = stock.history(period="1y")
 
         if df.empty:
             return 50.0
 
         # Calculate historical volatility (20-day rolling)
-        df["returns"] = df["close"].pct_change()
+        df["returns"] = df["Close"].pct_change()
         df["hv_20"] = df["returns"].rolling(window=20).std() * np.sqrt(252)
 
         # Get current HV and compute percentile
