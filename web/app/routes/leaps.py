@@ -1,5 +1,6 @@
 """LEAPS ranking API routes."""
 
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -8,7 +9,15 @@ from typing import List
 from fastapi import APIRouter, HTTPException
 
 # Add parent directory to path to import leaps_ranker
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+# Works for both local dev (from web/) and Docker (from /app)
+current_dir = Path(__file__).parent.parent.parent  # web/app/routes -> web
+repo_root = current_dir.parent  # web -> repo root (for local dev)
+
+# Try repo root first (local dev), then current working directory (Docker)
+for path in [repo_root, Path("/app"), Path.cwd()]:
+    if (path / "leaps_ranker.py").exists():
+        sys.path.insert(0, str(path))
+        break
 
 from leaps_ranker import rank_leaps, load_config
 
@@ -24,8 +33,18 @@ from app.models import (
 
 router = APIRouter(prefix="/api", tags=["leaps"])
 
-# Default config path
-CONFIG_PATH = Path(__file__).parent.parent.parent.parent / "config" / "leaps_ranker.yaml"
+
+def get_config_path() -> Path:
+    """Find config file in various locations."""
+    possible_paths = [
+        Path("/app/config/leaps_ranker.yaml"),  # Docker
+        Path.cwd() / "config" / "leaps_ranker.yaml",  # CWD
+        Path(__file__).parent.parent.parent.parent / "config" / "leaps_ranker.yaml",  # Local dev
+    ]
+    for p in possible_paths:
+        if p.exists():
+            return p
+    raise FileNotFoundError(f"Config file not found. Tried: {possible_paths}")
 
 # Supported tickers with default target percentages
 SUPPORTED_TICKERS = {
@@ -68,7 +87,7 @@ async def get_leaps_ranking(request: LEAPSRequest):
 
     try:
         # Load config
-        config = load_config(str(CONFIG_PATH))
+        config = load_config(str(get_config_path()))
 
         # Run the ranker
         df = rank_leaps(
