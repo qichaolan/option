@@ -393,6 +393,13 @@ tr.selected {
     color: white;
 }
 
+/* Hide columns on mobile */
+@media (max-width: 768px) {
+    .hide-mobile {
+        display: none !important;
+    }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .container {
@@ -412,9 +419,26 @@ tr.selected {
         grid-template-columns: repeat(2, 1fr);
     }
 
+    /* Increase tap target sizes for mobile */
     th, td {
-        padding: 0.5rem 0.75rem;
+        padding: 0.75rem 0.5rem;
         font-size: 0.75rem;
+        min-height: 44px;
+    }
+
+    tr[data-contract] {
+        min-height: 48px;
+    }
+
+    .btn {
+        min-height: 48px;
+        padding: 0.875rem 1.5rem;
+    }
+
+    .form-group select,
+    .form-group input {
+        min-height: 48px;
+        padding: 0.875rem;
     }
 
     .simulator-grid {
@@ -424,6 +448,45 @@ tr.selected {
     .table-header {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    /* Sticky section navigation - show on mobile */
+    .section-nav {
+        display: block;
+        position: sticky;
+        top: 60px;
+        background: var(--bg-color);
+        z-index: 50;
+        padding: 0.5rem;
+        margin: 0 -0.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-nav-links {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .section-nav-link {
+        padding: 0.5rem 1rem;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        text-decoration: none;
+        color: var(--text-secondary);
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+    }
+
+    .section-nav-link:active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
     }
 }
 
@@ -445,6 +508,11 @@ tr.selected {
 /* Click to select row */
 tr[data-contract] {
     cursor: pointer;
+}
+
+/* Section navigation - hidden on desktop */
+.section-nav {
+    display: none;
 }
 
 /* Tooltip */

@@ -2,6 +2,20 @@
  * LEAPS Ranker - Frontend Application
  */
 
+// Utility: Escape HTML to prevent XSS
+function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
+
+// Utility: Format number safely
+function formatNumber(num, decimals = 2) {
+    if (num === null || num === undefined || isNaN(num)) return '-';
+    return Number(num).toFixed(decimals);
+}
+
 // State
 let state = {
     tickers: [],
@@ -50,10 +64,10 @@ async function loadTickers() {
 
         state.tickers = await response.json();
 
-        // Populate ticker dropdown
+        // Populate ticker dropdown (escape values to prevent XSS)
         elements.tickerSelect.innerHTML = state.tickers.map(t =>
-            `<option value="${t.symbol}" data-target="${t.default_target_pct}">
-                ${t.symbol} - ${t.name}
+            `<option value="${escapeHtml(t.symbol)}" data-target="${escapeHtml(t.default_target_pct)}">
+                ${escapeHtml(t.symbol)} - ${escapeHtml(t.name)}
             </option>`
         ).join('');
 
@@ -178,22 +192,22 @@ function updateUI(data) {
     updateContractsInfo();
 }
 
-// Render contracts table
+// Render contracts table (with XSS protection)
 function renderTable(contracts) {
     elements.contractsBody.innerHTML = contracts.map((c, idx) => `
         <tr data-contract="${idx}">
-            <td>${c.contract_symbol}</td>
-            <td>${c.expiration}</td>
-            <td>$${c.strike.toFixed(2)}</td>
-            <td>$${c.premium.toFixed(2)}</td>
-            <td>$${c.cost.toFixed(0)}</td>
-            <td>$${c.payoff_target.toFixed(0)}</td>
-            <td class="${c.roi_target >= 0 ? 'positive' : 'negative'}">${c.roi_target.toFixed(1)}%</td>
-            <td>${c.ease_score.toFixed(2)}</td>
-            <td>${c.roi_score.toFixed(2)}</td>
-            <td><span class="score-badge ${getScoreClass(c.score)}">${c.score.toFixed(2)}</span></td>
-            <td>${c.implied_volatility ? (c.implied_volatility * 100).toFixed(1) + '%' : '-'}</td>
-            <td>${c.open_interest ? c.open_interest.toLocaleString() : '-'}</td>
+            <td class="col-contract">${escapeHtml(c.contract_symbol)}</td>
+            <td class="col-expiration">${escapeHtml(c.expiration)}</td>
+            <td class="col-strike">$${formatNumber(c.strike, 2)}</td>
+            <td class="col-premium">$${formatNumber(c.premium, 2)}</td>
+            <td class="col-cost">$${formatNumber(c.cost, 0)}</td>
+            <td class="col-payoff">$${formatNumber(c.payoff_target, 0)}</td>
+            <td class="col-roi ${c.roi_target >= 0 ? 'positive' : 'negative'}">${formatNumber(c.roi_target, 1)}%</td>
+            <td class="col-ease hide-mobile">${formatNumber(c.ease_score, 2)}</td>
+            <td class="col-roi-score hide-mobile">${formatNumber(c.roi_score, 2)}</td>
+            <td class="col-score"><span class="score-badge ${getScoreClass(c.score)}">${formatNumber(c.score, 2)}</span></td>
+            <td class="col-iv hide-mobile">${c.implied_volatility ? formatNumber(c.implied_volatility * 100, 1) + '%' : '-'}</td>
+            <td class="col-oi hide-mobile">${c.open_interest ? c.open_interest.toLocaleString() : '-'}</td>
         </tr>
     `).join('');
 
@@ -230,7 +244,7 @@ function toggleContractSelection(contract, row) {
     updateContractsInfo();
 }
 
-// Update contracts info display
+// Update contracts info display (with XSS protection)
 function updateContractsInfo() {
     if (state.selectedContracts.length === 0) {
         elements.simContractsInfo.innerHTML = '';
@@ -240,15 +254,16 @@ function updateContractsInfo() {
     let html = '<div class="info-cards">';
     state.selectedContracts.forEach(c => {
         const breakeven = c.strike + c.premium;
+        const escapedSymbol = escapeHtml(c.contract_symbol);
         html += `
-            <div class="info-card" style="position: relative;">
-                <button class="remove-contract" data-symbol="${c.contract_symbol}" style="position: absolute; top: 5px; right: 5px; background: none; border: none; cursor: pointer; color: var(--danger-color);">&times;</button>
-                <div class="info-card-label">${c.contract_symbol}</div>
+            <div class="info-card contract-card">
+                <button class="remove-contract" data-symbol="${escapedSymbol}" aria-label="Remove contract">&times;</button>
+                <div class="info-card-label">${escapedSymbol}</div>
                 <div style="font-size: 0.875rem; margin-top: 0.5rem;">
-                    <div>Strike: <strong>$${c.strike.toFixed(2)}</strong></div>
-                    <div>Premium: <strong>$${c.premium.toFixed(2)}</strong></div>
-                    <div>Cost: <strong>$${c.cost.toFixed(0)}</strong></div>
-                    <div style="color: var(--primary-color);">Breakeven: <strong>$${breakeven.toFixed(2)}</strong></div>
+                    <div>Strike: <strong>$${formatNumber(c.strike, 2)}</strong></div>
+                    <div>Premium: <strong>$${formatNumber(c.premium, 2)}</strong></div>
+                    <div>Cost: <strong>$${formatNumber(c.cost, 0)}</strong></div>
+                    <div style="color: var(--primary-color);">Breakeven: <strong>$${formatNumber(breakeven, 2)}</strong></div>
                 </div>
             </div>
         `;
@@ -335,13 +350,19 @@ async function runSimulation() {
     renderMultiContractResults(contractsToSimulate, underlying, targets);
 }
 
-// Render simulation results for multiple contracts
+// Render simulation results for multiple contracts (with XSS protection and mobile support)
 function renderMultiContractResults(contracts, underlying, targets) {
+    // On mobile, show fewer columns (every 10% instead of 5%)
+    const isMobile = window.innerWidth < 768;
+    const filteredTargets = isMobile
+        ? targets.filter((_, idx) => idx % 2 === 0)  // Show 0%, 10%, 20%, 30%, 40%, 50%, 60%
+        : targets;
+
     // Build table header with target percentages
-    let headerHtml = '<th style="min-width: 180px;">Contract</th>';
-    targets.forEach(target => {
+    let headerHtml = '<th class="sim-contract-col">Contract</th>';
+    filteredTargets.forEach(target => {
         const pct = Math.round(((target - underlying) / underlying) * 100);
-        headerHtml += `<th style="text-align: center; min-width: 70px;">${pct}%</th>`;
+        headerHtml += `<th class="sim-pct-col">${pct}%</th>`;
     });
 
     let rowsHtml = '';
@@ -350,23 +371,24 @@ function renderMultiContractResults(contracts, underlying, targets) {
         const premium = contract.premium;
         const cost = premium * 100;
         const breakeven = strike + premium;
+        const escapedSymbol = escapeHtml(contract.contract_symbol);
 
         // Contract info cell
         rowsHtml += `
             <tr>
-                <td style="white-space: nowrap;">
-                    <div style="font-weight: 600; font-size: 0.8rem;">${contract.contract_symbol}</div>
-                    <div style="font-size: 0.7rem; color: var(--text-secondary);">
-                        Strike: $${strike.toFixed(0)} | Cost: $${cost.toFixed(0)}
+                <td class="sim-contract-cell">
+                    <div class="sim-contract-name">${escapedSymbol}</div>
+                    <div class="sim-contract-details">
+                        Strike: $${formatNumber(strike, 0)} | Cost: $${formatNumber(cost, 0)}
                     </div>
-                    <div style="font-size: 0.7rem; color: var(--primary-color);">
-                        BE: $${breakeven.toFixed(2)}
+                    <div class="sim-contract-breakeven">
+                        BE: $${formatNumber(breakeven, 2)}
                     </div>
                 </td>
         `;
 
         // ROI cells for each target
-        targets.forEach(target => {
+        filteredTargets.forEach(target => {
             const intrinsic = Math.max(target - strike, 0);
             const payoff = intrinsic * 100;
             const profit = payoff - cost;
@@ -374,12 +396,12 @@ function renderMultiContractResults(contracts, underlying, targets) {
 
             const colorClass = roiPct >= 0 ? 'positive' : 'negative';
             rowsHtml += `
-                <td style="text-align: center;">
-                    <div class="${colorClass}" style="font-weight: 600; font-size: 0.85rem;">
-                        ${roiPct >= 0 ? '+' : ''}${roiPct.toFixed(0)}%
+                <td class="sim-roi-cell">
+                    <div class="sim-roi-value ${colorClass}">
+                        ${roiPct >= 0 ? '+' : ''}${formatNumber(roiPct, 0)}%
                     </div>
-                    <div style="font-size: 0.65rem; color: var(--text-secondary);">
-                        ${profit >= 0 ? '+' : ''}$${profit.toFixed(0)}
+                    <div class="sim-roi-profit">
+                        ${profit >= 0 ? '+' : ''}$${formatNumber(profit, 0)}
                     </div>
                 </td>
             `;
@@ -389,8 +411,8 @@ function renderMultiContractResults(contracts, underlying, targets) {
     });
 
     elements.simResultsGrid.innerHTML = `
-        <div class="table-container" style="overflow-x: auto;">
-            <table style="width: 100%; font-size: 0.875rem;">
+        <div class="table-container sim-results-table">
+            <table>
                 <thead>
                     <tr>${headerHtml}</tr>
                 </thead>

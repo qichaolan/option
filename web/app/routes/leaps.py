@@ -1,12 +1,19 @@
 """LEAPS ranking API routes."""
 
+import logging
 import os
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+
+logger = logging.getLogger(__name__)
 
 # Add parent directory to path to import leaps_ranker
 # Works for both local dev (from web/) and Docker (from /app)
@@ -54,7 +61,8 @@ SUPPORTED_TICKERS = {
 
 
 @router.get("/tickers", response_model=List[TickerInfo])
-async def get_supported_tickers():
+@limiter.limit("30/minute")
+async def get_supported_tickers(request: Request):
     """Get list of supported tickers."""
     return [
         TickerInfo(
@@ -67,17 +75,18 @@ async def get_supported_tickers():
 
 
 @router.post("/leaps", response_model=LEAPSResponse)
-async def get_leaps_ranking(request: LEAPSRequest):
+@limiter.limit("10/minute")
+async def get_leaps_ranking(request: Request, leaps_request: LEAPSRequest):
     """
     Get ranked LEAPS options for a given ticker.
 
     Args:
-        request: LEAPSRequest with symbol, target_pct, mode, and top_n
+        leaps_request: LEAPSRequest with symbol, target_pct, mode, and top_n
 
     Returns:
         LEAPSResponse with ranked contracts
     """
-    symbol = request.symbol.upper()
+    symbol = leaps_request.symbol.upper()
 
     if symbol not in SUPPORTED_TICKERS:
         raise HTTPException(
@@ -93,11 +102,11 @@ async def get_leaps_ranking(request: LEAPSRequest):
         df = rank_leaps(
             symbol=symbol,
             provider="cboe",
-            mode=request.mode,
-            target_pct=request.target_pct,
+            mode=leaps_request.mode,
+            target_pct=leaps_request.target_pct,
             min_dte=365,
             longest_only=True,
-            top_n=request.top_n,
+            top_n=leaps_request.top_n,
             config=config,
         )
 
@@ -130,46 +139,50 @@ async def get_leaps_ranking(request: LEAPSRequest):
         target_price = 0.0
         if contracts:
             target_price = contracts[0].target_price
-            underlying_price = target_price / (1 + request.target_pct)
+            underlying_price = target_price / (1 + leaps_request.target_pct)
 
         return LEAPSResponse(
             symbol=symbol,
             underlying_price=round(underlying_price, 2),
             target_price=round(target_price, 2),
-            target_pct=request.target_pct,
-            mode=request.mode,
+            target_pct=leaps_request.target_pct,
+            mode=leaps_request.mode,
             contracts=contracts,
             timestamp=datetime.utcnow().isoformat(),
         )
 
     except FileNotFoundError as e:
-        raise HTTPException(status_code=500, detail=f"Configuration error: {str(e)}")
+        logger.error(f"Configuration error for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail="Service configuration error. Please try again later.")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.warning(f"Validation error for {symbol}: {e}")
+        raise HTTPException(status_code=400, detail="Invalid request parameters. Please check your input.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching LEAPS data: {str(e)}")
+        logger.exception(f"Unexpected error fetching LEAPS for {symbol}")
+        raise HTTPException(status_code=500, detail="Unable to fetch options data. Please try again later.")
 
 
 @router.post("/roi-simulator", response_model=ROISimulatorResponse)
-async def simulate_roi(request: ROISimulatorRequest):
+@limiter.limit("30/minute")
+async def simulate_roi(request: Request, sim_request: ROISimulatorRequest):
     """
     Simulate ROI for different target prices.
 
     Args:
-        request: ROISimulatorRequest with strike, premium, underlying, and targets
+        sim_request: ROISimulatorRequest with strike, premium, underlying, and targets
 
     Returns:
         ROISimulatorResponse with simulation results
     """
-    cost = request.premium * request.contract_size
+    cost = sim_request.premium * sim_request.contract_size
     results = []
 
-    for target in request.target_prices:
-        intrinsic = max(target - request.strike, 0)
-        payoff = intrinsic * request.contract_size
+    for target in sim_request.target_prices:
+        intrinsic = max(target - sim_request.strike, 0)
+        payoff = intrinsic * sim_request.contract_size
         profit = payoff - cost
         roi_pct = (profit / cost) * 100 if cost > 0 else 0
-        price_change_pct = ((target - request.underlying_price) / request.underlying_price) * 100
+        price_change_pct = ((target - sim_request.underlying_price) / sim_request.underlying_price) * 100
 
         results.append(
             ROISimulatorResult(
@@ -183,9 +196,9 @@ async def simulate_roi(request: ROISimulatorRequest):
         )
 
     return ROISimulatorResponse(
-        strike=request.strike,
-        premium=request.premium,
+        strike=sim_request.strike,
+        premium=sim_request.premium,
         cost=round(cost, 2),
-        underlying_price=request.underlying_price,
+        underlying_price=sim_request.underlying_price,
         results=results,
     )

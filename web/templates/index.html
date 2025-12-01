@@ -17,8 +17,17 @@
     </header>
 
     <main class="container">
+        <!-- Mobile Section Navigation -->
+        <nav class="section-nav" id="sectionNav">
+            <div class="section-nav-links">
+                <a href="#controls" class="section-nav-link">Controls</a>
+                <a href="#leapsTable" class="section-nav-link">LEAPS Table</a>
+                <a href="#simulator" class="section-nav-link">ROI Simulator</a>
+            </div>
+        </nav>
+
         <!-- Controls -->
-        <section class="controls">
+        <section class="controls" id="controls">
             <div class="controls-grid">
                 <div class="form-group">
                     <label for="tickerSelect">Ticker</label>
@@ -66,7 +75,7 @@
         </section>
 
         <!-- LEAPS Table -->
-        <section class="table-section">
+        <section class="table-section" id="leapsTable">
             <div class="table-header">
                 <h2 class="table-title">AI Recommended LEAPS</h2>
                 <span style="color: var(--text-secondary); font-size: 0.875rem;">Click a row to load it in the simulator</span>
@@ -96,11 +105,11 @@
                             <th>Cost</th>
                             <th>Payoff</th>
                             <th>ROI %</th>
-                            <th>Ease</th>
-                            <th>ROI Score</th>
+                            <th class="hide-mobile">Ease</th>
+                            <th class="hide-mobile">ROI Score</th>
                             <th>Score</th>
-                            <th>IV</th>
-                            <th>OI</th>
+                            <th class="hide-mobile">IV</th>
+                            <th class="hide-mobile">OI</th>
                         </tr>
                     </thead>
                     <tbody id="contractsBody">
@@ -110,7 +119,7 @@
         </section>
 
         <!-- ROI Simulator -->
-        <section class="simulator-section">
+        <section class="simulator-section" id="simulator">
             <h2 class="simulator-title">ROI Simulator</h2>
 
             <div class="form-group" style="margin-bottom: 1rem;">

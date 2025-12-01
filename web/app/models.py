@@ -1,7 +1,8 @@
 """Pydantic models for LEAPS Ranker API."""
 
-from typing import List, Optional
-from pydantic import BaseModel, Field
+from typing import List, Literal, Optional
+from pydantic import BaseModel, Field, field_validator
+import re
 
 
 class LEAPSRequest(BaseModel):
@@ -14,11 +15,20 @@ class LEAPSRequest(BaseModel):
         le=2.0,
         description="Target percentage move (0.5 = 50%)"
     )
-    mode: str = Field(
+    mode: Literal["high_prob", "high_convexity"] = Field(
         default="high_prob",
         description="Scoring mode: high_prob or high_convexity"
     )
     top_n: int = Field(default=20, ge=1, le=50, description="Number of results")
+
+    @field_validator("symbol")
+    @classmethod
+    def validate_symbol(cls, v: str) -> str:
+        """Validate symbol is alphanumeric and reasonable length."""
+        v = v.strip().upper()
+        if not re.match(r"^[A-Z]{1,5}$", v):
+            raise ValueError("Symbol must be 1-5 uppercase letters")
+        return v
 
 
 class LEAPSContract(BaseModel):
