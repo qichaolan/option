@@ -1,0 +1,172 @@
+"""LEAPS ranking API routes."""
+
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import List
+
+from fastapi import APIRouter, HTTPException
+
+# Add parent directory to path to import leaps_ranker
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+
+from leaps_ranker import rank_leaps, load_config
+
+from app.models import (
+    LEAPSRequest,
+    LEAPSResponse,
+    LEAPSContract,
+    ROISimulatorRequest,
+    ROISimulatorResponse,
+    ROISimulatorResult,
+    TickerInfo,
+)
+
+router = APIRouter(prefix="/api", tags=["leaps"])
+
+# Default config path
+CONFIG_PATH = Path(__file__).parent.parent.parent.parent / "config" / "leaps_ranker.yaml"
+
+# Supported tickers with default target percentages
+SUPPORTED_TICKERS = {
+    "SPY": {"name": "S&P 500 ETF", "default_target_pct": 0.44},
+    "QQQ": {"name": "Nasdaq 100 ETF", "default_target_pct": 0.50},
+}
+
+
+@router.get("/tickers", response_model=List[TickerInfo])
+async def get_supported_tickers():
+    """Get list of supported tickers."""
+    return [
+        TickerInfo(
+            symbol=symbol,
+            name=info["name"],
+            default_target_pct=info["default_target_pct"],
+        )
+        for symbol, info in SUPPORTED_TICKERS.items()
+    ]
+
+
+@router.post("/leaps", response_model=LEAPSResponse)
+async def get_leaps_ranking(request: LEAPSRequest):
+    """
+    Get ranked LEAPS options for a given ticker.
+
+    Args:
+        request: LEAPSRequest with symbol, target_pct, mode, and top_n
+
+    Returns:
+        LEAPSResponse with ranked contracts
+    """
+    symbol = request.symbol.upper()
+
+    if symbol not in SUPPORTED_TICKERS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported ticker: {symbol}. Supported: {list(SUPPORTED_TICKERS.keys())}",
+        )
+
+    try:
+        # Load config
+        config = load_config(str(CONFIG_PATH))
+
+        # Run the ranker
+        df = rank_leaps(
+            symbol=symbol,
+            provider="cboe",
+            mode=request.mode,
+            target_pct=request.target_pct,
+            min_dte=365,
+            longest_only=True,
+            top_n=request.top_n,
+            config=config,
+        )
+
+        # Convert DataFrame to list of contracts
+        contracts = []
+        for _, row in df.iterrows():
+            contract = LEAPSContract(
+                contract_symbol=str(row.get("contract_symbol", "")),
+                expiration=str(row.get("expiration", "")),
+                strike=float(row.get("strike", 0)),
+                target_price=float(row.get("target_price", 0)),
+                premium=float(row.get("premium", 0)),
+                cost=float(row.get("cost", 0)),
+                payoff_target=float(row.get("payoff_target", 0)),
+                roi_target=float(row.get("roi_target", 0)),
+                ease_score=float(row.get("ease_score", 0)),
+                roi_score=float(row.get("roi_score", 0)),
+                score=float(row.get("score", 0)),
+                implied_volatility=float(row["implied_volatility"])
+                if "implied_volatility" in row and row["implied_volatility"]
+                else None,
+                open_interest=int(row["open_interest"])
+                if "open_interest" in row and row["open_interest"]
+                else None,
+            )
+            contracts.append(contract)
+
+        # Get underlying and target prices from first contract
+        underlying_price = 0.0
+        target_price = 0.0
+        if contracts:
+            target_price = contracts[0].target_price
+            underlying_price = target_price / (1 + request.target_pct)
+
+        return LEAPSResponse(
+            symbol=symbol,
+            underlying_price=round(underlying_price, 2),
+            target_price=round(target_price, 2),
+            target_pct=request.target_pct,
+            mode=request.mode,
+            contracts=contracts,
+            timestamp=datetime.utcnow().isoformat(),
+        )
+
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=500, detail=f"Configuration error: {str(e)}")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching LEAPS data: {str(e)}")
+
+
+@router.post("/roi-simulator", response_model=ROISimulatorResponse)
+async def simulate_roi(request: ROISimulatorRequest):
+    """
+    Simulate ROI for different target prices.
+
+    Args:
+        request: ROISimulatorRequest with strike, premium, underlying, and targets
+
+    Returns:
+        ROISimulatorResponse with simulation results
+    """
+    cost = request.premium * request.contract_size
+    results = []
+
+    for target in request.target_prices:
+        intrinsic = max(target - request.strike, 0)
+        payoff = intrinsic * request.contract_size
+        profit = payoff - cost
+        roi_pct = (profit / cost) * 100 if cost > 0 else 0
+        price_change_pct = ((target - request.underlying_price) / request.underlying_price) * 100
+
+        results.append(
+            ROISimulatorResult(
+                target_price=round(target, 2),
+                price_change_pct=round(price_change_pct, 2),
+                intrinsic_value=round(intrinsic, 2),
+                payoff=round(payoff, 2),
+                profit=round(profit, 2),
+                roi_pct=round(roi_pct, 2),
+            )
+        )
+
+    return ROISimulatorResponse(
+        strike=request.strike,
+        premium=request.premium,
+        cost=round(cost, 2),
+        underlying_price=request.underlying_price,
+        results=results,
+    )

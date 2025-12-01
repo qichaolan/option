@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEAPS Ranker - Options Ranking & ROI Simulator</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">LEAPS Ranker <span>| Options Analysis</span></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Controls -->
+        <section class="controls">
+            <div class="controls-grid">
+                <div class="form-group">
+                    <label for="tickerSelect">Ticker</label>
+                    <select id="tickerSelect">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="targetPct">Target % Move</label>
+                    <input type="number" id="targetPct" value="50" min="1" max="200" step="1">
+                </div>
+                <div class="form-group">
+                    <label for="modeSelect">Scoring Mode</label>
+                    <select id="modeSelect">
+                        <option value="high_prob">High Probability</option>
+                        <option value="high_convexity">High Convexity</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary" id="fetchBtn">Fetch LEAPS</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Error Display -->
+        <div id="errorDisplay" class="error" style="display: none;"></div>
+
+        <!-- Info Cards -->
+        <section class="info-cards">
+            <div class="info-card">
+                <div class="info-card-label">Symbol</div>
+                <div class="info-card-value" id="symbolDisplay">-</div>
+            </div>
+            <div class="info-card">
+                <div class="info-card-label">Underlying Price</div>
+                <div class="info-card-value" id="underlyingPrice">-</div>
+            </div>
+            <div class="info-card">
+                <div class="info-card-label">Target Price</div>
+                <div class="info-card-value" id="targetPrice">-</div>
+            </div>
+            <div class="info-card">
+                <div class="info-card-label">Target Move</div>
+                <div class="info-card-value positive" id="targetPctDisplay">-</div>
+            </div>
+        </section>
+
+        <!-- LEAPS Table -->
+        <section class="table-section">
+            <div class="table-header">
+                <h2 class="table-title">LEAPS Ranking</h2>
+                <span style="color: var(--text-secondary); font-size: 0.875rem;">Click a row to load it in the simulator</span>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <span>Fetching LEAPS data...</span>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state">
+                <div class="empty-state-icon">📊</div>
+                <p>Select a ticker and click "Fetch LEAPS" to view rankings</p>
+            </div>
+
+            <!-- Table Container -->
+            <div id="tableContainer" class="table-container" style="display: none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Contract</th>
+                            <th>Expiration</th>
+                            <th>Strike</th>
+                            <th>Premium</th>
+                            <th>Cost</th>
+                            <th>Payoff</th>
+                            <th>ROI %</th>
+                            <th>Ease</th>
+                            <th>ROI Score</th>
+                            <th>Score</th>
+                            <th>IV</th>
+                            <th>OI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contractsBody">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ROI Simulator -->
+        <section class="simulator-section">
+            <h2 class="simulator-title">ROI Simulator</h2>
+
+            <div class="controls-grid">
+                <div class="form-group">
+                    <label for="simStrike">Strike Price ($)</label>
+                    <input type="number" id="simStrike" step="0.01" placeholder="Strike">
+                </div>
+                <div class="form-group">
+                    <label for="simPremium">Premium ($)</label>
+                    <input type="number" id="simPremium" step="0.01" placeholder="Premium">
+                </div>
+                <div class="form-group">
+                    <label for="simUnderlying">Underlying Price ($)</label>
+                    <input type="number" id="simUnderlying" step="0.01" placeholder="Current price">
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary" id="runSimBtn">Simulate</button>
+                </div>
+            </div>
+
+            <div style="margin-top: 1rem;">
+                <div class="form-group">
+                    <label for="simTargetInput">Target Prices (comma separated)</label>
+                    <input type="text" id="simTargetInput" placeholder="e.g., 500, 550, 600, 650">
+                </div>
+            </div>
+
+            <div class="info-cards" style="margin-top: 1rem;">
+                <div class="info-card">
+                    <div class="info-card-label">Contract Cost</div>
+                    <div class="info-card-value" id="simCost">-</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-label">Breakeven Price</div>
+                    <div class="info-card-value" id="simBreakeven">-</div>
+                </div>
+            </div>
+
+            <h3 style="font-size: 1rem; margin: 1.5rem 0 1rem; color: var(--text-secondary);">Simulation Results</h3>
+            <div id="simResultsGrid" class="simulator-grid">
+                <div class="simulator-result">
+                    <div class="simulator-result-label">Select a contract to simulate</div>
+                    <div class="simulator-result-value">-</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer style="text-align: center; padding: 2rem; color: var(--text-secondary); font-size: 0.875rem;">
+        <p>LEAPS Ranker - For educational purposes only. Not financial advice.</p>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
