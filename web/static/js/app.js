@@ -6,9 +6,10 @@
 let state = {
     tickers: [],
     contracts: [],
-    selectedContract: null,
+    selectedContracts: [], // Array of selected contracts for simulator
     loading: false,
     error: null,
+    underlyingPrice: 0,
 };
 
 // DOM Elements
@@ -26,11 +27,9 @@ const elements = {
     emptyState: document.getElementById('emptyState'),
     tableContainer: document.getElementById('tableContainer'),
     errorDisplay: document.getElementById('errorDisplay'),
-    simStrike: document.getElementById('simStrike'),
-    simPremium: document.getElementById('simPremium'),
+    simContracts: document.getElementById('simContracts'),
     simUnderlying: document.getElementById('simUnderlying'),
-    simCost: document.getElementById('simCost'),
-    simBreakeven: document.getElementById('simBreakeven'),
+    simContractsInfo: document.getElementById('simContractsInfo'),
     simTargetInput: document.getElementById('simTargetInput'),
     runSimBtn: document.getElementById('runSimBtn'),
     simResultsGrid: document.getElementById('simResultsGrid'),
@@ -142,12 +141,25 @@ async function fetchLEAPS() {
 // Update UI with data
 function updateUI(data) {
     state.contracts = data.contracts;
+    state.underlyingPrice = data.underlying_price;
 
     // Update info cards
     elements.symbolDisplay.textContent = data.symbol;
     elements.underlyingPrice.textContent = `$${data.underlying_price.toFixed(2)}`;
     elements.targetPrice.textContent = `$${data.target_price.toFixed(2)}`;
     elements.targetPctDisplay.textContent = `+${(data.target_pct * 100).toFixed(0)}%`;
+
+    // Update simulator underlying price
+    elements.simUnderlying.value = data.underlying_price.toFixed(2);
+
+    // Set default target prices for simulation
+    const underlying = data.underlying_price;
+    const targets = [];
+    const pctSteps = [-10, 0, 10, 25, 50, 75, 100];
+    pctSteps.forEach(pct => {
+        targets.push((underlying * (1 + pct / 100)).toFixed(2));
+    });
+    elements.simTargetInput.value = targets.join(', ');
 
     // Update table
     if (data.contracts.length === 0) {
@@ -159,16 +171,16 @@ function updateUI(data) {
         renderTable(data.contracts);
     }
 
-    // Select first contract for simulator
-    if (data.contracts.length > 0) {
-        selectContract(data.contracts[0], 0);
-    }
+    // Clear selected contracts
+    state.selectedContracts = [];
+    elements.simContracts.value = '';
+    updateContractsInfo();
 }
 
 // Render contracts table
 function renderTable(contracts) {
     elements.contractsBody.innerHTML = contracts.map((c, idx) => `
-        <tr data-contract="${idx}" class="${idx === 0 ? 'selected' : ''}">
+        <tr data-contract="${idx}">
             <td>${c.contract_symbol}</td>
             <td>${c.expiration}</td>
             <td>$${c.strike.toFixed(2)}</td>
@@ -188,11 +200,79 @@ function renderTable(contracts) {
     document.querySelectorAll('[data-contract]').forEach(row => {
         row.addEventListener('click', () => {
             const idx = parseInt(row.dataset.contract);
-            selectContract(contracts[idx], idx);
+            toggleContractSelection(contracts[idx], row);
+        });
+    });
+}
 
-            // Update selected class
-            document.querySelectorAll('[data-contract]').forEach(r => r.classList.remove('selected'));
-            row.classList.add('selected');
+// Toggle contract selection for simulator
+function toggleContractSelection(contract, row) {
+    const symbol = contract.contract_symbol;
+    const existingIdx = state.selectedContracts.findIndex(c => c.contract_symbol === symbol);
+
+    if (existingIdx >= 0) {
+        // Remove if already selected
+        state.selectedContracts.splice(existingIdx, 1);
+        row.classList.remove('selected');
+    } else {
+        // Add if not at limit
+        if (state.selectedContracts.length >= 10) {
+            showError('Maximum 10 contracts allowed');
+            return;
+        }
+        state.selectedContracts.push(contract);
+        row.classList.add('selected');
+    }
+
+    // Update input field
+    elements.simContracts.value = state.selectedContracts.map(c => c.contract_symbol).join(', ');
+    updateContractsInfo();
+}
+
+// Update contracts info display
+function updateContractsInfo() {
+    if (state.selectedContracts.length === 0) {
+        elements.simContractsInfo.innerHTML = '';
+        return;
+    }
+
+    let html = '<div class="info-cards">';
+    state.selectedContracts.forEach(c => {
+        const breakeven = c.strike + c.premium;
+        html += `
+            <div class="info-card" style="position: relative;">
+                <button class="remove-contract" data-symbol="${c.contract_symbol}" style="position: absolute; top: 5px; right: 5px; background: none; border: none; cursor: pointer; color: var(--danger-color);">&times;</button>
+                <div class="info-card-label">${c.contract_symbol}</div>
+                <div style="font-size: 0.875rem; margin-top: 0.5rem;">
+                    <div>Strike: <strong>$${c.strike.toFixed(2)}</strong></div>
+                    <div>Premium: <strong>$${c.premium.toFixed(2)}</strong></div>
+                    <div>Cost: <strong>$${c.cost.toFixed(0)}</strong></div>
+                    <div style="color: var(--primary-color);">Breakeven: <strong>$${breakeven.toFixed(2)}</strong></div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    elements.simContractsInfo.innerHTML = html;
+
+    // Add remove button handlers
+    document.querySelectorAll('.remove-contract').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const symbol = btn.dataset.symbol;
+            const idx = state.selectedContracts.findIndex(c => c.contract_symbol === symbol);
+            if (idx >= 0) {
+                state.selectedContracts.splice(idx, 1);
+                // Update row selection
+                document.querySelectorAll('[data-contract]').forEach(row => {
+                    const rowIdx = parseInt(row.dataset.contract);
+                    if (state.contracts[rowIdx]?.contract_symbol === symbol) {
+                        row.classList.remove('selected');
+                    }
+                });
+                elements.simContracts.value = state.selectedContracts.map(c => c.contract_symbol).join(', ');
+                updateContractsInfo();
+            }
         });
     });
 }
@@ -204,43 +284,39 @@ function getScoreClass(score) {
     return 'score-low';
 }
 
-// Select contract for simulator
-function selectContract(contract, idx) {
-    state.selectedContract = contract;
-
-    // Update simulator inputs
-    elements.simStrike.value = contract.strike.toFixed(2);
-    elements.simPremium.value = contract.premium.toFixed(2);
-
-    // Calculate underlying from target price
-    const underlying = contract.target_price / (1 + parseFloat(elements.targetPctInput.value) / 100);
-    elements.simUnderlying.value = underlying.toFixed(2);
-
-    // Calculate cost and breakeven
-    const cost = contract.premium * 100;
-    const breakeven = contract.strike + contract.premium;
-
-    elements.simCost.textContent = `$${cost.toFixed(0)}`;
-    elements.simBreakeven.textContent = `$${breakeven.toFixed(2)}`;
-
-    // Set default target prices for simulation
-    const targets = [];
-    const pctSteps = [-10, 0, 10, 25, 50, 75, 100];
-    pctSteps.forEach(pct => {
-        targets.push((underlying * (1 + pct / 100)).toFixed(2));
-    });
-    elements.simTargetInput.value = targets.join(', ');
-}
-
 // Run ROI simulation
 async function runSimulation() {
-    const strike = parseFloat(elements.simStrike.value);
-    const premium = parseFloat(elements.simPremium.value);
     const underlying = parseFloat(elements.simUnderlying.value);
     const targetStr = elements.simTargetInput.value;
 
-    if (isNaN(strike) || isNaN(premium) || isNaN(underlying)) {
-        showError('Please enter valid strike, premium, and underlying price');
+    // Get contracts either from state or parse from input
+    let contractsToSimulate = state.selectedContracts;
+
+    // If no contracts selected but input has values, try to match from loaded contracts
+    if (contractsToSimulate.length === 0) {
+        const inputSymbols = elements.simContracts.value.split(',').map(s => s.trim()).filter(s => s);
+        if (inputSymbols.length > 0) {
+            contractsToSimulate = inputSymbols.map(symbol => {
+                const found = state.contracts.find(c => c.contract_symbol === symbol);
+                if (found) return found;
+                // If not found, we can't simulate without strike/premium
+                return null;
+            }).filter(c => c !== null);
+
+            if (contractsToSimulate.length === 0) {
+                showError('Could not find contract data. Please select contracts from the table.');
+                return;
+            }
+        }
+    }
+
+    if (contractsToSimulate.length === 0) {
+        showError('Please select at least one contract to simulate');
+        return;
+    }
+
+    if (isNaN(underlying) || underlying <= 0) {
+        showError('Please enter a valid underlying price');
         return;
     }
 
@@ -254,46 +330,56 @@ async function runSimulation() {
         return;
     }
 
-    try {
-        const response = await fetch('/api/roi-simulator', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                strike,
-                premium,
-                underlying_price: underlying,
-                target_prices: targets,
-                contract_size: 100,
-            }),
-        });
-
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || 'Simulation failed');
-        }
-
-        const data = await response.json();
-        renderSimResults(data);
-
-    } catch (err) {
-        console.error('Simulation error:', err);
-        showError(err.message);
-    }
+    // Simulate for all contracts
+    renderMultiContractResults(contractsToSimulate, underlying, targets);
 }
 
-// Render simulation results
-function renderSimResults(data) {
-    elements.simResultsGrid.innerHTML = data.results.map(r => `
-        <div class="simulator-result">
-            <div class="simulator-result-label">$${r.target_price.toFixed(2)} (${r.price_change_pct >= 0 ? '+' : ''}${r.price_change_pct.toFixed(1)}%)</div>
-            <div class="simulator-result-value ${r.roi_pct >= 0 ? 'positive' : 'negative'}">
-                ${r.roi_pct >= 0 ? '+' : ''}${r.roi_pct.toFixed(1)}%
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                P&L: ${r.profit >= 0 ? '+' : ''}$${r.profit.toFixed(0)}
-            </div>
-        </div>
-    `).join('');
+// Render simulation results for multiple contracts
+function renderMultiContractResults(contracts, underlying, targets) {
+    let html = '';
+
+    contracts.forEach(contract => {
+        const strike = contract.strike;
+        const premium = contract.premium;
+        const cost = premium * 100;
+        const breakeven = strike + premium;
+
+        html += `
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-color); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <strong>${contract.contract_symbol}</strong>
+                    <span style="color: var(--primary-color);">Breakeven: $${breakeven.toFixed(2)}</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                    Strike: $${strike.toFixed(2)} | Premium: $${premium.toFixed(2)} | Cost: $${cost.toFixed(0)}
+                </div>
+                <div class="simulator-grid">
+        `;
+
+        targets.forEach(target => {
+            const intrinsic = Math.max(target - strike, 0);
+            const payoff = intrinsic * 100;
+            const profit = payoff - cost;
+            const roiPct = (profit / cost) * 100;
+            const priceChangePct = ((target - underlying) / underlying) * 100;
+
+            html += `
+                <div class="simulator-result">
+                    <div class="simulator-result-label">$${target.toFixed(2)} (${priceChangePct >= 0 ? '+' : ''}${priceChangePct.toFixed(1)}%)</div>
+                    <div class="simulator-result-value ${roiPct >= 0 ? 'positive' : 'negative'}">
+                        ${roiPct >= 0 ? '+' : ''}${roiPct.toFixed(1)}%
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                        P&L: ${profit >= 0 ? '+' : ''}$${profit.toFixed(0)}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div></div>';
+    });
+
+    elements.simResultsGrid.innerHTML = html;
 }
 
 // Set loading state

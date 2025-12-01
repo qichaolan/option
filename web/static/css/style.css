@@ -167,6 +167,13 @@ body {
     margin-top: 0.25rem;
 }
 
+.info-card-hint {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+    font-style: italic;
+}
+
 /* Table Section */
 .table-section {
     background: var(--card-bg);

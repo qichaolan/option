@@ -55,8 +55,9 @@
                 <div class="info-card-value" id="underlyingPrice">-</div>
             </div>
             <div class="info-card">
-                <div class="info-card-label">Target Price</div>
+                <div class="info-card-label">Target Price at Expiration</div>
                 <div class="info-card-value" id="targetPrice">-</div>
+                <div class="info-card-hint">Assumed stock price when LEAPS expires</div>
             </div>
             <div class="info-card">
                 <div class="info-card-label">Target Move</div>
@@ -112,18 +113,20 @@
         <section class="simulator-section">
             <h2 class="simulator-title">ROI Simulator</h2>
 
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="simContracts">Contract Symbols (up to 10, comma separated)</label>
+                <input type="text" id="simContracts" placeholder="e.g., SPY280121C00795000, QQQ261218C00550000">
+                <div class="info-card-hint">Click rows in the table above to add contracts, or enter manually</div>
+            </div>
+
             <div class="controls-grid">
-                <div class="form-group">
-                    <label for="simStrike">Strike Price ($)</label>
-                    <input type="number" id="simStrike" step="0.01" placeholder="Strike">
-                </div>
-                <div class="form-group">
-                    <label for="simPremium">Premium ($)</label>
-                    <input type="number" id="simPremium" step="0.01" placeholder="Premium">
-                </div>
                 <div class="form-group">
                     <label for="simUnderlying">Underlying Price ($)</label>
                     <input type="number" id="simUnderlying" step="0.01" placeholder="Current price">
+                </div>
+                <div class="form-group">
+                    <label for="simTargetInput">Target Prices (comma separated)</label>
+                    <input type="text" id="simTargetInput" placeholder="e.g., 500, 550, 600, 650">
                 </div>
                 <div class="form-group">
                     <label>&nbsp;</label>
@@ -131,28 +134,12 @@
                 </div>
             </div>
 
-            <div style="margin-top: 1rem;">
-                <div class="form-group">
-                    <label for="simTargetInput">Target Prices (comma separated)</label>
-                    <input type="text" id="simTargetInput" placeholder="e.g., 500, 550, 600, 650">
-                </div>
-            </div>
-
-            <div class="info-cards" style="margin-top: 1rem;">
-                <div class="info-card">
-                    <div class="info-card-label">Contract Cost</div>
-                    <div class="info-card-value" id="simCost">-</div>
-                </div>
-                <div class="info-card">
-                    <div class="info-card-label">Breakeven Price</div>
-                    <div class="info-card-value" id="simBreakeven">-</div>
-                </div>
-            </div>
+            <div id="simContractsInfo" style="margin-top: 1rem;"></div>
 
             <h3 style="font-size: 1rem; margin: 1.5rem 0 1rem; color: var(--text-secondary);">Simulation Results</h3>
             <div id="simResultsGrid" class="simulator-grid">
                 <div class="simulator-result">
-                    <div class="simulator-result-label">Select a contract to simulate</div>
+                    <div class="simulator-result-label">Enter contracts to simulate</div>
                     <div class="simulator-result-value">-</div>
                 </div>
             </div>
