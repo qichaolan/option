@@ -337,50 +337,67 @@ async function runSimulation() {
 
 // Render simulation results for multiple contracts
 function renderMultiContractResults(contracts, underlying, targets) {
-    let html = '';
+    // Build table header with target percentages
+    let headerHtml = '<th style="min-width: 180px;">Contract</th>';
+    targets.forEach(target => {
+        const pct = Math.round(((target - underlying) / underlying) * 100);
+        headerHtml += `<th style="text-align: center; min-width: 70px;">${pct}%</th>`;
+    });
 
+    let rowsHtml = '';
     contracts.forEach(contract => {
         const strike = contract.strike;
         const premium = contract.premium;
         const cost = premium * 100;
         const breakeven = strike + premium;
 
-        html += `
-            <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-color); border-radius: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                    <strong>${contract.contract_symbol}</strong>
-                    <span style="color: var(--primary-color);">Breakeven: $${breakeven.toFixed(2)}</span>
-                </div>
-                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
-                    Strike: $${strike.toFixed(2)} | Premium: $${premium.toFixed(2)} | Cost: $${cost.toFixed(0)}
-                </div>
-                <div class="simulator-grid">
+        // Contract info cell
+        rowsHtml += `
+            <tr>
+                <td style="white-space: nowrap;">
+                    <div style="font-weight: 600; font-size: 0.8rem;">${contract.contract_symbol}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary);">
+                        Strike: $${strike.toFixed(0)} | Cost: $${cost.toFixed(0)}
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--primary-color);">
+                        BE: $${breakeven.toFixed(2)}
+                    </div>
+                </td>
         `;
 
+        // ROI cells for each target
         targets.forEach(target => {
             const intrinsic = Math.max(target - strike, 0);
             const payoff = intrinsic * 100;
             const profit = payoff - cost;
             const roiPct = (profit / cost) * 100;
-            const priceChangePct = ((target - underlying) / underlying) * 100;
 
-            html += `
-                <div class="simulator-result">
-                    <div class="simulator-result-label">$${target.toFixed(2)} (${priceChangePct >= 0 ? '+' : ''}${priceChangePct.toFixed(1)}%)</div>
-                    <div class="simulator-result-value ${roiPct >= 0 ? 'positive' : 'negative'}">
-                        ${roiPct >= 0 ? '+' : ''}${roiPct.toFixed(1)}%
+            const colorClass = roiPct >= 0 ? 'positive' : 'negative';
+            rowsHtml += `
+                <td style="text-align: center;">
+                    <div class="${colorClass}" style="font-weight: 600; font-size: 0.85rem;">
+                        ${roiPct >= 0 ? '+' : ''}${roiPct.toFixed(0)}%
                     </div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                        P&L: ${profit >= 0 ? '+' : ''}$${profit.toFixed(0)}
+                    <div style="font-size: 0.65rem; color: var(--text-secondary);">
+                        ${profit >= 0 ? '+' : ''}$${profit.toFixed(0)}
                     </div>
-                </div>
+                </td>
             `;
         });
 
-        html += '</div></div>';
+        rowsHtml += '</tr>';
     });
 
-    elements.simResultsGrid.innerHTML = html;
+    elements.simResultsGrid.innerHTML = `
+        <div class="table-container" style="overflow-x: auto;">
+            <table style="width: 100%; font-size: 0.875rem;">
+                <thead>
+                    <tr>${headerHtml}</tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>
+        </div>
+    `;
 }
 
 // Set loading state
