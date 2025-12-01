@@ -65,12 +65,51 @@ body {
     font-weight: 400;
 }
 
-/* Main Navigation */
+/* Main Navigation - Improved Button Style */
 .main-nav {
     display: flex;
     gap: 0.5rem;
+    align-items: center;
 }
 
+/* Navigation Buttons - More prominent and clickable */
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    background: var(--bg-color);
+    border: 2px solid var(--border-color);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.nav-btn:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    background: rgba(37, 99, 235, 0.05);
+    transform: translateY(-1px);
+}
+
+.nav-btn.active {
+    color: white;
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.nav-btn.active:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+    color: white;
+}
+
+/* Legacy nav-link support */
 .nav-link {
     padding: 0.5rem 1rem;
     border-radius: 6px;
@@ -89,6 +128,46 @@ body {
 .nav-link.active {
     color: var(--primary-color);
     background: rgba(37, 99, 235, 0.1);
+}
+
+/* Quick Link Section - Compact button on LEAPS page */
+.quick-link-section {
+    margin: 1rem 0 1.5rem;
+}
+
+.quick-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.03) 100%);
+    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    transition: all 0.2s ease;
+}
+
+.quick-link-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.quick-link-icon {
+    font-size: 1.25rem;
+}
+
+.quick-link-text {
+    flex: 1;
+}
+
+.quick-link-arrow {
+    font-size: 1.125rem;
+    opacity: 0.8;
 }
 
 /* Feature Cards */
@@ -1688,5 +1767,83 @@ tr[data-contract] {
         font-weight: 600;
         color: var(--text-primary);
         margin-top: 0.125rem;
+    }
+}
+
+/* ============================================
+   SIMPLIFIED FORM - Credit Spreads
+   ============================================ */
+
+.simple-form {
+    padding: 0.5rem 0;
+}
+
+.simple-form-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.simple-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 140px;
+}
+
+.simple-form-group label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.simple-form-group .select-lg {
+    min-width: 200px;
+}
+
+.simple-form-action {
+    flex: 1;
+    min-width: auto;
+}
+
+.simple-form-action .btn-run {
+    width: auto;
+    min-width: 160px;
+}
+
+/* Mobile responsive for simple form */
+@media (max-width: 640px) {
+    .simple-form-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .simple-form-group {
+        width: 100%;
+    }
+
+    .simple-form-group .select-lg {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .simple-form-action {
+        margin-top: 0.5rem;
+    }
+
+    .simple-form-action .btn-run {
+        width: 100%;
+    }
+
+    /* Navigation responsive on mobile */
+    .nav-btn {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.8125rem;
+    }
+
+    .quick-link-btn {
+        width: 100%;
+        justify-content: center;
     }
 }

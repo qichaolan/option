@@ -13,8 +13,8 @@
             <div class="header-content">
                 <div class="logo">Option Chain Analysis</div>
                 <nav class="main-nav">
-                    <a href="/" class="nav-link">LEAPS Ranker</a>
-                    <a href="/credit-spreads" class="nav-link active">Credit Spreads</a>
+                    <a href="/" class="nav-btn">LEAPS Ranker</a>
+                    <a href="/credit-spreads" class="nav-btn active">Credit Spreads</a>
                 </nav>
             </div>
         </div>
@@ -24,107 +24,43 @@
         <!-- Page Header with visual hierarchy -->
         <div class="page-header">
             <h1 class="page-title">Credit Spreads Screener</h1>
-            <p class="page-subtitle">Find optimal Put Credit Spreads (PCS) and Call Credit Spreads (CCS) opportunities</p>
+            <p class="page-subtitle">Find optimal credit spread opportunities for income generation</p>
         </div>
 
-        <!-- Controls Card - Improved form layout -->
+        <!-- Simplified Controls Card - Only Ticker and Spread Type -->
         <section class="controls-card" id="controls">
-            <div class="controls-card-header">
-                <h2 class="controls-card-title">Screening Parameters</h2>
-            </div>
-
-            <!-- Primary Filters - Most important options visible first -->
-            <div class="filter-section">
-                <div class="filter-row">
-                    <div class="form-group form-group-flex">
-                        <label for="tickerSelect">
-                            Ticker Symbol
-                            <span class="label-hint">Select underlying</span>
-                        </label>
+            <div class="simple-form">
+                <div class="simple-form-row">
+                    <div class="simple-form-group">
+                        <label for="tickerSelect">Underlying</label>
                         <select id="tickerSelect" class="select-lg">
-                            <option value="SPY">SPY - S&P 500 ETF</option>
-                            <option value="QQQ">QQQ - Nasdaq 100 ETF</option>
+                            <option value="SPY">SPY</option>
+                            <option value="QQQ">QQQ</option>
                         </select>
                     </div>
-                    <div class="form-group form-group-flex">
-                        <label for="spreadTypeSelect">
-                            Spread Type
-                            <span class="label-hint">Bullish or Bearish</span>
-                        </label>
+                    <div class="simple-form-group">
+                        <label for="spreadTypeSelect">Strategy</label>
                         <select id="spreadTypeSelect" class="select-lg">
-                            <option value="ALL">All Spreads</option>
-                            <option value="PCS">Put Credit Spreads (Bullish)</option>
-                            <option value="CCS">Call Credit Spreads (Bearish)</option>
+                            <option value="PCS">Bullish (Put Credit Spread)</option>
+                            <option value="CCS">Bearish (Call Credit Spread)</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="filter-row">
-                    <div class="form-group">
-                        <label for="minDte">
-                            Min DTE
-                            <span class="label-hint">Days to expiration</span>
-                        </label>
-                        <input type="number" id="minDte" value="14" min="7" max="60" class="input-number">
-                    </div>
-                    <div class="form-group">
-                        <label for="maxDte">
-                            Max DTE
-                            <span class="label-hint">Days to expiration</span>
-                        </label>
-                        <input type="number" id="maxDte" value="30" min="7" max="90" class="input-number">
+                    <div class="simple-form-group simple-form-action">
+                        <button class="btn btn-primary btn-lg btn-run" id="runScreenerBtn">
+                            <span class="btn-icon">&#9654;</span>
+                            Find Spreads
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Advanced Options - Collapsible for cleaner UI -->
-            <details class="advanced-options-panel">
-                <summary class="advanced-options-toggle">
-                    <span class="toggle-icon">+</span>
-                    Advanced Filters
-                    <span class="toggle-hint">Delta, Width, ROC thresholds</span>
-                </summary>
-                <div class="advanced-options-content">
-                    <div class="filter-row filter-row-4">
-                        <div class="form-group">
-                            <label for="minDelta">
-                                Min Delta
-                                <span class="label-hint">Short leg (0.05-0.40)</span>
-                            </label>
-                            <input type="number" id="minDelta" value="0.10" min="0.05" max="0.40" step="0.01" class="input-number">
-                        </div>
-                        <div class="form-group">
-                            <label for="maxDelta">
-                                Max Delta
-                                <span class="label-hint">Short leg (0.10-0.50)</span>
-                            </label>
-                            <input type="number" id="maxDelta" value="0.25" min="0.10" max="0.50" step="0.01" class="input-number">
-                        </div>
-                        <div class="form-group">
-                            <label for="maxWidth">
-                                Max Width
-                                <span class="label-hint">Spread width in $</span>
-                            </label>
-                            <input type="number" id="maxWidth" value="10" min="1" max="50" step="1" class="input-number">
-                        </div>
-                        <div class="form-group">
-                            <label for="minRoc">
-                                Min ROC
-                                <span class="label-hint">Return on capital %</span>
-                            </label>
-                            <input type="number" id="minRoc" value="20" min="5" max="100" step="1" class="input-number">
-                        </div>
-                    </div>
-                </div>
-            </details>
-
-            <!-- Action Button - Prominent and clear -->
-            <div class="action-row">
-                <button class="btn btn-primary btn-lg btn-run" id="runScreenerBtn">
-                    <span class="btn-icon">&#9654;</span>
-                    Run Screener
-                </button>
-            </div>
+            <!-- Hidden default values for backend compatibility -->
+            <input type="hidden" id="minDte" value="14">
+            <input type="hidden" id="maxDte" value="45">
+            <input type="hidden" id="minDelta" value="0.08">
+            <input type="hidden" id="maxDelta" value="0.30">
+            <input type="hidden" id="maxWidth" value="10">
+            <input type="hidden" id="minRoc" value="15">
         </section>
 
         <!-- Error Display - Improved styling -->
