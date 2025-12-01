@@ -168,10 +168,10 @@ function updateUI(data) {
     elements.simUnderlying.value = data.underlying_price.toFixed(2);
     elements.simUnderlyingDisplay.textContent = `$${data.underlying_price.toFixed(2)}`;
 
-    // Set target prices for simulation (0% to 60%, every 5%)
+    // Set target prices for simulation (10% to 65%, every 5%)
     const underlying = data.underlying_price;
     const targets = [];
-    for (let pct = 0; pct <= 60; pct += 5) {
+    for (let pct = 10; pct <= 65; pct += 5) {
         targets.push((underlying * (1 + pct / 100)).toFixed(2));
     }
     elements.simTargetInput.value = targets.join(', ');
