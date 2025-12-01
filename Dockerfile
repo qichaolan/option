@@ -13,8 +13,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY web/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the leaps_ranker module and config
+# Copy the leaps_ranker and credit_spread_screener modules and config
 COPY leaps_ranker.py ./leaps_ranker.py
+COPY credit_spread_screener.py ./credit_spread_screener.py
 COPY config/ ./config/
 
 # Copy web application

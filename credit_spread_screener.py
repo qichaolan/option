@@ -179,9 +179,10 @@ def estimate_delta(
     iv: float,
     option_type: str,
     risk_free_rate: float = 0.05,
+    dividend_yield: float = 0.013,
 ) -> float:
     """
-    Estimate option delta using Black-Scholes formula.
+    Estimate option delta using Black-Scholes formula with dividend yield.
 
     Parameters
     ----------
@@ -197,6 +198,8 @@ def estimate_delta(
         "call" or "put".
     risk_free_rate : float
         Risk-free rate (annualized).
+    dividend_yield : float
+        Continuous dividend yield (annualized). Default 1.3% for SPY/QQQ.
 
     Returns
     -------
@@ -209,12 +212,13 @@ def estimate_delta(
     t = dte / 365.0
     sqrt_t = np.sqrt(t)
 
-    d1 = (np.log(underlying_price / strike) + (risk_free_rate + 0.5 * iv ** 2) * t) / (iv * sqrt_t)
+    # Black-Scholes with continuous dividend yield (Merton model)
+    d1 = (np.log(underlying_price / strike) + (risk_free_rate - dividend_yield + 0.5 * iv ** 2) * t) / (iv * sqrt_t)
 
     if option_type.lower() == "call":
-        delta = norm.cdf(d1)
+        delta = np.exp(-dividend_yield * t) * norm.cdf(d1)
     else:
-        delta = norm.cdf(d1) - 1  # Negative for puts
+        delta = np.exp(-dividend_yield * t) * (norm.cdf(d1) - 1)  # Negative for puts
 
     return delta
 
@@ -596,6 +600,8 @@ def compute_spread_metrics(df: pd.DataFrame, config: ScreenerConfig) -> pd.DataF
     Compute additional metrics for spreads: liquidity_score, slippage_score,
     convexity_score, ease_score.
 
+    Uses vectorized operations for performance.
+
     Parameters
     ----------
     df : pd.DataFrame
@@ -613,67 +619,61 @@ def compute_spread_metrics(df: pd.DataFrame, config: ScreenerConfig) -> pd.DataF
 
     df = df.copy()
 
-    # Liquidity score: based on min(OI, volume) of both legs
+    # Liquidity score: based on min(OI, volume) of both legs (vectorized)
     liquidity_target = 100
     df["min_oi"] = df[["short_oi", "long_oi"]].min(axis=1)
     df["min_volume"] = df[["short_volume", "long_volume"]].min(axis=1)
     df["liquidity_raw"] = df[["min_oi", "min_volume"]].min(axis=1)
     df["liquidity_score"] = (df["liquidity_raw"] / liquidity_target).clip(0, 1)
 
-    # Slippage score: based on bid-ask spread percentage
-    def calc_slippage(row: pd.Series) -> float:
-        short_mid = (row["short_bid"] + row["short_ask"]) / 2
-        long_mid = (row["long_bid"] + row["long_ask"]) / 2
+    # Slippage score: vectorized calculation
+    short_mid = (df["short_bid"] + df["short_ask"]) / 2
+    long_mid = (df["long_bid"] + df["long_ask"]) / 2
 
-        if short_mid <= 0 or long_mid <= 0:
-            return 0.5
+    # Avoid division by zero
+    short_mid_safe = short_mid.replace(0, np.nan)
+    long_mid_safe = long_mid.replace(0, np.nan)
 
-        short_spread_pct = (row["short_ask"] - row["short_bid"]) / short_mid
-        long_spread_pct = (row["long_ask"] - row["long_bid"]) / long_mid
+    short_spread_pct = (df["short_ask"] - df["short_bid"]) / short_mid_safe
+    long_spread_pct = (df["long_ask"] - df["long_bid"]) / long_mid_safe
 
-        max_spread_pct = max(short_spread_pct, long_spread_pct)
+    max_spread_pct = np.maximum(short_spread_pct.fillna(0.05), long_spread_pct.fillna(0.05))
+    df["slippage_score"] = np.maximum(0, 1 - max_spread_pct / 0.10)
+    # Default to 0.5 where both mids were invalid
+    df.loc[(short_mid <= 0) & (long_mid <= 0), "slippage_score"] = 0.5
 
-        # Invert: lower spread = higher score
-        # Normalize: 0% spread = 1.0, 10%+ spread = 0.0
-        return max(0, 1 - max_spread_pct / 0.10)
+    # Convexity score: vectorized calculation
+    roc_component = np.minimum(df["roc"] / 0.5, 1.0)
+    delta_in_range = (df["short_delta"] >= config.min_delta) & (df["short_delta"] <= config.max_delta)
+    delta_component = np.where(delta_in_range, 1.0, 0.5)
+    distance_component = np.minimum(np.abs(df["break_even_distance_pct"]) / 0.05, 1.0)
+    width_component = 1 - np.minimum(df["width"] / config.max_width, 1.0)
 
-    df["slippage_score"] = df.apply(calc_slippage, axis=1)
+    df["convexity_score"] = (
+        0.4 * roc_component +
+        0.3 * delta_component +
+        0.2 * distance_component +
+        0.1 * width_component
+    )
 
-    # Convexity score: reward narrower spreads with good ROC and decent distance
-    def calc_convexity(row: pd.Series) -> float:
-        roc_component = min(row["roc"] / 0.5, 1.0)
-        delta_component = 1.0 if config.min_delta <= row["short_delta"] <= config.max_delta else 0.5
-        distance_component = min(abs(row["break_even_distance_pct"]) / 0.05, 1.0)
-        width_component = 1 - min(row["width"] / config.max_width, 1.0)
+    # Ease score: vectorized calculation
+    distance_score = np.minimum(np.abs(df["break_even_distance_pct"]) / 0.10, 1.0)
 
-        return 0.4 * roc_component + 0.3 * delta_component + 0.2 * distance_component + 0.1 * width_component
+    # DTE score: use np.select for multiple conditions
+    dte = df["dte"]
+    conditions = [
+        (dte >= 14) & (dte <= 30),
+        ((dte >= 7) & (dte < 14)) | ((dte > 30) & (dte <= 45)),
+    ]
+    choices = [1.0, 0.7]
+    dte_score = np.select(conditions, choices, default=0.4)
 
-    df["convexity_score"] = df.apply(calc_convexity, axis=1)
-
-    # Ease score: distance from underlying, DTE, liquidity, slippage
-    def calc_ease(row: pd.Series) -> float:
-        # Distance cushion (more = easier)
-        distance_score = min(abs(row["break_even_distance_pct"]) / 0.10, 1.0)
-
-        # DTE score (prefer 14-30 days, penalize extremes)
-        dte = row["dte"]
-        if 14 <= dte <= 30:
-            dte_score = 1.0
-        elif 7 <= dte < 14 or 30 < dte <= 45:
-            dte_score = 0.7
-        else:
-            dte_score = 0.4
-
-        # Combine with liquidity and slippage
-        ease = (
-            0.35 * distance_score +
-            0.25 * dte_score +
-            0.20 * row["liquidity_score"] +
-            0.20 * row["slippage_score"]
-        )
-        return ease
-
-    df["ease_score"] = df.apply(calc_ease, axis=1)
+    df["ease_score"] = (
+        0.35 * distance_score +
+        0.25 * dte_score +
+        0.20 * df["liquidity_score"] +
+        0.20 * df["slippage_score"]
+    )
 
     return df
 

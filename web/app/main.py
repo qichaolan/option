@@ -14,6 +14,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.routes.leaps import router as leaps_router
+from app.routes.credit_spreads import router as credit_spreads_router
 
 # Configure logging
 logging.basicConfig(
@@ -86,12 +87,19 @@ templates = Jinja2Templates(directory=str(templates_path))
 
 # Include API routes
 app.include_router(leaps_router)
+app.include_router(credit_spreads_router)
 
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    """Serve the main page."""
+    """Serve the main page (LEAPS Ranker)."""
     return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.get("/credit-spreads", response_class=HTMLResponse)
+async def credit_spreads_page(request: Request):
+    """Serve the credit spreads screener page."""
+    return templates.TemplateResponse("credit_spreads.html", {"request": request})
 
 
 @app.get("/health")

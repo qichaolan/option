@@ -110,29 +110,33 @@ async def get_leaps_ranking(request: Request, leaps_request: LEAPSRequest):
             config=config,
         )
 
-        # Convert DataFrame to list of contracts
-        contracts = []
-        for _, row in df.iterrows():
-            contract = LEAPSContract(
-                contract_symbol=str(row.get("contract_symbol", "")),
-                expiration=str(row.get("expiration", "")),
-                strike=float(row.get("strike", 0)),
-                target_price=float(row.get("target_price", 0)),
-                premium=float(row.get("premium", 0)),
-                cost=float(row.get("cost", 0)),
-                payoff_target=float(row.get("payoff_target", 0)),
-                roi_target=float(row.get("roi_target", 0)),
-                ease_score=float(row.get("ease_score", 0)),
-                roi_score=float(row.get("roi_score", 0)),
-                score=float(row.get("score", 0)),
-                implied_volatility=float(row["implied_volatility"])
-                if "implied_volatility" in row and row["implied_volatility"]
-                else None,
-                open_interest=int(row["open_interest"])
-                if "open_interest" in row and row["open_interest"]
-                else None,
+        # Convert DataFrame to list of contracts using vectorized operations
+        # Select columns that match LEAPSContract model
+        contract_columns = [
+            "contract_symbol", "expiration", "strike", "target_price",
+            "premium", "cost", "payoff_target", "roi_target",
+            "ease_score", "roi_score", "score", "implied_volatility", "open_interest"
+        ]
+        available_cols = [c for c in contract_columns if c in df.columns]
+        df_out = df[available_cols].copy()
+
+        # Handle optional fields - convert NaN to None
+        if "implied_volatility" in df_out.columns:
+            df_out["implied_volatility"] = df_out["implied_volatility"].where(
+                df_out["implied_volatility"].notna() & (df_out["implied_volatility"] != 0), None
             )
-            contracts.append(contract)
+        if "open_interest" in df_out.columns:
+            df_out["open_interest"] = df_out["open_interest"].where(
+                df_out["open_interest"].notna() & (df_out["open_interest"] != 0), None
+            )
+            # Convert to int where not None
+            df_out.loc[df_out["open_interest"].notna(), "open_interest"] = (
+                df_out.loc[df_out["open_interest"].notna(), "open_interest"].astype(int)
+            )
+
+        # Convert to list of dicts and then to Pydantic models
+        records = df_out.to_dict(orient="records")
+        contracts = [LEAPSContract(**record) for record in records]
 
         # Get underlying and target prices from first contract
         underlying_price = 0.0

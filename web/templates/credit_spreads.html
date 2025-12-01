@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Spreads Screener - Option Chain Analysis</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">Option Chain Analysis</div>
+                <nav class="main-nav">
+                    <a href="/" class="nav-link">LEAPS Ranker</a>
+                    <a href="/credit-spreads" class="nav-link active">Credit Spreads</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Page Header with visual hierarchy -->
+        <div class="page-header">
+            <h1 class="page-title">Credit Spreads Screener</h1>
+            <p class="page-subtitle">Find optimal Put Credit Spreads (PCS) and Call Credit Spreads (CCS) opportunities</p>
+        </div>
+
+        <!-- Controls Card - Improved form layout -->
+        <section class="controls-card" id="controls">
+            <div class="controls-card-header">
+                <h2 class="controls-card-title">Screening Parameters</h2>
+            </div>
+
+            <!-- Primary Filters - Most important options visible first -->
+            <div class="filter-section">
+                <div class="filter-row">
+                    <div class="form-group form-group-flex">
+                        <label for="tickerSelect">
+                            Ticker Symbol
+                            <span class="label-hint">Select underlying</span>
+                        </label>
+                        <select id="tickerSelect" class="select-lg">
+                            <option value="SPY">SPY - S&P 500 ETF</option>
+                            <option value="QQQ">QQQ - Nasdaq 100 ETF</option>
+                        </select>
+                    </div>
+                    <div class="form-group form-group-flex">
+                        <label for="spreadTypeSelect">
+                            Spread Type
+                            <span class="label-hint">Bullish or Bearish</span>
+                        </label>
+                        <select id="spreadTypeSelect" class="select-lg">
+                            <option value="ALL">All Spreads</option>
+                            <option value="PCS">Put Credit Spreads (Bullish)</option>
+                            <option value="CCS">Call Credit Spreads (Bearish)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-row">
+                    <div class="form-group">
+                        <label for="minDte">
+                            Min DTE
+                            <span class="label-hint">Days to expiration</span>
+                        </label>
+                        <input type="number" id="minDte" value="14" min="7" max="60" class="input-number">
+                    </div>
+                    <div class="form-group">
+                        <label for="maxDte">
+                            Max DTE
+                            <span class="label-hint">Days to expiration</span>
+                        </label>
+                        <input type="number" id="maxDte" value="30" min="7" max="90" class="input-number">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Options - Collapsible for cleaner UI -->
+            <details class="advanced-options-panel">
+                <summary class="advanced-options-toggle">
+                    <span class="toggle-icon">+</span>
+                    Advanced Filters
+                    <span class="toggle-hint">Delta, Width, ROC thresholds</span>
+                </summary>
+                <div class="advanced-options-content">
+                    <div class="filter-row filter-row-4">
+                        <div class="form-group">
+                            <label for="minDelta">
+                                Min Delta
+                                <span class="label-hint">Short leg (0.05-0.40)</span>
+                            </label>
+                            <input type="number" id="minDelta" value="0.10" min="0.05" max="0.40" step="0.01" class="input-number">
+                        </div>
+                        <div class="form-group">
+                            <label for="maxDelta">
+                                Max Delta
+                                <span class="label-hint">Short leg (0.10-0.50)</span>
+                            </label>
+                            <input type="number" id="maxDelta" value="0.25" min="0.10" max="0.50" step="0.01" class="input-number">
+                        </div>
+                        <div class="form-group">
+                            <label for="maxWidth">
+                                Max Width
+                                <span class="label-hint">Spread width in $</span>
+                            </label>
+                            <input type="number" id="maxWidth" value="10" min="1" max="50" step="1" class="input-number">
+                        </div>
+                        <div class="form-group">
+                            <label for="minRoc">
+                                Min ROC
+                                <span class="label-hint">Return on capital %</span>
+                            </label>
+                            <input type="number" id="minRoc" value="20" min="5" max="100" step="1" class="input-number">
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+            <!-- Action Button - Prominent and clear -->
+            <div class="action-row">
+                <button class="btn btn-primary btn-lg btn-run" id="runScreenerBtn">
+                    <span class="btn-icon">&#9654;</span>
+                    Run Screener
+                </button>
+            </div>
+        </section>
+
+        <!-- Error Display - Improved styling -->
+        <div id="errorDisplay" class="error-banner" style="display: none;">
+            <span class="error-icon">!</span>
+            <span class="error-message"></span>
+        </div>
+
+        <!-- Results Summary Cards - Key metrics at a glance -->
+        <section class="summary-cards" id="infoCards" style="display: none;">
+            <div class="summary-card">
+                <div class="summary-card-icon">📈</div>
+                <div class="summary-card-content">
+                    <div class="summary-card-label">Symbol</div>
+                    <div class="summary-card-value" id="symbolDisplay">-</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-icon">💰</div>
+                <div class="summary-card-content">
+                    <div class="summary-card-label">Current Price</div>
+                    <div class="summary-card-value" id="underlyingPrice">-</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-icon">📊</div>
+                <div class="summary-card-content">
+                    <div class="summary-card-label">IV Percentile</div>
+                    <div class="summary-card-value" id="ivpDisplay">-</div>
+                </div>
+            </div>
+            <div class="summary-card summary-card-highlight">
+                <div class="summary-card-icon">🎯</div>
+                <div class="summary-card-content">
+                    <div class="summary-card-label">Total Spreads Found</div>
+                    <div class="summary-card-value" id="totalSpreads">-</div>
+                    <div class="summary-card-breakdown">
+                        <span class="breakdown-pcs"><span id="pcsCount">0</span> PCS</span>
+                        <span class="breakdown-divider">|</span>
+                        <span class="breakdown-ccs"><span id="ccsCount">0</span> CCS</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection">
+            <!-- Loading State - Enhanced with skeleton -->
+            <div id="loadingState" class="loading-state" style="display: none;">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Scanning for credit spreads...</div>
+                <div class="loading-subtext">Analyzing options chains and computing scores</div>
+            </div>
+
+            <!-- Empty State - Improved guidance -->
+            <div id="emptyState" class="empty-state">
+                <div class="empty-state-icon">📊</div>
+                <h3 class="empty-state-title">Ready to Screen</h3>
+                <p class="empty-state-text">Select your parameters above and click <strong>"Run Screener"</strong> to find credit spread opportunities.</p>
+                <div class="empty-state-tips">
+                    <div class="tip">
+                        <span class="tip-icon">💡</span>
+                        <span><strong>PCS (Bullish)</strong>: Profit when stock stays above short strike</span>
+                    </div>
+                    <div class="tip">
+                        <span class="tip-icon">💡</span>
+                        <span><strong>CCS (Bearish)</strong>: Profit when stock stays below short strike</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PCS Results Table -->
+            <div id="pcsTableContainer" class="results-table-container" style="display: none;">
+                <div class="results-table-header">
+                    <h3 class="results-table-title">
+                        Put Credit Spreads (PCS)
+                        <span class="spread-badge spread-badge-bullish">Bullish</span>
+                    </h3>
+                    <p class="results-table-subtitle">Profit if underlying stays above short strike</p>
+                </div>
+                <div class="table-scroll-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable col-exp" data-sort="expiration">Exp</th>
+                                <th class="sortable col-dte" data-sort="dte">DTE</th>
+                                <th class="sortable col-strike" data-sort="short_strike">Short</th>
+                                <th class="sortable col-strike" data-sort="long_strike">Long</th>
+                                <th class="sortable col-money" data-sort="credit">Credit</th>
+                                <th class="sortable col-pct" data-sort="roc">ROC</th>
+                                <th class="sortable col-delta hide-mobile" data-sort="short_delta">Delta</th>
+                                <th class="sortable col-pct" data-sort="prob_profit">Win%</th>
+                                <th class="sortable col-money hide-mobile" data-sort="break_even">BE</th>
+                                <th class="sortable col-score" data-sort="total_score">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pcsBody"></tbody>
+                    </table>
+                </div>
+                <!-- Mobile Card View -->
+                <div id="pcsMobileCards" class="mobile-cards-container"></div>
+            </div>
+
+            <!-- CCS Results Table -->
+            <div id="ccsTableContainer" class="results-table-container" style="display: none;">
+                <div class="results-table-header">
+                    <h3 class="results-table-title">
+                        Call Credit Spreads (CCS)
+                        <span class="spread-badge spread-badge-bearish">Bearish</span>
+                    </h3>
+                    <p class="results-table-subtitle">Profit if underlying stays below short strike</p>
+                </div>
+                <div class="table-scroll-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable col-exp" data-sort="expiration">Exp</th>
+                                <th class="sortable col-dte" data-sort="dte">DTE</th>
+                                <th class="sortable col-strike" data-sort="short_strike">Short</th>
+                                <th class="sortable col-strike" data-sort="long_strike">Long</th>
+                                <th class="sortable col-money" data-sort="credit">Credit</th>
+                                <th class="sortable col-pct" data-sort="roc">ROC</th>
+                                <th class="sortable col-delta hide-mobile" data-sort="short_delta">Delta</th>
+                                <th class="sortable col-pct" data-sort="prob_profit">Win%</th>
+                                <th class="sortable col-money hide-mobile" data-sort="break_even">BE</th>
+                                <th class="sortable col-score" data-sort="total_score">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ccsBody"></tbody>
+                    </table>
+                </div>
+                <!-- Mobile Card View -->
+                <div id="ccsMobileCards" class="mobile-cards-container"></div>
+            </div>
+
+            <!-- No Results State -->
+            <div id="noResultsState" class="empty-state" style="display: none;">
+                <div class="empty-state-icon">🔍</div>
+                <h3 class="empty-state-title">No Spreads Found</h3>
+                <p class="empty-state-text">No spreads match your current criteria. Try adjusting the filters:</p>
+                <ul class="empty-state-suggestions">
+                    <li>Increase the Max DTE range</li>
+                    <li>Lower the Min ROC threshold</li>
+                    <li>Widen the Delta range</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Legend Section - Cleaner layout -->
+        <section class="legend-card" id="legendSection" style="display: none;">
+            <div class="legend-header">
+                <h4 class="legend-title">Understanding the Metrics</h4>
+            </div>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <span class="legend-term">ROC</span>
+                    <span class="legend-def">Return on Capital (Credit / Max Loss)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-term">Delta</span>
+                    <span class="legend-def">Short leg delta (lower = further OTM, higher win rate)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-term">Win%</span>
+                    <span class="legend-def">Estimated probability of profit at expiration</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-term">BE</span>
+                    <span class="legend-def">Break-even price at expiration</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-term">Score</span>
+                    <span class="legend-def">Composite ranking based on ROC, liquidity & slippage</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-term delta-estimated">*</span>
+                    <span class="legend-def">Delta was estimated using Black-Scholes (not from broker)</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>Option Chain Analysis - For educational purposes only. Not financial advice.</p>
+    </footer>
+
+    <script src="/static/js/credit_spreads.js"></script>
+</body>
+</html>

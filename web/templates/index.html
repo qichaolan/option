@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Recommended LEAPS - Options Ranking & ROI Simulator</title>
+    <title>Option Chain Analysis - LEAPS Ranking & Credit Spreads</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -11,12 +11,34 @@
     <header class="header">
         <div class="container">
             <div class="header-content">
-                <div class="logo">AI Recommended LEAPS</div>
+                <div class="logo">Option Chain Analysis</div>
+                <nav class="main-nav">
+                    <a href="/" class="nav-link active">LEAPS Ranker</a>
+                    <a href="/credit-spreads" class="nav-link">Credit Spreads</a>
+                </nav>
             </div>
         </div>
     </header>
 
     <main class="container">
+        <!-- Feature Cards -->
+        <section class="feature-cards">
+            <a href="/credit-spreads" class="feature-card feature-card-highlight">
+                <div class="feature-card-icon">📊</div>
+                <div class="feature-card-content">
+                    <h3>Credit Spreads Screener</h3>
+                    <p>Scan for optimal Put Credit Spreads (PCS) and Call Credit Spreads (CCS)</p>
+                </div>
+                <div class="feature-card-arrow">→</div>
+            </a>
+        </section>
+
+        <!-- LEAPS Section Header -->
+        <div class="section-header">
+            <h2>AI Recommended LEAPS</h2>
+            <p>Long-term equity anticipation securities ranked by probability and ROI</p>
+        </div>
+
         <!-- Mobile Section Navigation -->
         <nav class="section-nav" id="sectionNav">
             <div class="section-nav-links">
@@ -160,7 +182,7 @@
 
     <!-- Footer -->
     <footer style="text-align: center; padding: 2rem; color: var(--text-secondary); font-size: 0.875rem;">
-        <p>LEAPS Ranker - For educational purposes only. Not financial advice.</p>
+        <p>Option Chain Analysis - For educational purposes only. Not financial advice.</p>
     </footer>
 
     <script src="/static/js/app.js"></script>
