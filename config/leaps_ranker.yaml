@@ -1,0 +1,116 @@
+# LEAPS Ranker Configuration
+# ===========================
+# Configuration file for the LEAPS (Long-term Equity Anticipation Securities) ranker CLI tool.
+# This file controls scoring weights, filtering parameters, and display options.
+
+# -----------------------------------------------------------------------------
+# Scoring Mode Weights
+# -----------------------------------------------------------------------------
+# Define weights for each scoring mode. Weights should sum to 1.0 within each mode.
+# - ease_weight: How much to favor contracts that are easier to reach profitability
+# - roi_weight: How much to favor contracts with higher ROI potential
+
+scoring_modes:
+  high_prob:
+    description: "High-Probability mode - favors contracts with higher chance of profit"
+    ease_weight: 0.70
+    roi_weight: 0.30
+
+  high_convexity:
+    description: "High-Convexity mode - favors contracts with higher ROI potential"
+    ease_weight: 0.30
+    roi_weight: 0.70
+
+# -----------------------------------------------------------------------------
+# Default Scoring Mode
+# -----------------------------------------------------------------------------
+# Which mode to use when --mode is not specified
+default_mode: "high_prob"
+
+# -----------------------------------------------------------------------------
+# LEAPS Filtering Parameters
+# -----------------------------------------------------------------------------
+filtering:
+  # Minimum days to expiration to qualify as a LEAP
+  min_dte: 365
+
+  # Maximum distance from target price (as fraction) to include a contract
+  # Contracts with strike too far from target will be filtered out
+  # Example: 0.5 means contracts with strike > target_price * 1.5 are excluded
+  max_target_distance_pct: 0.5
+
+  # By default, only keep contracts at the longest available expiry
+  longest_only: true
+
+# -----------------------------------------------------------------------------
+# Target Price Parameters
+# -----------------------------------------------------------------------------
+target:
+  # Default target percentage move in the underlying
+  # 0.5 = 50% move (target_price = current_price * 1.5)
+  default_target_pct: 0.3
+
+# -----------------------------------------------------------------------------
+# Contract Parameters
+# -----------------------------------------------------------------------------
+contract:
+  # Standard options contract multiplier
+  contract_size: 100
+
+  # Default option type (call or put)
+  option_type: "call"
+
+# -----------------------------------------------------------------------------
+# Display Options
+# -----------------------------------------------------------------------------
+display:
+  # Default number of top contracts to display
+  top_n: 20
+
+  # Decimal places for price columns
+  price_decimals: 2
+
+  # Decimal places for percentage/ratio columns
+  pct_decimals: 4
+
+  # Columns to display in output (in order)
+  # Available columns: contract_symbol, expiration, dte, strike,
+  # current_underlying_price, target_price, premium, cost, payoff_target,
+  # roi_target, ease_score, roi_score, score, delta, implied_volatility,
+  # open_interest, volume, mark
+  output_columns:
+    - contract_symbol
+    - expiration
+    - strike
+    - target_price
+    - premium
+    - cost
+    - payoff_target
+    - roi_target
+    - ease_score
+    - roi_score
+    - score
+    - implied_volatility
+    - open_interest
+
+# -----------------------------------------------------------------------------
+# OpenBB Provider Settings
+# -----------------------------------------------------------------------------
+provider:
+  # Default provider for options data
+  default: "cboe"
+
+  # Fallback providers to try if default fails (in order)
+  fallbacks:
+    - "yfinance"
+    - "intrinio"
+
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
+logging:
+  # Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+
+  # Log format
+  format: "%(asctime)s - %(levelname)s - %(message)s"

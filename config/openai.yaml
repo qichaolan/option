@@ -1,0 +1,41 @@
+# OpenAI API Configuration
+#
+# Instructions:
+# 1. Copy this file to openai_config.yaml
+# 2. Replace 'your_api_key_here' with your actual OpenAI API key
+# 3. Add openai_config.yaml to .gitignore (already done)
+#
+# Get your API key from: https://platform.openai.com/api-keys
+
+openai_api_key: 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
+
+# Model configuration
+# Available models:
+#   - gpt-4o-mini (recommended - fast and cost-effective)
+#   - gpt-4o (most capable)
+#   - gpt-4-turbo (older, but still capable)
+#   - gpt-4 (original GPT-4)
+#   - gpt-3.5-turbo (fastest, cheapest)
+model: gpt-5-mini
+
+# API call settings
+# Temperature controls randomness: 0 = deterministic, 2 = very creative
+# Recommended: 0.7 for balanced, 1.0 for more creative, 0.3 for focused
+temperature: 1.0
+
+# Token limit for response
+# For newer models (gpt-4o, gpt-4o-mini): use max_completion_tokens
+# For older models (gpt-4, gpt-3.5-turbo): use max_tokens
+# Recommended ranges:
+#   - gpt-4o-mini: 1000-4096 (max: 16384)
+#   - gpt-4o: 1000-4096 (max: 16384)
+#   - gpt-4-turbo: 1000-4096 (max: 128000)
+#   - gpt-4: 1000-4096 (max: 8192)
+#   - gpt-3.5-turbo: 1000-4096 (max: 16385)
+max_completion_tokens: 128000
+
+# User-Agent for SEC.gov requests
+# SEC.gov requires identification per their fair access policy
+# Format: "Company/Version (Description; contact.email@domain.com)"
+# Replace with your actual contact information
+user_agent: "PersonalResearch/1.0 (Python SEC filing analyzer; lanqichao@gmail.com)"
