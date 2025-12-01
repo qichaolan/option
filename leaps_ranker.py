@@ -647,9 +647,9 @@ def _compute_ease_score(
     Uses three anchor points with linear interpolation:
     - Deep ITM (strike << underlying): score = 1.00
     - ATM (strike = underlying): score = 0.90
-    - Target price (strike = target): score = 0.85
+    - Target price (strike = target): score = 0.70
 
-    For strikes beyond target, deduct 0.03 for every 1% farther from target.
+    For strikes beyond target, deduct 0.05 for every 1% farther from target.
 
     Args:
         df: Options DataFrame with 'strike' column.
@@ -664,8 +664,8 @@ def _compute_ease_score(
     # Anchor point scores
     DEEP_ITM_SCORE = 1.00
     ATM_SCORE = 0.90
-    TARGET_SCORE = 0.85
-    BEYOND_TARGET_PENALTY_PER_PCT = 0.03
+    TARGET_SCORE = 0.70
+    BEYOND_TARGET_PENALTY_PER_PCT = 0.05
 
     # Calculate position of each strike relative to underlying and target
     strikes = df["strike"]
@@ -694,7 +694,7 @@ def _compute_ease_score(
         else:
             df.loc[mask_itm_to_atm, "ease_score"] = ATM_SCORE
 
-    # Case 2: ATM to Target - linear interpolation from 0.9 to 0.75
+    # Case 2: ATM to Target - linear interpolation from 0.9 to 0.70
     mask_atm_to_target = (strikes > underlying_price) & (strikes <= target_price)
     if mask_atm_to_target.any():
         # Distance from underlying to target
@@ -702,17 +702,17 @@ def _compute_ease_score(
         if otm_range > 0:
             # Position ratio: 0 at underlying, 1 at target
             position_in_otm = (strikes[mask_atm_to_target] - underlying_price) / otm_range
-            # Linear interpolation: 0.9 -> 0.75
+            # Linear interpolation: 0.9 -> 0.70
             df.loc[mask_atm_to_target, "ease_score"] = ATM_SCORE - (ATM_SCORE - TARGET_SCORE) * position_in_otm
         else:
             df.loc[mask_atm_to_target, "ease_score"] = TARGET_SCORE
 
-    # Case 3: Beyond target - start at 0.75 and deduct 0.03 per 1% beyond target
+    # Case 3: Beyond target - start at 0.70 and deduct 0.05 per 1% beyond target
     mask_beyond_target = strikes > target_price
     if mask_beyond_target.any():
         # Calculate how many percent beyond target each strike is
         pct_beyond_target = ((strikes[mask_beyond_target] - target_price) / target_price) * 100
-        # Deduct 0.03 for each 1% beyond target
+        # Deduct 0.05 for each 1% beyond target
         penalty = pct_beyond_target * BEYOND_TARGET_PENALTY_PER_PCT
         df.loc[mask_beyond_target, "ease_score"] = TARGET_SCORE - penalty
 
