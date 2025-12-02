@@ -685,11 +685,20 @@ def compute_metrics(
     df["cost"] = df["premium"] * contract_size
 
     # Compute ROI at target (as percentage)
-    df["roi_target"] = ((df["payoff_target"] - df["cost"]) / df["cost"]) * 100
+    # Avoid division by zero - set ROI to 0 for zero-cost contracts
+    df["roi_target"] = np.where(
+        df["cost"] > 0,
+        ((df["payoff_target"] - df["cost"]) / df["cost"]) * 100,
+        0.0
+    )
 
-    # Handle infinite ROI values
+    # Handle infinite/NaN ROI values - replace with 0 for safety
     df["roi_target"] = df["roi_target"].replace([np.inf, -np.inf], np.nan)
-    df["roi_target"] = df["roi_target"].fillna(df["roi_target"].min())
+    min_roi = df["roi_target"].min()
+    # If min is still NaN (all values are NaN), use 0
+    if pd.isna(min_roi):
+        min_roi = 0.0
+    df["roi_target"] = df["roi_target"].fillna(min_roi)
 
     # Compute ease score based on strike position relative to midpoint
     df = _compute_ease_score(df, underlying_price, target_price)
@@ -697,10 +706,17 @@ def compute_metrics(
     # Normalize ROI to 0-1 scale
     df = _normalize_roi_score(df)
 
+    # Ensure no NaN values in scores before computing final score
+    df["ease_score"] = df["ease_score"].fillna(0.0)
+    df["roi_score"] = df["roi_score"].fillna(0.0)
+
     # Compute final combined score
     ease_weight = weights["ease_weight"]
     roi_weight = weights["roi_weight"]
     df["score"] = (ease_weight * df["ease_score"]) + (roi_weight * df["roi_score"])
+
+    # Final safety check - ensure score is never NaN
+    df["score"] = df["score"].fillna(0.0)
 
     # Ensure numeric columns for volume and open interest
     for col in ["open_interest", "volume"]:
@@ -837,10 +853,13 @@ def _normalize_roi_score(df: pd.DataFrame) -> pd.DataFrame:
     # Normalize to max in dataset
     log_max = log_roi.max()
 
-    if log_max <= 0:
+    # Handle edge cases: NaN or zero max
+    if pd.isna(log_max) or log_max <= 0:
         df["roi_score"] = 0.0
     else:
         df["roi_score"] = log_roi / log_max
+        # Replace any remaining NaN with 0
+        df["roi_score"] = df["roi_score"].fillna(0.0)
 
     # Clamp to [0, 1]
     df["roi_score"] = df["roi_score"].clip(0, 1)
@@ -923,10 +942,14 @@ def format_output(
 
     for col in price_cols:
         if col in result.columns:
+            # Replace inf/NaN with 0 before rounding
+            result[col] = result[col].replace([np.inf, -np.inf], np.nan).fillna(0.0)
             result[col] = result[col].round(price_decimals)
 
     for col in pct_cols:
         if col in result.columns:
+            # Replace inf/NaN with 0 before rounding
+            result[col] = result[col].replace([np.inf, -np.inf], np.nan).fillna(0.0)
             result[col] = result[col].round(pct_decimals)
 
     return result

@@ -140,22 +140,26 @@ async def get_leaps_ranking(request: Request, leaps_request: LEAPSRequest):
         if "expiration" in df_out.columns:
             df_out = df_out[df_out["expiration"].notna() & (df_out["expiration"] != "")]
 
-        # Handle optional fields - convert NaN to None
-        if "implied_volatility" in df_out.columns:
-            df_out["implied_volatility"] = df_out["implied_volatility"].where(
-                df_out["implied_volatility"].notna() & (df_out["implied_volatility"] != 0), None
-            )
-        if "open_interest" in df_out.columns:
-            df_out["open_interest"] = df_out["open_interest"].where(
-                df_out["open_interest"].notna() & (df_out["open_interest"] != 0), None
-            )
-            # Convert to int where not None
-            df_out.loc[df_out["open_interest"].notna(), "open_interest"] = (
-                df_out.loc[df_out["open_interest"].notna(), "open_interest"].astype(int)
-            )
-
-        # Convert to list of dicts and then to Pydantic models
+        # Convert to list of dicts
         records = df_out.to_dict(orient="records")
+
+        # Clean up optional fields in each record (handle NaN -> None)
+        for record in records:
+            # Handle implied_volatility: NaN or 0 -> None
+            if "implied_volatility" in record:
+                val = record["implied_volatility"]
+                if val is None or (isinstance(val, float) and (not np.isfinite(val) or val == 0)):
+                    record["implied_volatility"] = None
+
+            # Handle open_interest: NaN or 0 -> None, otherwise convert to int
+            if "open_interest" in record:
+                val = record["open_interest"]
+                if val is None or (isinstance(val, float) and (not np.isfinite(val) or val == 0)):
+                    record["open_interest"] = None
+                elif val is not None:
+                    record["open_interest"] = int(val)
+
+        # Convert to Pydantic models
         contracts = []
         for record in records:
             try:

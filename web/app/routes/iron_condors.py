@@ -18,6 +18,7 @@ Units & Conventions:
 import datetime
 import hashlib
 import logging
+import math
 import re
 import sys
 import time
@@ -27,6 +28,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from slowapi import Limiter
@@ -246,6 +248,32 @@ def _compute_risk_reward_ratio(max_profit: float, max_loss: float) -> float:
     return round(max_profit / max_loss, 4)
 
 
+def _safe_float(val, default: float = 0.0) -> float:
+    """Safely convert value to float, handling NaN/inf."""
+    if val is None:
+        return default
+    try:
+        f = float(val)
+        if not np.isfinite(f):
+            return default
+        return f
+    except (ValueError, TypeError):
+        return default
+
+
+def _safe_int(val, default: int = 0) -> int:
+    """Safely convert value to int, handling NaN/inf."""
+    if val is None:
+        return default
+    try:
+        f = float(val)
+        if not np.isfinite(f):
+            return default
+        return int(f)
+    except (ValueError, TypeError):
+        return default
+
+
 def _condor_to_summary(condor: IronCondor, condor_id: str) -> IronCondorSummary:
     """Convert IronCondor object to API summary model."""
     return IronCondorSummary(
@@ -285,13 +313,13 @@ def _row_to_credit_spread(row: dict, symbol: str) -> CreditSpread:
         underlying=symbol,
         expiration=row["expiration"],
         spread_type=row["type"],  # Column is "type" not "spread_type"
-        short_strike=float(row["short_strike"]),
-        long_strike=float(row["long_strike"]),
-        credit=float(row["credit"]),
-        short_delta=abs(float(row.get("short_delta", 0.15))),
-        bid_ask_spread=float(row.get("bid_ask_spread", 0.10)),
-        volume=int(row.get("volume", 100)),
-        open_interest=int(row.get("open_interest", 500)),
+        short_strike=_safe_float(row.get("short_strike"), 0.0),
+        long_strike=_safe_float(row.get("long_strike"), 0.0),
+        credit=_safe_float(row.get("credit"), 0.0),
+        short_delta=abs(_safe_float(row.get("short_delta"), 0.15)),
+        bid_ask_spread=_safe_float(row.get("bid_ask_spread"), 0.10),
+        volume=_safe_int(row.get("volume"), 100),
+        open_interest=_safe_int(row.get("open_interest"), 500),
     )
 
 
@@ -309,8 +337,9 @@ def _get_underlying_price(df, symbol: str) -> float:
     # Try to get from screener data first (faster)
     if "underlying_price" in df.columns and not df["underlying_price"].isna().all():
         price = df["underlying_price"].iloc[0]
-        if price and price > 0:
-            return float(price)
+        safe_price = _safe_float(price, 0.0)
+        if safe_price > 0:
+            return safe_price
 
     # Fall back to yfinance
     try:

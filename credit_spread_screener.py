@@ -819,6 +819,13 @@ def score_spreads(df: pd.DataFrame, config: ScreenerConfig) -> pd.DataFrame:
         config.liquidity_weight * df["normalized_liquidity"]
     )
 
+    # Final safety: ensure no NaN/inf values in score columns
+    score_cols = ["total_score", "normalized_roc", "normalized_convexity",
+                  "normalized_slippage", "normalized_liquidity", "normalized_prob", "normalized_ease"]
+    for col in score_cols:
+        if col in df.columns:
+            df[col] = df[col].replace([np.inf, -np.inf], np.nan).fillna(0.0)
+
     return df
 
 

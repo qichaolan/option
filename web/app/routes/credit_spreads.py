@@ -112,8 +112,16 @@ async def screen_credit_spreads(request: Request, spread_request: CreditSpreadRe
             )
 
         # Get underlying price and IVP from first result (before filtering)
-        underlying_price = float(df["underlying_price"].iloc[0]) if len(df) > 0 else 0.0
-        ivp = float(df["ivp"].iloc[0]) if len(df) > 0 else 0.0
+        # Use safe conversion to handle potential NaN values
+        underlying_price = 0.0
+        ivp = 0.0
+        if len(df) > 0:
+            raw_price = df["underlying_price"].iloc[0]
+            raw_ivp = df["ivp"].iloc[0]
+            if raw_price is not None and np.isfinite(raw_price):
+                underlying_price = float(raw_price)
+            if raw_ivp is not None and np.isfinite(raw_ivp):
+                ivp = float(raw_ivp)
 
         # Count by type BEFORE filtering (so frontend can show available counts)
         total_pcs = len(df[df["type"] == "PCS"])
