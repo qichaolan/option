@@ -416,12 +416,14 @@ async def list_iron_condors(
 
     try:
         # Use credit spread screener to fetch PCS and CCS
+        # For Iron Condors, use tighter symmetrical delta range (0.10–0.20)
+        # This selects OTM options with ~10-20% delta on both sides
         config = ScreenerConfig(
             tickers=[symbol],
             min_dte=dte_min,
             max_dte=dte_max,
-            min_delta=0.08,  # Fixed filter for credit spreads
-            max_delta=0.30,
+            min_delta=0.10,  # Short leg delta floor (both puts and calls)
+            max_delta=0.20,  # Short leg delta ceiling (symmetrical for IC)
             max_width=10,
             min_roc=min_roc,
         )

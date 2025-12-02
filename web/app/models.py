@@ -144,8 +144,8 @@ class CreditSpreadRequest(BaseModel):
     symbol: str = Field(..., description="Ticker symbol (e.g., SPY, QQQ)")
     min_dte: int = Field(default=14, ge=7, le=60, description="Minimum days to expiration")
     max_dte: int = Field(default=30, ge=7, le=90, description="Maximum days to expiration")
-    min_delta: float = Field(default=0.10, ge=0.05, le=0.40, description="Minimum short leg delta")
-    max_delta: float = Field(default=0.30, ge=0.10, le=0.50, description="Maximum short leg delta")
+    min_delta: float = Field(default=0.08, ge=0.05, le=0.40, description="Minimum short leg delta")
+    max_delta: float = Field(default=0.35, ge=0.10, le=0.50, description="Maximum short leg delta")
     max_width: float = Field(default=10.0, ge=1.0, le=50.0, description="Maximum spread width in dollars")
     min_roc: float = Field(default=0.20, ge=0.05, le=1.0, description="Minimum return on capital")
     spread_type: Optional[Literal["PCS", "CCS", "ALL"]] = Field(

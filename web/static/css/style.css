@@ -986,6 +986,50 @@ tr[data-contract] {
     margin-right: auto;
 }
 
+/* Page Header - Compact variant (reduces vertical space) */
+.page-header-compact {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin: 0.75rem 0 0.875rem;
+    padding: 0;
+    flex-wrap: wrap;
+}
+
+.page-title-compact {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+.page-subtitle-compact {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Mobile: stack title/subtitle vertically */
+@media (max-width: 640px) {
+    .page-header-compact {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+        margin: 0.5rem 0 0.75rem;
+    }
+
+    .page-title-compact {
+        font-size: 1.25rem;
+    }
+
+    .page-subtitle-compact {
+        font-size: 0.8125rem;
+    }
+}
+
 /* Strategy Introduction */
 .strategy-intro {
     background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(37, 99, 235, 0.02) 100%);
@@ -2636,4 +2680,267 @@ tr.selected-for-sim::after {
     min-height: 120px;
     color: var(--text-secondary);
     font-size: 0.875rem;
+}
+
+/* ============================================
+   LEAPS RANKER - COMPACT & HIGH DENSITY STYLES
+   ============================================ */
+
+/* Compact Summary Cards - 30% smaller than default */
+.summary-cards-compact {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.summary-card-sm {
+    padding: 0.75rem;
+    gap: 0.5rem;
+}
+
+.summary-card-sm .summary-card-icon {
+    font-size: 1.25rem;
+}
+
+.summary-card-sm .summary-card-label {
+    font-size: 0.625rem;
+}
+
+.summary-card-sm .summary-card-value {
+    font-size: 1.125rem;
+}
+
+/* Compact Empty State */
+.empty-state-compact {
+    padding: 2rem 1.5rem;
+}
+
+.empty-state-compact .empty-state-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.empty-state-compact .empty-state-title {
+    font-size: 1.125rem;
+    margin-bottom: 0.375rem;
+}
+
+.empty-state-compact .empty-state-text {
+    font-size: 0.875rem;
+}
+
+.empty-state-compact .empty-state-tips {
+    margin-top: 1rem;
+    gap: 0.5rem;
+}
+
+.empty-state-compact .tip {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+}
+
+/* Compact Results Table Header */
+.results-table-header-compact {
+    padding: 0.75rem 1rem;
+}
+
+.results-table-header-compact .results-table-title {
+    font-size: 0.9375rem;
+}
+
+.results-table-header-compact .results-table-subtitle {
+    font-size: 0.75rem;
+    margin-top: 0.125rem;
+}
+
+.results-table-header-compact .simulator-hint-banner {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.results-table-header-compact .simulator-hint-text {
+    font-size: 0.75rem;
+}
+
+/* Dense Data Table - Higher row density */
+.data-table-dense th {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.625rem;
+}
+
+.data-table-dense td {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.75rem;
+}
+
+.data-table-dense .score-badge {
+    padding: 0.125rem 0.375rem;
+    font-size: 0.6875rem;
+}
+
+/* Contract column - truncate long names */
+.data-table-dense .col-contract {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.6875rem;
+}
+
+/* Compact Simulator Section - 30% smaller */
+.simulator-section-compact {
+    padding: 1rem;
+    border-width: 1.5px;
+}
+
+.simulator-header-compact {
+    margin-bottom: 0.875rem;
+    padding-bottom: 0.75rem;
+}
+
+.simulator-title-compact {
+    font-size: 1rem;
+}
+
+.simulator-title-compact::before {
+    font-size: 1rem;
+}
+
+/* Compact Spread Info Grid */
+.simulator-spread-info-compact {
+    padding: 0.75rem;
+    margin-bottom: 0.875rem;
+}
+
+.spread-info-grid-compact {
+    gap: 0.625rem;
+}
+
+.spread-info-value-sm {
+    font-size: 0.875rem;
+}
+
+/* Compact Action Summary */
+.simulator-action-summary-compact {
+    padding: 0.875rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.action-profit-condition-compact {
+    font-size: 0.9375rem;
+    margin-bottom: 0.5rem;
+}
+
+.action-profit-condition-compact::before {
+    font-size: 1rem;
+}
+
+/* Compact Chart Container */
+.simulator-chart-container-compact {
+    margin-bottom: 1rem;
+}
+
+.simulator-chart-title-compact {
+    font-size: 0.875rem;
+    margin-bottom: 0.125rem;
+}
+
+.simulator-chart-subtitle-compact {
+    font-size: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Smaller simulator results grid */
+.simulator-section-compact .simulator-grid {
+    gap: 0.625rem;
+}
+
+.simulator-section-compact .simulator-result {
+    padding: 0.625rem;
+}
+
+.simulator-section-compact .simulator-result-label {
+    font-size: 0.625rem;
+}
+
+.simulator-section-compact .simulator-result-value {
+    font-size: 1rem;
+}
+
+/* Compact sim results table */
+.simulator-section-compact .sim-results-table table {
+    font-size: 0.75rem;
+}
+
+.simulator-section-compact .sim-contract-cell {
+    padding: 0.5rem;
+}
+
+.simulator-section-compact .sim-contract-name {
+    font-size: 0.6875rem;
+}
+
+.simulator-section-compact .sim-contract-details {
+    font-size: 0.625rem;
+}
+
+.simulator-section-compact .sim-contract-breakeven {
+    font-size: 0.625rem;
+}
+
+.simulator-section-compact .sim-roi-cell {
+    padding: 0.375rem;
+}
+
+.simulator-section-compact .sim-roi-value {
+    font-size: 0.75rem;
+}
+
+.simulator-section-compact .sim-roi-profit {
+    font-size: 0.5625rem;
+}
+
+/* Mobile adjustments for compact LEAPS */
+@media (max-width: 768px) {
+    .summary-cards-compact {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+
+    .summary-card-sm {
+        padding: 0.625rem;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .summary-card-sm .summary-card-icon {
+        font-size: 1rem;
+    }
+
+    .summary-card-sm .summary-card-value {
+        font-size: 1rem;
+    }
+
+    .data-table-dense th,
+    .data-table-dense td {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.6875rem;
+    }
+
+    .simulator-section-compact {
+        padding: 0.875rem;
+    }
+
+    .spread-info-grid-compact {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .summary-cards-compact {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .spread-info-grid-compact {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }

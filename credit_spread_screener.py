@@ -42,8 +42,8 @@ class ScreenerConfig:
     tickers: list[str]
     min_dte: int = 14
     max_dte: int = 30
-    min_delta: float = 0.10
-    max_delta: float = 0.30  # Wider default range to capture more spreads
+    min_delta: float = 0.08  # Short leg delta floor
+    max_delta: float = 0.35  # Short leg delta ceiling
     max_width: float = 10.0
     min_roc: float = 0.20
     min_ivp: int = 40
