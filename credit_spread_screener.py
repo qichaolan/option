@@ -64,7 +64,7 @@ class ScreenerConfig:
 
 def fetch_current_price(symbol: str) -> float:
     """
-    Fetch current underlying price using yfinance.
+    Fetch current underlying price using yfinance with retry logic.
 
     Parameters
     ----------
@@ -81,22 +81,47 @@ def fetch_current_price(symbol: str) -> float:
     ValueError
         If price cannot be retrieved.
     """
+    import time
     import yfinance as yf
 
-    try:
-        stock = yf.Ticker(symbol.upper())
-        info = stock.info
-        price = info.get("regularMarketPrice") or info.get("currentPrice") or info.get("previousClose")
+    max_retries = 3
 
-        if price is None:
-            hist = stock.history(period="1d")
-            if not hist.empty:
-                price = hist["Close"].iloc[-1]
+    for attempt in range(max_retries):
+        try:
+            stock = yf.Ticker(symbol.upper())
 
-        if price is not None:
-            return float(price)
-    except Exception as exc:
-        logger.debug(f"yfinance failed for {symbol}: {exc}")
+            # Method 1: Try fast history first (more reliable than ticker.info in cloud environments)
+            try:
+                hist = stock.history(period="1d", timeout=10)
+                if not hist.empty:
+                    price = hist["Close"].iloc[-1]
+                    logger.debug(f"Got {symbol} price from history: ${price:.2f}")
+                    return float(price)
+            except Exception as exc:
+                logger.debug(f"History lookup failed for {symbol}: {exc}")
+
+            # Method 2: Try ticker.info as fallback (may timeout in cloud)
+            try:
+                info = stock.info
+                price = info.get("regularMarketPrice") or info.get("currentPrice") or info.get("previousClose")
+                if price is not None:
+                    return float(price)
+            except Exception as exc:
+                logger.debug(f"ticker.info failed for {symbol}: {exc}")
+
+            # If we got here, both methods failed but without timeout - don't retry
+            break
+
+        except Exception as exc:
+            error_msg = str(exc).lower()
+            if "timeout" in error_msg or "curl" in error_msg or "connection" in error_msg:
+                if attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 2
+                    logger.warning(f"Price fetch attempt {attempt + 1} failed for {symbol}, retrying in {wait_time}s")
+                    time.sleep(wait_time)
+                    continue
+            logger.debug(f"Price fetch failed for {symbol}: {exc}")
+            break
 
     raise ValueError(f"Could not fetch price for {symbol}")
 
@@ -203,37 +228,67 @@ def estimate_delta(
 
 
 def _fetch_chain_yfinance(symbol: str) -> pd.DataFrame:
-    """Fallback to fetch option chain directly from yfinance."""
-    try:
-        import yfinance as yf
-        stock = yf.Ticker(symbol.upper())
-        expirations = stock.options
+    """Fallback to fetch option chain directly from yfinance with retry logic."""
+    import time
+    import yfinance as yf
 
-        all_chains = []
-        for exp in expirations:
-            try:
-                opt = stock.option_chain(exp)
-                calls = opt.calls.copy()
-                calls["option_type"] = "call"
-                puts = opt.puts.copy()
-                puts["option_type"] = "put"
-                calls["expiration"] = pd.to_datetime(exp)
-                puts["expiration"] = pd.to_datetime(exp)
-                all_chains.extend([calls, puts])
-            except Exception:
-                continue
+    max_retries = 3
+    last_error = None
 
-        if all_chains:
-            return pd.concat(all_chains, ignore_index=True)
-    except Exception as exc:
-        logger.error(f"yfinance chain fetch failed for {symbol}: {exc}")
+    for attempt in range(max_retries):
+        try:
+            stock = yf.Ticker(symbol.upper())
+            expirations = stock.options
+
+            if not expirations:
+                logger.warning(f"No expirations found for {symbol}")
+                return pd.DataFrame()
+
+            all_chains = []
+            failed_count = 0
+
+            for exp in expirations:
+                try:
+                    opt = stock.option_chain(exp)
+                    calls = opt.calls.copy()
+                    calls["option_type"] = "call"
+                    puts = opt.puts.copy()
+                    puts["option_type"] = "put"
+                    calls["expiration"] = pd.to_datetime(exp)
+                    puts["expiration"] = pd.to_datetime(exp)
+                    all_chains.extend([calls, puts])
+                except Exception as e:
+                    failed_count += 1
+                    logger.debug(f"Failed to fetch chain for {exp}: {e}")
+                    # If too many consecutive failures with no data, might be systemic
+                    if failed_count > 5 and len(all_chains) == 0:
+                        raise RuntimeError(f"Too many chain fetch failures for {symbol}")
+                    continue
+
+            if all_chains:
+                return pd.concat(all_chains, ignore_index=True)
+
+            return pd.DataFrame()
+
+        except Exception as exc:
+            last_error = exc
+            error_msg = str(exc).lower()
+            # Retry on timeout/network errors
+            if "timeout" in error_msg or "curl" in error_msg or "connection" in error_msg:
+                if attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 2  # 2, 4, 6 seconds
+                    logger.warning(f"Attempt {attempt + 1} failed for {symbol}, retrying in {wait_time}s: {exc}")
+                    time.sleep(wait_time)
+                    continue
+            logger.error(f"yfinance chain fetch failed for {symbol}: {exc}")
+            break
 
     return pd.DataFrame()
 
 
 def fetch_iv_percentile(symbol: str) -> float:
     """
-    Fetch IV percentile for a symbol using yfinance.
+    Fetch IV percentile for a symbol using yfinance with retry logic.
 
     Uses historical volatility data to compute percentile (as a proxy for IV percentile).
     Falls back to a default if historical data is unavailable.
@@ -248,33 +303,46 @@ def fetch_iv_percentile(symbol: str) -> float:
     float
         IV percentile (0-100).
     """
+    import time
     import yfinance as yf
 
-    try:
-        # Fetch 1 year of historical data
-        stock = yf.Ticker(symbol.upper())
-        df = stock.history(period="1y")
+    max_retries = 2  # Fewer retries since this is non-critical
 
-        if df.empty:
-            return 50.0
+    for attempt in range(max_retries):
+        try:
+            # Fetch 1 year of historical data
+            stock = yf.Ticker(symbol.upper())
+            df = stock.history(period="1y", timeout=15)
 
-        # Calculate historical volatility (20-day rolling)
-        df["returns"] = df["Close"].pct_change()
-        df["hv_20"] = df["returns"].rolling(window=20).std() * np.sqrt(252)
+            if df.empty:
+                return 50.0
 
-        # Get current HV and compute percentile
-        current_hv = df["hv_20"].iloc[-1]
-        if pd.isna(current_hv):
-            return 50.0
+            # Calculate historical volatility (20-day rolling)
+            df["returns"] = df["Close"].pct_change()
+            df["hv_20"] = df["returns"].rolling(window=20).std() * np.sqrt(252)
 
-        hv_values = df["hv_20"].dropna()
-        ivp = (hv_values < current_hv).sum() / len(hv_values) * 100
+            # Get current HV and compute percentile
+            current_hv = df["hv_20"].iloc[-1]
+            if pd.isna(current_hv):
+                return 50.0
 
-        return float(ivp)
+            hv_values = df["hv_20"].dropna()
+            ivp = (hv_values < current_hv).sum() / len(hv_values) * 100
 
-    except Exception as exc:
-        logger.debug(f"IV percentile calculation failed for {symbol}: {exc}")
-        return 50.0
+            return float(ivp)
+
+        except Exception as exc:
+            error_msg = str(exc).lower()
+            if "timeout" in error_msg or "curl" in error_msg or "connection" in error_msg:
+                if attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 2
+                    logger.warning(f"IVP fetch attempt {attempt + 1} failed for {symbol}, retrying in {wait_time}s")
+                    time.sleep(wait_time)
+                    continue
+            logger.debug(f"IV percentile calculation failed for {symbol}: {exc}")
+            break
+
+    return 50.0  # Default fallback
 
 
 def build_credit_spreads_from_chain(
@@ -393,8 +461,17 @@ def _build_put_credit_spreads(
                 continue
 
             # Calculate credit (sell short, buy long)
-            # Credit = short_bid - long_ask (conservative)
-            credit = short_bid - long_ask if short_bid > 0 and long_ask > 0 else 0
+            # Credit = short_bid - long_ask (conservative when available)
+            # Fall back to mid prices or last prices when market is closed
+            if short_bid > 0 and long_ask > 0:
+                credit = short_bid - long_ask
+            elif short_mid > 0 and long_mid > 0:
+                credit = short_mid - long_mid
+            else:
+                # Try using last trade prices as fallback
+                short_last = short_put.get("lastPrice") or short_put.get("last_trade_price", 0) or 0
+                long_last = long_put.get("lastPrice") or long_put.get("last_trade_price", 0) or 0
+                credit = short_last - long_last if short_last > 0 and long_last > 0 else 0
 
             if credit <= 0:
                 continue
@@ -513,8 +590,17 @@ def _build_call_credit_spreads(
                 continue
 
             # Calculate credit (sell short, buy long)
-            # Credit = short_bid - long_ask (conservative)
-            credit = short_bid - long_ask if short_bid > 0 and long_ask > 0 else 0
+            # Credit = short_bid - long_ask (conservative when available)
+            # Fall back to mid prices or last prices when market is closed
+            if short_bid > 0 and long_ask > 0:
+                credit = short_bid - long_ask
+            elif short_mid > 0 and long_mid > 0:
+                credit = short_mid - long_mid
+            else:
+                # Try using last trade prices as fallback
+                short_last = short_call.get("lastPrice") or short_call.get("last_trade_price", 0) or 0
+                long_last = long_call.get("lastPrice") or long_call.get("last_trade_price", 0) or 0
+                credit = short_last - long_last if short_last > 0 and long_last > 0 else 0
 
             if credit <= 0:
                 continue
@@ -604,6 +690,8 @@ def compute_spread_metrics(df: pd.DataFrame, config: ScreenerConfig) -> pd.DataF
     df["min_volume"] = df[["short_volume", "long_volume"]].min(axis=1)
     df["liquidity_raw"] = df[["min_oi", "min_volume"]].min(axis=1)
     df["liquidity_score"] = (df["liquidity_raw"] / liquidity_target).clip(0, 1)
+    # When market is closed, OI/volume may be 0 - use a minimum floor
+    df.loc[df["liquidity_score"] == 0, "liquidity_score"] = 0.15
 
     # Slippage score: vectorized calculation
     short_mid = (df["short_bid"] + df["short_ask"]) / 2

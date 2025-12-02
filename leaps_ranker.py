@@ -145,68 +145,145 @@ def _get_yfinance_options_chain(
 
     logger.info(f"Fetching options via yfinance for {symbol}")
 
+    # Retry logic for transient failures (timeouts, network issues)
+    max_retries = 3
+    last_error = None
+
+    for attempt in range(max_retries):
+        try:
+            ticker = yf.Ticker(symbol.upper())
+
+            # Get all expiration dates first (this is fast)
+            expirations = ticker.options
+            if not expirations:
+                raise ValueError(f"No options expirations found for {symbol}")
+
+            logger.info(f"Found {len(expirations)} expiration dates for {symbol}")
+
+            # Fetch all chains and combine
+            all_chains = []
+            underlying_price = 0
+            failed_count = 0
+
+            for exp in expirations:
+                try:
+                    opt_chain = ticker.option_chain(exp)
+                    if option_type == "call":
+                        chain = opt_chain.calls.copy()
+                    else:
+                        chain = opt_chain.puts.copy()
+
+                    chain["expiration"] = exp
+                    all_chains.append(chain)
+
+                    # Extract underlying price from the option chain if available
+                    if underlying_price == 0 and hasattr(opt_chain, 'underlying'):
+                        underlying_price = opt_chain.underlying.get('regularMarketPrice', 0)
+                except Exception as e:
+                    failed_count += 1
+                    logger.debug(f"Failed to fetch chain for {exp}: {e}")
+                    # If too many failures, might be a systemic issue
+                    if failed_count > 5 and len(all_chains) == 0:
+                        raise RuntimeError(f"Too many chain fetch failures for {symbol}")
+                    continue
+
+            if not all_chains:
+                raise ValueError(f"No {option_type} options data found for {symbol}")
+
+            df = pd.concat(all_chains, ignore_index=True)
+
+            # Calculate DTE
+            today = pd.Timestamp.now().normalize()
+            df["expiration_dt"] = pd.to_datetime(df["expiration"])
+            df["dte"] = (df["expiration_dt"] - today).dt.days
+
+            # Standardize column names from yfinance format
+            col_mapping = {
+                "contractSymbol": "contract_symbol",
+                "lastPrice": "last_trade_price",
+                "openInterest": "open_interest",
+                "impliedVolatility": "implied_volatility",
+            }
+            df = df.rename(columns=col_mapping)
+
+            # Add mark as mid price
+            if "bid" in df.columns and "ask" in df.columns:
+                df["mark"] = (df["bid"].fillna(0) + df["ask"].fillna(0)) / 2
+
+            # If we still don't have underlying price, try to get it from ticker.info
+            # with a short timeout, or estimate from ATM options
+            if underlying_price == 0:
+                underlying_price = _get_underlying_price_fallback(ticker, df, symbol)
+
+            # Add underlying price
+            df["underlying_price"] = underlying_price
+
+            return df, underlying_price
+
+        except Exception as e:
+            last_error = e
+            error_msg = str(e).lower()
+            # Only retry on timeout/network errors
+            if "timeout" in error_msg or "curl" in error_msg or "connection" in error_msg:
+                if attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 2  # 2, 4, 6 seconds
+                    logger.warning(f"Attempt {attempt + 1} failed for {symbol}, retrying in {wait_time}s: {e}")
+                    import time
+                    time.sleep(wait_time)
+                    continue
+            # Non-retryable error, raise immediately
+            raise RuntimeError(f"yfinance failed for {symbol}: {e}") from e
+
+    # All retries exhausted
+    raise RuntimeError(f"yfinance failed for {symbol} after {max_retries} attempts: {last_error}") from last_error
+
+
+def _get_underlying_price_fallback(ticker, df: pd.DataFrame, symbol: str) -> float:
+    """
+    Get underlying price using fallback methods when ticker.info times out.
+
+    Tries multiple approaches:
+    1. Fast history lookup (1 day)
+    2. Estimate from ATM option strikes
+    """
+    import yfinance as yf
+
+    # Method 1: Try fast history (usually faster than ticker.info)
     try:
-        ticker = yf.Ticker(symbol.upper())
-
-        # Get underlying price
-        info = ticker.info
-        underlying_price = info.get("regularMarketPrice") or info.get(
-            "previousClose", 0
-        )
-
-        # Get all expiration dates
-        expirations = ticker.options
-        if not expirations:
-            raise ValueError(f"No options expirations found for {symbol}")
-
-        logger.info(f"Found {len(expirations)} expiration dates for {symbol}")
-
-        # Fetch all chains and combine
-        all_chains = []
-        for exp in expirations:
-            try:
-                opt_chain = ticker.option_chain(exp)
-                if option_type == "call":
-                    chain = opt_chain.calls.copy()
-                else:
-                    chain = opt_chain.puts.copy()
-
-                chain["expiration"] = exp
-                all_chains.append(chain)
-            except Exception as e:
-                logger.debug(f"Failed to fetch chain for {exp}: {e}")
-                continue
-
-        if not all_chains:
-            raise ValueError(f"No {option_type} options data found for {symbol}")
-
-        df = pd.concat(all_chains, ignore_index=True)
-
-        # Calculate DTE
-        today = pd.Timestamp.now().normalize()
-        df["expiration_dt"] = pd.to_datetime(df["expiration"])
-        df["dte"] = (df["expiration_dt"] - today).dt.days
-
-        # Standardize column names from yfinance format
-        col_mapping = {
-            "contractSymbol": "contract_symbol",
-            "lastPrice": "last_trade_price",
-            "openInterest": "open_interest",
-            "impliedVolatility": "implied_volatility",
-        }
-        df = df.rename(columns=col_mapping)
-
-        # Add mark as mid price
-        if "bid" in df.columns and "ask" in df.columns:
-            df["mark"] = (df["bid"].fillna(0) + df["ask"].fillna(0)) / 2
-
-        # Add underlying price
-        df["underlying_price"] = underlying_price
-
-        return df, underlying_price
-
+        hist = ticker.history(period="1d", timeout=10)
+        if not hist.empty:
+            price = hist["Close"].iloc[-1]
+            logger.info(f"Got {symbol} price from history: ${price:.2f}")
+            return float(price)
     except Exception as e:
-        raise RuntimeError(f"yfinance failed for {symbol}: {e}") from e
+        logger.debug(f"History lookup failed for {symbol}: {e}")
+
+    # Method 2: Estimate from option strikes (ATM options have strike ≈ underlying)
+    # Find strikes where calls and puts have similar prices (ATM region)
+    try:
+        if "strike" in df.columns and len(df) > 0:
+            # Get unique strikes sorted
+            strikes = sorted(df["strike"].unique())
+            if len(strikes) >= 3:
+                # ATM is typically in the middle of the strike range
+                mid_idx = len(strikes) // 2
+                estimated_price = strikes[mid_idx]
+                logger.info(f"Estimated {symbol} price from strikes: ${estimated_price:.2f}")
+                return float(estimated_price)
+    except Exception as e:
+        logger.debug(f"Strike estimation failed for {symbol}: {e}")
+
+    # Method 3: Last resort - try ticker.info with awareness it might timeout
+    try:
+        info = ticker.info
+        price = info.get("regularMarketPrice") or info.get("previousClose", 0)
+        if price > 0:
+            logger.info(f"Got {symbol} price from info: ${price:.2f}")
+            return float(price)
+    except Exception as e:
+        logger.warning(f"ticker.info failed for {symbol}: {e}")
+
+    raise ValueError(f"Could not determine underlying price for {symbol}")
 
 
 def fetch_options_chain(
