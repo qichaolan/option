@@ -986,6 +986,24 @@ tr[data-contract] {
     margin-right: auto;
 }
 
+/* Strategy Introduction */
+.strategy-intro {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(37, 99, 235, 0.02) 100%);
+    border: 1px solid rgba(37, 99, 235, 0.15);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin: 0 auto 1.5rem;
+    max-width: 800px;
+    text-align: center;
+}
+
+.strategy-intro-text {
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.6;
+}
+
 /* Controls Card - Main filter section */
 .controls-card {
     background: var(--card-bg);

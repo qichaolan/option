@@ -12,14 +12,16 @@
 
 scoring_modes:
   high_prob:
-    description: "High-Probability mode - favors contracts with higher chance of profit"
-    ease_weight: 0.70
-    roi_weight: 0.30
+    description: "High-Probability mode - favors ITM/ATM contracts with higher chance of profit"
+    ease_weight: 0.85
+    roi_weight: 0.15
+    # Favors: Lower strikes, higher delta, lower risk
 
   high_convexity:
-    description: "High-Convexity mode - favors contracts with higher ROI potential"
-    ease_weight: 0.30
-    roi_weight: 0.70
+    description: "High-Convexity mode - favors OTM contracts with higher leverage/ROI potential"
+    ease_weight: 0.10
+    roi_weight: 0.90
+    # Favors: Higher strikes near target, lower delta, higher potential returns
 
 # -----------------------------------------------------------------------------
 # Default Scoring Mode

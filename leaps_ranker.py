@@ -644,12 +644,14 @@ def _compute_ease_score(
     """
     Compute ease score based on how likely the option is to be profitable.
 
-    Uses three anchor points with linear interpolation:
-    - Deep ITM (strike << underlying): score = 1.00
-    - ATM (strike = underlying): score = 0.90
-    - Target price (strike = target): score = 0.70
+    Uses wider score ranges to better differentiate ITM vs OTM options:
+    - Deep ITM (strike <= 85% of underlying): score = 1.00
+    - ATM (strike = underlying): score = 0.70
+    - Target price (strike = target): score = 0.40
+    - Beyond target: rapidly decreasing score
 
-    For strikes beyond target, deduct 0.05 for every 1% farther from target.
+    This wider range (1.0 -> 0.4) creates stronger differentiation between
+    high-probability ITM options and speculative OTM options.
 
     Args:
         df: Options DataFrame with 'strike' column.
@@ -661,11 +663,11 @@ def _compute_ease_score(
     """
     df = df.copy()
 
-    # Anchor point scores
+    # Anchor point scores - wider range for better differentiation
     DEEP_ITM_SCORE = 1.00
-    ATM_SCORE = 0.90
-    TARGET_SCORE = 0.70
-    BEYOND_TARGET_PENALTY_PER_PCT = 0.05
+    ATM_SCORE = 0.70       # Was 0.90 - now much lower to separate from ITM
+    TARGET_SCORE = 0.40    # Was 0.70 - now much lower for OTM options
+    BEYOND_TARGET_PENALTY_PER_PCT = 0.08  # Was 0.05 - steeper penalty
 
     # Calculate position of each strike relative to underlying and target
     strikes = df["strike"]
@@ -673,15 +675,14 @@ def _compute_ease_score(
     # Initialize ease_score column
     df["ease_score"] = 0.0
 
-    # Case 1: Deep ITM (strike <= underlying) - linear interpolation from 1.0 to 0.9
-    # We consider "deep ITM" as strikes that are 10% or more below underlying
-    deep_itm_threshold = underlying_price * 0.90
+    # Case 1: Deep ITM - strikes that are 15% or more below underlying
+    deep_itm_threshold = underlying_price * 0.85  # Was 0.90
 
     # Strikes at or below deep ITM threshold get 1.0
     mask_deep_itm = strikes <= deep_itm_threshold
     df.loc[mask_deep_itm, "ease_score"] = DEEP_ITM_SCORE
 
-    # Strikes between deep ITM and ATM: linear interpolation 1.0 -> 0.9
+    # Strikes between deep ITM and ATM: linear interpolation 1.0 -> 0.70
     mask_itm_to_atm = (strikes > deep_itm_threshold) & (strikes <= underlying_price)
     if mask_itm_to_atm.any():
         # Distance from deep ITM threshold to underlying
@@ -689,12 +690,12 @@ def _compute_ease_score(
         if itm_range > 0:
             # Position ratio: 0 at deep ITM threshold, 1 at underlying
             position_in_itm = (strikes[mask_itm_to_atm] - deep_itm_threshold) / itm_range
-            # Linear interpolation: 1.0 -> 0.9
+            # Linear interpolation: 1.0 -> 0.70
             df.loc[mask_itm_to_atm, "ease_score"] = DEEP_ITM_SCORE - (DEEP_ITM_SCORE - ATM_SCORE) * position_in_itm
         else:
             df.loc[mask_itm_to_atm, "ease_score"] = ATM_SCORE
 
-    # Case 2: ATM to Target - linear interpolation from 0.9 to 0.70
+    # Case 2: ATM to Target - linear interpolation from 0.70 to 0.40
     mask_atm_to_target = (strikes > underlying_price) & (strikes <= target_price)
     if mask_atm_to_target.any():
         # Distance from underlying to target
@@ -702,17 +703,17 @@ def _compute_ease_score(
         if otm_range > 0:
             # Position ratio: 0 at underlying, 1 at target
             position_in_otm = (strikes[mask_atm_to_target] - underlying_price) / otm_range
-            # Linear interpolation: 0.9 -> 0.70
+            # Linear interpolation: 0.70 -> 0.40
             df.loc[mask_atm_to_target, "ease_score"] = ATM_SCORE - (ATM_SCORE - TARGET_SCORE) * position_in_otm
         else:
             df.loc[mask_atm_to_target, "ease_score"] = TARGET_SCORE
 
-    # Case 3: Beyond target - start at 0.70 and deduct 0.05 per 1% beyond target
+    # Case 3: Beyond target - start at 0.40 and deduct 0.08 per 1% beyond target
     mask_beyond_target = strikes > target_price
     if mask_beyond_target.any():
         # Calculate how many percent beyond target each strike is
         pct_beyond_target = ((strikes[mask_beyond_target] - target_price) / target_price) * 100
-        # Deduct 0.05 for each 1% beyond target
+        # Deduct 0.08 for each 1% beyond target (steeper penalty)
         penalty = pct_beyond_target * BEYOND_TARGET_PENALTY_PER_PCT
         df.loc[mask_beyond_target, "ease_score"] = TARGET_SCORE - penalty
 
@@ -724,14 +725,16 @@ def _compute_ease_score(
 
 def _normalize_roi_score(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Normalize ROI into a 0-1 score.
+    Normalize ROI into a 0-1 score using logarithmic scaling.
 
-    Uses 50% ROI as the floor (score = 0) and normalizes linearly to
-    the highest ROI in the dataset (score = 1).
+    Uses log scaling to better differentiate high-ROI options:
+    - ROI <= 0%: score = 0.0
+    - ROI = 100%: score ~= 0.5 (anchor point)
+    - ROI = 500%: score ~= 0.85
+    - ROI = 1000%+: score -> 1.0
 
-    - ROI <= 50%: score = 0.0
-    - ROI = max ROI: score = 1.0
-    - ROI between 50% and max: linearly interpolated
+    Log scaling helps separate OTM options with high potential ROI
+    from ITM options with lower but safer ROI.
 
     Args:
         df: Options DataFrame with 'roi_target' column.
@@ -743,16 +746,24 @@ def _normalize_roi_score(df: pd.DataFrame) -> pd.DataFrame:
 
     roi = df["roi_target"]
 
-    # Floor at 50% ROI
-    ROI_FLOOR = 50.0
-    roi_max = roi.max()
+    # Use log scaling for better differentiation at high ROI values
+    # Formula: score = log(1 + roi/100) / log(1 + max_roi/100)
+    # This gives more separation between 100%, 200%, 500%, 1000% ROI options
 
-    if roi_max <= ROI_FLOOR:
-        # All ROIs are at or below floor, give all 0
+    # Floor: ROI <= 0% gets score 0
+    roi_adjusted = roi.clip(lower=0)
+
+    # Log scale: log(1 + x) where x is ROI as decimal (100% = 1.0)
+    roi_decimal = roi_adjusted / 100.0
+    log_roi = np.log1p(roi_decimal)  # log(1 + roi_decimal)
+
+    # Normalize to max in dataset
+    log_max = log_roi.max()
+
+    if log_max <= 0:
         df["roi_score"] = 0.0
     else:
-        # Normalize: 50% -> 0, max -> 1
-        df["roi_score"] = (roi - ROI_FLOOR) / (roi_max - ROI_FLOOR)
+        df["roi_score"] = log_roi / log_max
 
     # Clamp to [0, 1]
     df["roi_score"] = df["roi_score"].clip(0, 1)
