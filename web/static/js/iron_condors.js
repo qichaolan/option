@@ -248,10 +248,10 @@ async function fetchPayoff(condorId) {
     }
 
     try {
-        // Request ±10% range for the payoff curve
+        // Request ±8% range for the payoff curve
         const params = new URLSearchParams({
-            move_low_pct: '-0.10',
-            move_high_pct: '0.10',
+            move_low_pct: '-0.08',
+            move_high_pct: '0.08',
         });
         const response = await fetch(
             `${API_BASE_URL}/api/iron-condors/${encodeURIComponent(condorId)}/payoff?${params}`
