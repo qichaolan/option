@@ -110,18 +110,20 @@ async def screen_credit_spreads(request: Request, spread_request: CreditSpreadRe
                 timestamp=datetime.utcnow().isoformat(),
             )
 
-        # Filter by spread type if specified
-        spread_type_filter = spread_request.spread_type or "ALL"
-        if spread_type_filter != "ALL":
-            df = df[df["type"] == spread_type_filter]
-
-        # Get underlying price and IVP from first result
+        # Get underlying price and IVP from first result (before filtering)
         underlying_price = float(df["underlying_price"].iloc[0]) if len(df) > 0 else 0.0
         ivp = float(df["ivp"].iloc[0]) if len(df) > 0 else 0.0
 
-        # Count by type
+        # Count by type BEFORE filtering (so frontend can show available counts)
         total_pcs = len(df[df["type"] == "PCS"])
         total_ccs = len(df[df["type"] == "CCS"])
+
+        # Filter by spread type if specified
+        spread_type_filter = spread_request.spread_type or "ALL"
+        logger.info(f"Spread type filter: {spread_type_filter}, total spreads: {len(df)} (PCS={total_pcs}, CCS={total_ccs})")
+        if spread_type_filter != "ALL":
+            df = df[df["type"] == spread_type_filter]
+            logger.info(f"After type filter: {len(df)} spreads remaining")
 
         # Convert to response model using vectorized to_dict (much faster than iterrows)
         # Rename 'type' column to 'spread_type' for the model
@@ -138,8 +140,21 @@ async def screen_credit_spreads(request: Request, spread_request: CreditSpreadRe
         available_cols = [c for c in result_columns if c in df_out.columns]
         df_out = df_out[available_cols]
 
+        # Handle NaN/inf in required float fields to prevent Pydantic validation errors
+        required_float_fields = [
+            "short_strike", "long_strike", "width", "credit", "max_loss", "roc",
+            "short_delta", "prob_profit", "iv", "ivp", "underlying_price",
+            "break_even", "break_even_distance_pct", "liquidity_score",
+            "slippage_score", "total_score"
+        ]
+        for col in required_float_fields:
+            if col in df_out.columns:
+                df_out[col] = df_out[col].replace([float('inf'), float('-inf')], float('nan'))
+                df_out[col] = df_out[col].fillna(0.0)
+
         # Convert to list of dicts and then to Pydantic models
         records = df_out.to_dict(orient="records")
+        logger.info(f"Converting {len(records)} spreads to response model")
         spreads = [CreditSpreadResult(**record) for record in records]
 
         return CreditSpreadResponse(

@@ -399,7 +399,14 @@ def build_credit_spreads_from_chain(
     if not spreads:
         return pd.DataFrame()
 
-    return pd.DataFrame(spreads)
+    # Log spread type breakdown
+    df = pd.DataFrame(spreads)
+    pcs_count = len(df[df["type"] == "PCS"])
+    ccs_count = len(df[df["type"] == "CCS"])
+    if pcs_count == 0 or ccs_count == 0:
+        logger.info(f"Spread type imbalance for {symbol}: PCS={pcs_count}, CCS={ccs_count}")
+
+    return df
 
 
 def _build_put_credit_spreads(
@@ -413,6 +420,11 @@ def _build_put_credit_spreads(
 ) -> list[dict]:
     """Build Put Credit Spreads from puts chain."""
     spreads = []
+    # Debug counters
+    delta_filtered = 0
+    credit_filtered = 0
+    roc_filtered = 0
+    max_loss_filtered = 0
 
     # Sort puts by strike descending (higher strikes first for short leg)
     puts = puts.sort_values("strike", ascending=False).reset_index(drop=True)
@@ -421,6 +433,7 @@ def _build_put_credit_spreads(
     otm_puts = puts[puts["strike"] < underlying_price].copy()
 
     if len(otm_puts) < 2:
+        logger.debug(f"PCS {symbol} exp {expiration}: Not enough OTM puts ({len(otm_puts)})")
         return spreads
 
     puts_array = otm_puts.to_dict("records")
@@ -444,6 +457,7 @@ def _build_put_credit_spreads(
 
         # Check delta range for short leg
         if not (config.min_delta <= short_delta <= config.max_delta):
+            delta_filtered += 1
             continue
 
         # Find valid long puts (lower strikes)
@@ -474,18 +488,21 @@ def _build_put_credit_spreads(
                 credit = short_last - long_last if short_last > 0 and long_last > 0 else 0
 
             if credit <= 0:
+                credit_filtered += 1
                 continue
 
             # Calculate max loss
             max_loss = width - credit
 
             if max_loss <= 0:
+                max_loss_filtered += 1
                 continue
 
             # Calculate ROC
             roc = credit / max_loss
 
             if roc < config.min_roc:
+                roc_filtered += 1
                 continue
 
             # Break-even for PCS: short_strike - credit
@@ -527,6 +544,14 @@ def _build_put_credit_spreads(
                 "long_ask": long_ask,
             }
             spreads.append(spread)
+
+    # Log debug info if no PCS spreads found
+    if len(spreads) == 0 and (delta_filtered > 0 or credit_filtered > 0 or roc_filtered > 0):
+        logger.debug(
+            f"PCS {symbol} exp {expiration}: delta_filtered={delta_filtered}, "
+            f"credit_filtered={credit_filtered}, max_loss_filtered={max_loss_filtered}, "
+            f"roc_filtered={roc_filtered}"
+        )
 
     return spreads
 

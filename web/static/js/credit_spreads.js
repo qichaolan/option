@@ -260,6 +260,22 @@ function updateUI(data) {
         elements.ccsTableContainer.style.display = 'none';
         elements.noResultsState.style.display = 'block';
         elements.legendSection.style.display = 'none';
+
+        // Update no results message with helpful info
+        const noResultsTitle = elements.noResultsState.querySelector('.empty-state-title');
+        const noResultsText = elements.noResultsState.querySelector('.empty-state-text');
+        const spreadType = elements.spreadTypeSelect.value;
+
+        if (spreadType === 'PCS' && data.total_ccs > 0) {
+            if (noResultsTitle) noResultsTitle.textContent = 'No Put Credit Spreads Found';
+            if (noResultsText) noResultsText.innerHTML = `No bullish put spreads meet the current criteria.<br>However, <strong>${data.total_ccs} bearish call spreads</strong> are available. Try switching to "Bearish (Call Credit Spread)".`;
+        } else if (spreadType === 'CCS' && data.total_pcs > 0) {
+            if (noResultsTitle) noResultsTitle.textContent = 'No Call Credit Spreads Found';
+            if (noResultsText) noResultsText.innerHTML = `No bearish call spreads meet the current criteria.<br>However, <strong>${data.total_pcs} bullish put spreads</strong> are available. Try switching to "Bullish (Put Credit Spread)".`;
+        } else {
+            if (noResultsTitle) noResultsTitle.textContent = 'No Spreads Found';
+            if (noResultsText) noResultsText.textContent = 'No spreads match your current criteria. Try adjusting the filters.';
+        }
         return;
     }
 
@@ -459,7 +475,7 @@ function setLoading(loading) {
         elements.emptyState.style.display = 'none';
         elements.noResultsState.style.display = 'none';
     } else {
-        elements.runScreenerBtn.innerHTML = '<span class="btn-icon">&#9654;</span> Run Screener';
+        elements.runScreenerBtn.innerHTML = '<span class="btn-icon">&#9654;</span> Find Spreads';
         elements.loadingState.style.display = 'none';
     }
 }

@@ -120,6 +120,23 @@ async def get_leaps_ranking(request: Request, leaps_request: LEAPSRequest):
         available_cols = [c for c in contract_columns if c in df.columns]
         df_out = df[available_cols].copy()
 
+        # Required float fields - replace NaN/inf with 0 to prevent Pydantic validation errors
+        required_float_fields = [
+            "strike", "target_price", "premium", "cost", "payoff_target",
+            "roi_target", "ease_score", "roi_score", "score"
+        ]
+        for col in required_float_fields:
+            if col in df_out.columns:
+                # Replace inf with NaN first, then fill NaN with 0
+                df_out[col] = df_out[col].replace([float('inf'), float('-inf')], float('nan'))
+                df_out[col] = df_out[col].fillna(0.0)
+
+        # Filter out rows with missing required string fields
+        if "contract_symbol" in df_out.columns:
+            df_out = df_out[df_out["contract_symbol"].notna() & (df_out["contract_symbol"] != "")]
+        if "expiration" in df_out.columns:
+            df_out = df_out[df_out["expiration"].notna() & (df_out["expiration"] != "")]
+
         # Handle optional fields - convert NaN to None
         if "implied_volatility" in df_out.columns:
             df_out["implied_volatility"] = df_out["implied_volatility"].where(
