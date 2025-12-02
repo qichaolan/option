@@ -534,10 +534,10 @@ async def get_iron_condor_payoff(
     request: Request,
     condor_id: str,
     move_low_pct: float = Query(
-        default=-0.05, ge=-0.30, le=0.0, description="Lower move bound (e.g., -0.05 = -5%)"
+        default=-0.10, ge=-0.30, le=0.0, description="Lower move bound (e.g., -0.10 = -10%)"
     ),
     move_high_pct: float = Query(
-        default=0.05, ge=0.0, le=0.30, description="Upper move bound (e.g., 0.05 = +5%)"
+        default=0.10, ge=0.0, le=0.30, description="Upper move bound (e.g., 0.10 = +10%)"
     ),
     step_pct: float = Query(
         default=0.01, ge=0.005, le=0.05, description="Step size (e.g., 0.01 = 1%)"

@@ -248,8 +248,13 @@ async function fetchPayoff(condorId) {
     }
 
     try {
+        // Request ±10% range for the payoff curve
+        const params = new URLSearchParams({
+            move_low_pct: '-0.10',
+            move_high_pct: '0.10',
+        });
         const response = await fetch(
-            `${API_BASE_URL}/api/iron-condors/${encodeURIComponent(condorId)}/payoff`
+            `${API_BASE_URL}/api/iron-condors/${encodeURIComponent(condorId)}/payoff?${params}`
         );
 
         if (!response.ok) {
@@ -468,7 +473,7 @@ function renderMobileCards(condors) {
                     </div>
                 </div>
                 <div class="mobile-card-action">
-                    <span class="tap-to-simulate">Tap to see payoff chart &rarr;</span>
+                    <span class="tap-to-simulate">Tap to simulate P/L &rarr;</span>
                 </div>
             </div>
         `;

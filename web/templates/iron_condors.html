@@ -141,7 +141,7 @@
                         <p class="results-table-subtitle">Top 20 Iron Condors ranked by AI Score</p>
                         <div class="simulator-hint-banner">
                             <span class="simulator-hint-icon">👆</span>
-                            <span class="simulator-hint-text">Click any row to see the payoff chart</span>
+                            <span class="simulator-hint-text">Click any row to simulate P/L</span>
                         </div>
                     </div>
                     <div class="table-scroll-container">
@@ -180,11 +180,11 @@
                 </div>
             </section>
 
-            <!-- Payoff Chart Section (Right side on desktop) -->
+            <!-- P/L Simulator Section (Right side on desktop) -->
             <section class="simulator-section" id="payoffSection" style="display: none;">
                 <div class="simulator-header">
-                    <h2 class="simulator-title">Payoff Chart</h2>
-                    <button class="simulator-close" id="closePayoff" aria-label="Close chart">&times;</button>
+                    <h2 class="simulator-title">P/L Simulator</h2>
+                    <button class="simulator-close" id="closePayoff" aria-label="Close simulator">&times;</button>
                 </div>
 
                 <!-- Selected Condor Info -->
@@ -242,7 +242,7 @@
                 <!-- P/L Chart -->
                 <div class="simulator-chart-container">
                     <h3 class="simulator-chart-title">P/L at Expiration by % Move</h3>
-                    <p class="simulator-chart-subtitle">Shows profit/loss for 1 contract from -5% to +5% move</p>
+                    <p class="simulator-chart-subtitle">Shows profit/loss for 1 contract from -10% to +10% move</p>
                     <div class="simulator-chart" id="payoffChart">
                         <!-- Chart will be rendered here -->
                     </div>
