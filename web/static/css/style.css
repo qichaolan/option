@@ -2944,3 +2944,32 @@ tr.selected-for-sim::after {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+/* Mobile fix for LEAPS results table visibility */
+@media (max-width: 1023px) {
+    .page-layout .results-section {
+        /* Remove sticky behavior on mobile that can cause visibility issues */
+        position: static;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .page-layout .results-table-container {
+        /* Ensure table container doesn't have hidden overflow on mobile */
+        overflow: visible;
+    }
+
+    .page-layout .table-scroll-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Ensure data table rows are visible on mobile */
+    .page-layout .data-table-dense tbody {
+        display: table-row-group;
+    }
+
+    .page-layout .data-table-dense tr {
+        display: table-row;
+    }
+}

@@ -180,9 +180,9 @@ function updateUI(data) {
     state.contracts = data.contracts;
     state.underlyingPrice = data.underlying_price;
 
-    // Show info cards
+    // Show info cards (use grid, not flex - matches CSS)
     if (elements.infoCards) {
-        elements.infoCards.style.display = 'flex';
+        elements.infoCards.style.display = 'grid';
     }
 
     // Update info cards
