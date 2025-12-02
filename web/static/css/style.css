@@ -1594,6 +1594,18 @@ tr[data-contract] {
 .col-delta { text-align: center !important; min-width: 60px; }
 .col-score { text-align: center !important; min-width: 70px; }
 
+/* LEAPS Ranker specific column classes - matching header and body */
+.col-contract { text-align: left !important; min-width: 140px; }
+.col-expiration { text-align: left !important; min-width: 90px; }
+.col-premium { text-align: right !important; min-width: 80px; font-family: 'SF Mono', Monaco, monospace; }
+.col-cost { text-align: right !important; min-width: 80px; font-family: 'SF Mono', Monaco, monospace; }
+.col-payoff { text-align: right !important; min-width: 80px; font-family: 'SF Mono', Monaco, monospace; }
+.col-roi { text-align: right !important; min-width: 70px; }
+.col-ease { text-align: center !important; min-width: 60px; }
+.col-roi-score { text-align: center !important; min-width: 60px; }
+.col-iv { text-align: right !important; min-width: 60px; }
+.col-oi { text-align: right !important; min-width: 50px; }
+
 /* Mobile Cards Container - Alternative view */
 .mobile-cards-container {
     display: none;

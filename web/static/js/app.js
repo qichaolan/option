@@ -237,8 +237,8 @@ function renderTable(contracts) {
             <td class="col-expiration">${escapeHtml(c.expiration)}</td>
             <td class="col-strike">$${formatNumber(c.strike, 2)}</td>
             <td class="col-premium">$${formatNumber(c.premium, 2)}</td>
-            <td class="col-cost">$${formatNumber(c.cost, 0)}</td>
-            <td class="col-payoff">$${formatNumber(c.payoff_target, 0)}</td>
+            <td class="col-cost hide-mobile">$${formatNumber(c.cost, 0)}</td>
+            <td class="col-payoff hide-mobile">$${formatNumber(c.payoff_target, 0)}</td>
             <td class="col-roi ${c.roi_target >= 0 ? 'positive' : 'negative'}">${formatNumber(c.roi_target, 1)}%</td>
             <td class="col-ease hide-mobile">${formatNumber(c.ease_score, 2)}</td>
             <td class="col-roi-score hide-mobile">${formatNumber(c.roi_score, 2)}</td>
