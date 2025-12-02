@@ -2446,10 +2446,43 @@ tr.selected-for-sim::after {
 }
 
 /* ============================================
-   IRON CONDOR PAGE STYLES
+   TWO-COLUMN PAGE LAYOUT (Shared)
    ============================================ */
 
-/* Two-column layout for desktop */
+/* Two-column layout for desktop - table on left, simulator on right */
+.page-layout {
+    display: grid;
+    gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+    .page-layout {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+    }
+
+    .page-layout .results-section {
+        position: sticky;
+        top: 5rem;
+        max-height: calc(100vh - 6rem);
+        overflow-y: auto;
+    }
+
+    .page-layout .simulator-section {
+        position: sticky;
+        top: 5rem;
+        max-height: calc(100vh - 6rem);
+        overflow-y: auto;
+    }
+}
+
+@media (max-width: 1023px) {
+    .page-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Alias for backward compatibility */
 .iron-condor-layout {
     display: grid;
     gap: 1.5rem;
@@ -2463,12 +2496,16 @@ tr.selected-for-sim::after {
 
     .iron-condor-layout .results-section {
         position: sticky;
-        top: 1rem;
+        top: 5rem;
+        max-height: calc(100vh - 6rem);
+        overflow-y: auto;
     }
 
     .iron-condor-layout .simulator-section {
         position: sticky;
-        top: 1rem;
+        top: 5rem;
+        max-height: calc(100vh - 6rem);
+        overflow-y: auto;
     }
 }
 

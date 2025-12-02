@@ -22,7 +22,7 @@
     </header>
 
     <main class="container">
-        <!-- Page Header with visual hierarchy -->
+        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-title">Credit Spreads Screener</h1>
             <p class="page-subtitle">Find optimal credit spread opportunities for income generation</p>
@@ -30,7 +30,7 @@
 
         <!-- Strategy Introduction -->
         <div class="strategy-intro">
-            <p class="strategy-intro-text">A defined-risk income strategy where traders sell a nearer-money option and buy a further-out option; best for steady trends, elevated IV, and high win-rate setups.</p>
+            <p class="strategy-intro-text">A defined-risk income strategy where you sell a nearer-money option and buy a further-out option for protection. Best suited for steady trends, elevated IV environments, and high win-rate setups.</p>
         </div>
 
         <!-- Simplified Controls Card - Only Ticker and Spread Type -->
@@ -112,119 +112,121 @@
             </div>
         </section>
 
-        <!-- Results Section -->
-        <section class="results-section" id="resultsSection">
-            <!-- Loading State - Enhanced with skeleton -->
-            <div id="loadingState" class="loading-state" style="display: none;">
-                <div class="loading-spinner"></div>
-                <div class="loading-text">Scanning for credit spreads...</div>
-                <div class="loading-subtext">Analyzing options chains and computing scores</div>
-            </div>
-
-            <!-- Empty State - Improved guidance -->
-            <div id="emptyState" class="empty-state">
-                <div class="empty-state-icon">📊</div>
-                <h3 class="empty-state-title">Ready to Screen</h3>
-                <p class="empty-state-text">Select your parameters above and click <strong>"Run Screener"</strong> to find credit spread opportunities.</p>
-                <div class="empty-state-tips">
-                    <div class="tip">
-                        <span class="tip-icon">💡</span>
-                        <span><strong>PCS (Bullish)</strong>: Profit when stock stays above short strike</span>
-                    </div>
-                    <div class="tip">
-                        <span class="tip-icon">💡</span>
-                        <span><strong>CCS (Bearish)</strong>: Profit when stock stays below short strike</span>
-                    </div>
+        <!-- Main Content Grid - Table and Simulator side by side on desktop -->
+        <div class="page-layout" id="mainContent">
+            <!-- Results Section (Left side on desktop) -->
+            <section class="results-section" id="resultsSection">
+                <!-- Loading State - Enhanced with skeleton -->
+                <div id="loadingState" class="loading-state" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Scanning for credit spreads...</div>
+                    <div class="loading-subtext">Analyzing options chains and computing scores</div>
                 </div>
-            </div>
 
-            <!-- PCS Results Table -->
-            <div id="pcsTableContainer" class="results-table-container" style="display: none;">
-                <div class="results-table-header">
-                    <h3 class="results-table-title">
-                        <span class="ai-badge">AI</span> Recommended Put Credit Spreads (PCS)
-                        <span class="spread-badge spread-badge-bullish">Bullish</span>
-                    </h3>
-                    <p class="results-table-subtitle">Top 20 spreads ranked by AI Score</p>
-                    <div class="simulator-hint-banner">
-                        <span class="simulator-hint-icon">👆</span>
-                        <span class="simulator-hint-text">Click any row to simulate P/L — results appear below the table</span>
+                <!-- Empty State - Improved guidance -->
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <h3 class="empty-state-title">Ready to Screen</h3>
+                    <p class="empty-state-text">Select your parameters above and click <strong>"Find Spreads"</strong> to find credit spread opportunities.</p>
+                    <div class="empty-state-tips">
+                        <div class="tip">
+                            <span class="tip-icon">💡</span>
+                            <span><strong>PCS (Bullish)</strong>: Profit when stock stays above short strike</span>
+                        </div>
+                        <div class="tip">
+                            <span class="tip-icon">💡</span>
+                            <span><strong>CCS (Bearish)</strong>: Profit when stock stays below short strike</span>
+                        </div>
                     </div>
                 </div>
-                <div class="table-scroll-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th class="sortable col-exp" data-sort="expiration">Exp</th>
-                                <th class="sortable col-dte" data-sort="dte">DTE</th>
-                                <th class="sortable col-strike" data-sort="short_strike">Short</th>
-                                <th class="sortable col-strike" data-sort="long_strike">Long</th>
-                                <th class="sortable col-money" data-sort="credit">Credit</th>
-                                <th class="sortable col-pct" data-sort="roc">ROC</th>
-                                <th class="sortable col-delta hide-mobile" data-sort="short_delta">Delta</th>
-                                <th class="sortable col-pct" data-sort="prob_profit">Win%</th>
-                                <th class="sortable col-money hide-mobile" data-sort="break_even">BE</th>
-                                <th class="sortable col-score" data-sort="total_score">AI Score</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pcsBody"></tbody>
-                    </table>
-                </div>
-                <!-- Mobile Card View -->
-                <div id="pcsMobileCards" class="mobile-cards-container"></div>
-            </div>
 
-            <!-- CCS Results Table -->
-            <div id="ccsTableContainer" class="results-table-container" style="display: none;">
-                <div class="results-table-header">
-                    <h3 class="results-table-title">
-                        <span class="ai-badge">AI</span> Recommended Call Credit Spreads (CCS)
-                        <span class="spread-badge spread-badge-bearish">Bearish</span>
-                    </h3>
-                    <p class="results-table-subtitle">Top 20 spreads ranked by AI Score</p>
-                    <div class="simulator-hint-banner">
-                        <span class="simulator-hint-icon">👆</span>
-                        <span class="simulator-hint-text">Click any row to simulate P/L — results appear below the table</span>
+                <!-- PCS Results Table -->
+                <div id="pcsTableContainer" class="results-table-container" style="display: none;">
+                    <div class="results-table-header">
+                        <h3 class="results-table-title">
+                            <span class="ai-badge">AI</span> Recommended Put Credit Spreads (PCS)
+                            <span class="spread-badge spread-badge-bullish">Bullish</span>
+                        </h3>
+                        <p class="results-table-subtitle">Top 20 spreads ranked by AI Score</p>
+                        <div class="simulator-hint-banner">
+                            <span class="simulator-hint-icon">👆</span>
+                            <span class="simulator-hint-text">Click any row to simulate P/L</span>
+                        </div>
                     </div>
+                    <div class="table-scroll-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="sortable col-exp" data-sort="expiration">Exp</th>
+                                    <th class="sortable col-dte" data-sort="dte">DTE</th>
+                                    <th class="sortable col-strike" data-sort="short_strike">Short</th>
+                                    <th class="sortable col-strike" data-sort="long_strike">Long</th>
+                                    <th class="sortable col-money" data-sort="credit">Credit</th>
+                                    <th class="sortable col-pct" data-sort="roc">ROC</th>
+                                    <th class="sortable col-delta hide-mobile" data-sort="short_delta">Delta</th>
+                                    <th class="sortable col-pct" data-sort="prob_profit">Win%</th>
+                                    <th class="sortable col-money hide-mobile" data-sort="break_even">BE</th>
+                                    <th class="sortable col-score" data-sort="total_score">AI Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pcsBody"></tbody>
+                        </table>
+                    </div>
+                    <!-- Mobile Card View -->
+                    <div id="pcsMobileCards" class="mobile-cards-container"></div>
                 </div>
-                <div class="table-scroll-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th class="sortable col-exp" data-sort="expiration">Exp</th>
-                                <th class="sortable col-dte" data-sort="dte">DTE</th>
-                                <th class="sortable col-strike" data-sort="short_strike">Short</th>
-                                <th class="sortable col-strike" data-sort="long_strike">Long</th>
-                                <th class="sortable col-money" data-sort="credit">Credit</th>
-                                <th class="sortable col-pct" data-sort="roc">ROC</th>
-                                <th class="sortable col-delta hide-mobile" data-sort="short_delta">Delta</th>
-                                <th class="sortable col-pct" data-sort="prob_profit">Win%</th>
-                                <th class="sortable col-money hide-mobile" data-sort="break_even">BE</th>
-                                <th class="sortable col-score" data-sort="total_score">AI Score</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ccsBody"></tbody>
-                    </table>
+
+                <!-- CCS Results Table -->
+                <div id="ccsTableContainer" class="results-table-container" style="display: none;">
+                    <div class="results-table-header">
+                        <h3 class="results-table-title">
+                            <span class="ai-badge">AI</span> Recommended Call Credit Spreads (CCS)
+                            <span class="spread-badge spread-badge-bearish">Bearish</span>
+                        </h3>
+                        <p class="results-table-subtitle">Top 20 spreads ranked by AI Score</p>
+                        <div class="simulator-hint-banner">
+                            <span class="simulator-hint-icon">👆</span>
+                            <span class="simulator-hint-text">Click any row to simulate P/L</span>
+                        </div>
+                    </div>
+                    <div class="table-scroll-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="sortable col-exp" data-sort="expiration">Exp</th>
+                                    <th class="sortable col-dte" data-sort="dte">DTE</th>
+                                    <th class="sortable col-strike" data-sort="short_strike">Short</th>
+                                    <th class="sortable col-strike" data-sort="long_strike">Long</th>
+                                    <th class="sortable col-money" data-sort="credit">Credit</th>
+                                    <th class="sortable col-pct" data-sort="roc">ROC</th>
+                                    <th class="sortable col-delta hide-mobile" data-sort="short_delta">Delta</th>
+                                    <th class="sortable col-pct" data-sort="prob_profit">Win%</th>
+                                    <th class="sortable col-money hide-mobile" data-sort="break_even">BE</th>
+                                    <th class="sortable col-score" data-sort="total_score">AI Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ccsBody"></tbody>
+                        </table>
+                    </div>
+                    <!-- Mobile Card View -->
+                    <div id="ccsMobileCards" class="mobile-cards-container"></div>
                 </div>
-                <!-- Mobile Card View -->
-                <div id="ccsMobileCards" class="mobile-cards-container"></div>
-            </div>
 
-            <!-- No Results State -->
-            <div id="noResultsState" class="empty-state" style="display: none;">
-                <div class="empty-state-icon">🔍</div>
-                <h3 class="empty-state-title">No Spreads Found</h3>
-                <p class="empty-state-text">No spreads match your current criteria. Try adjusting the filters:</p>
-                <ul class="empty-state-suggestions">
-                    <li>Increase the Max DTE range</li>
-                    <li>Lower the Min ROC threshold</li>
-                    <li>Widen the Delta range</li>
-                </ul>
-            </div>
-        </section>
+                <!-- No Results State -->
+                <div id="noResultsState" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">🔍</div>
+                    <h3 class="empty-state-title">No Spreads Found</h3>
+                    <p class="empty-state-text">No spreads match your current criteria. Try adjusting the filters:</p>
+                    <ul class="empty-state-suggestions">
+                        <li>Increase the Max DTE range</li>
+                        <li>Lower the Min ROC threshold</li>
+                        <li>Widen the Delta range</li>
+                    </ul>
+                </div>
+            </section>
 
-        <!-- Credit Spread Simulator - Inline below selected spread -->
-        <section class="simulator-section" id="spreadSimulator" style="display: none;">
+            <!-- P/L Simulator Section (Right side on desktop) -->
+            <section class="simulator-section" id="spreadSimulator" style="display: none;">
             <div class="simulator-header">
                 <h2 class="simulator-title">P/L Simulator</h2>
                 <button class="simulator-close" id="closeSimulator" aria-label="Close simulator">&times;</button>
@@ -315,6 +317,7 @@
                 <span>Calculating P/L...</span>
             </div>
         </section>
+        </div><!-- End page-layout -->
 
         <!-- Legend Section - Cleaner layout -->
         <section class="legend-card" id="legendSection" style="display: none;">

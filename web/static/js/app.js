@@ -40,13 +40,21 @@ const elements = {
     loadingState: document.getElementById('loadingState'),
     emptyState: document.getElementById('emptyState'),
     tableContainer: document.getElementById('tableContainer'),
+    noResultsState: document.getElementById('noResultsState'),
     errorDisplay: document.getElementById('errorDisplay'),
+    infoCards: document.getElementById('infoCards'),
+    simulator: document.getElementById('simulator'),
+    closeSimulator: document.getElementById('closeSimulator'),
+    simContractDisplay: document.getElementById('simContractDisplay'),
+    simStrikeDisplay: document.getElementById('simStrikeDisplay'),
+    simExpirationDisplay: document.getElementById('simExpirationDisplay'),
+    simPremiumDisplay: document.getElementById('simPremiumDisplay'),
+    simCostDisplay: document.getElementById('simCostDisplay'),
     simContracts: document.getElementById('simContracts'),
     simUnderlying: document.getElementById('simUnderlying'),
     simUnderlyingDisplay: document.getElementById('simUnderlyingDisplay'),
     simContractsInfo: document.getElementById('simContractsInfo'),
     simTargetInput: document.getElementById('simTargetInput'),
-    runSimBtn: document.getElementById('runSimBtn'),
     simResultsGrid: document.getElementById('simResultsGrid'),
 };
 
@@ -95,14 +103,28 @@ function setupEventListeners() {
     // Fetch button
     elements.fetchBtn.addEventListener('click', fetchLEAPS);
 
-    // Run simulation button
-    elements.runSimBtn.addEventListener('click', runSimulation);
+    // Close simulator button
+    if (elements.closeSimulator) {
+        elements.closeSimulator.addEventListener('click', closeSimulator);
+    }
 
     // Keyboard shortcut: Enter to fetch
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.target.matches('input, textarea')) {
             fetchLEAPS();
         }
+    });
+}
+
+// Close the simulator panel
+function closeSimulator() {
+    if (elements.simulator) {
+        elements.simulator.style.display = 'none';
+    }
+    // Clear selection state
+    state.selectedContracts = [];
+    document.querySelectorAll('[data-contract].selected').forEach(row => {
+        row.classList.remove('selected');
     });
 }
 
@@ -158,6 +180,11 @@ function updateUI(data) {
     state.contracts = data.contracts;
     state.underlyingPrice = data.underlying_price;
 
+    // Show info cards
+    if (elements.infoCards) {
+        elements.infoCards.style.display = 'flex';
+    }
+
     // Update info cards
     elements.symbolDisplay.textContent = data.symbol;
     elements.underlyingPrice.textContent = `$${data.underlying_price.toFixed(2)}`;
@@ -166,7 +193,9 @@ function updateUI(data) {
 
     // Update simulator underlying price (display and hidden input)
     elements.simUnderlying.value = data.underlying_price.toFixed(2);
-    elements.simUnderlyingDisplay.textContent = `$${data.underlying_price.toFixed(2)}`;
+    if (elements.simUnderlyingDisplay) {
+        elements.simUnderlyingDisplay.textContent = `$${data.underlying_price.toFixed(2)}`;
+    }
 
     // Set target prices for simulation (10% to 65%, every 5%)
     const underlying = data.underlying_price;
@@ -178,18 +207,26 @@ function updateUI(data) {
 
     // Update table
     if (data.contracts.length === 0) {
-        elements.emptyState.style.display = 'block';
+        elements.emptyState.style.display = 'none';
         elements.tableContainer.style.display = 'none';
+        if (elements.noResultsState) {
+            elements.noResultsState.style.display = 'block';
+        }
     } else {
         elements.emptyState.style.display = 'none';
+        if (elements.noResultsState) {
+            elements.noResultsState.style.display = 'none';
+        }
         elements.tableContainer.style.display = 'block';
         renderTable(data.contracts);
     }
 
-    // Clear selected contracts
+    // Clear selected contracts and hide simulator
     state.selectedContracts = [];
     elements.simContracts.value = '';
-    updateContractsInfo();
+    if (elements.simulator) {
+        elements.simulator.style.display = 'none';
+    }
 }
 
 // Render contracts table (with XSS protection)
@@ -225,23 +262,56 @@ function toggleContractSelection(contract, row) {
     const symbol = contract.contract_symbol;
     const existingIdx = state.selectedContracts.findIndex(c => c.contract_symbol === symbol);
 
+    // Clear all selections first
+    document.querySelectorAll('[data-contract].selected').forEach(r => {
+        r.classList.remove('selected');
+    });
+
     if (existingIdx >= 0) {
-        // Remove if already selected
-        state.selectedContracts.splice(existingIdx, 1);
-        row.classList.remove('selected');
-    } else {
-        // Add if not at limit
-        if (state.selectedContracts.length >= 10) {
-            showError('Maximum 10 contracts allowed');
-            return;
+        // Clicking same row - deselect and hide simulator
+        state.selectedContracts = [];
+        if (elements.simulator) {
+            elements.simulator.style.display = 'none';
         }
-        state.selectedContracts.push(contract);
+    } else {
+        // Select this contract (single selection)
+        state.selectedContracts = [contract];
         row.classList.add('selected');
+
+        // Show and update simulator
+        showSimulator(contract);
     }
 
     // Update input field
     elements.simContracts.value = state.selectedContracts.map(c => c.contract_symbol).join(', ');
-    updateContractsInfo();
+}
+
+// Show the simulator panel with contract details
+function showSimulator(contract) {
+    if (!elements.simulator) return;
+
+    // Show the simulator panel
+    elements.simulator.style.display = 'block';
+
+    // Update contract info displays
+    if (elements.simContractDisplay) {
+        elements.simContractDisplay.textContent = contract.contract_symbol;
+    }
+    if (elements.simStrikeDisplay) {
+        elements.simStrikeDisplay.textContent = `$${formatNumber(contract.strike, 2)}`;
+    }
+    if (elements.simExpirationDisplay) {
+        elements.simExpirationDisplay.textContent = contract.expiration;
+    }
+    if (elements.simPremiumDisplay) {
+        elements.simPremiumDisplay.textContent = `$${formatNumber(contract.premium, 2)}`;
+    }
+    if (elements.simCostDisplay) {
+        elements.simCostDisplay.textContent = `$${formatNumber(contract.cost, 0)}`;
+    }
+
+    // Run simulation automatically
+    runSimulation();
 }
 
 // Update contracts info display (with XSS protection)
@@ -432,13 +502,25 @@ function setLoading(loading) {
     if (loading) {
         elements.tableContainer.style.display = 'none';
         elements.emptyState.style.display = 'none';
+        if (elements.noResultsState) {
+            elements.noResultsState.style.display = 'none';
+        }
+        if (elements.simulator) {
+            elements.simulator.style.display = 'none';
+        }
     }
 }
 
 // Show error message
 function showError(message) {
-    elements.errorDisplay.textContent = message;
-    elements.errorDisplay.style.display = 'block';
+    // Find the error message span inside the error banner
+    const errorMsg = elements.errorDisplay.querySelector('.error-message');
+    if (errorMsg) {
+        errorMsg.textContent = message;
+    } else {
+        elements.errorDisplay.textContent = message;
+    }
+    elements.errorDisplay.style.display = 'flex';
 }
 
 // Hide error message
