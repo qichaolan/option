@@ -43,7 +43,7 @@ class ScreenerConfig:
     min_dte: int = 14
     max_dte: int = 30
     min_delta: float = 0.10
-    max_delta: float = 0.25
+    max_delta: float = 0.30  # Wider default range to capture more spreads
     max_width: float = 10.0
     min_roc: float = 0.20
     min_ivp: int = 40
@@ -425,6 +425,7 @@ def _build_put_credit_spreads(
     credit_filtered = 0
     roc_filtered = 0
     max_loss_filtered = 0
+    candidates_checked = 0
 
     # Sort puts by strike descending (higher strikes first for short leg)
     puts = puts.sort_values("strike", ascending=False).reset_index(drop=True)
@@ -433,7 +434,7 @@ def _build_put_credit_spreads(
     otm_puts = puts[puts["strike"] < underlying_price].copy()
 
     if len(otm_puts) < 2:
-        logger.debug(f"PCS {symbol} exp {expiration}: Not enough OTM puts ({len(otm_puts)})")
+        logger.info(f"PCS {symbol} exp {expiration}: Not enough OTM puts ({len(otm_puts)}) at underlying=${underlying_price:.2f}")
         return spreads
 
     puts_array = otm_puts.to_dict("records")
@@ -443,7 +444,9 @@ def _build_put_credit_spreads(
         short_bid = short_put.get("bid", 0) or 0
         short_ask = short_put.get("ask", 0) or 0
         short_mid = (short_bid + short_ask) / 2 if short_bid > 0 and short_ask > 0 else 0
-        short_iv = short_put.get("impliedVolatility") or short_put.get("iv") or 0.25
+        # Get IV with fallback - use 0.25 if IV is missing, None, or unrealistically low (< 5%)
+        raw_iv = short_put.get("impliedVolatility") or short_put.get("iv")
+        short_iv = raw_iv if raw_iv and raw_iv >= 0.05 else 0.25
         short_oi = short_put.get("openInterest", 0) or 0
         short_volume = short_put.get("volume", 0) or 0
 
@@ -545,12 +548,28 @@ def _build_put_credit_spreads(
             }
             spreads.append(spread)
 
-    # Log debug info if no PCS spreads found
-    if len(spreads) == 0 and (delta_filtered > 0 or credit_filtered > 0 or roc_filtered > 0):
-        logger.debug(
-            f"PCS {symbol} exp {expiration}: delta_filtered={delta_filtered}, "
+    # Log info when no PCS spreads found to help diagnose filtering issues
+    if len(spreads) == 0:
+        # Get sample deltas from top OTM puts for debugging
+        sample_deltas = []
+        for p in puts_array[:5]:
+            strike = p["strike"]
+            delta_raw = p.get("delta")
+            raw_iv = p.get("impliedVolatility") or p.get("iv")
+            iv = raw_iv if raw_iv and raw_iv >= 0.05 else 0.25  # Same fallback logic
+            if delta_raw is None or delta_raw == 0:
+                delta_est = abs(estimate_delta(strike, underlying_price, dte, iv, "put"))
+                sample_deltas.append(f"${strike}:d={delta_est:.3f}(est,iv={iv:.2f})")
+            else:
+                sample_deltas.append(f"${strike}:d={abs(delta_raw):.3f}")
+
+        logger.info(
+            f"PCS {symbol} exp {expiration}: 0 spreads built. "
+            f"OTM puts={len(otm_puts)}, delta_filtered={delta_filtered}, "
             f"credit_filtered={credit_filtered}, max_loss_filtered={max_loss_filtered}, "
-            f"roc_filtered={roc_filtered}"
+            f"roc_filtered={roc_filtered}. "
+            f"Delta range=[{config.min_delta:.2f},{config.max_delta:.2f}]. "
+            f"Sample: {', '.join(sample_deltas)}"
         )
 
     return spreads
@@ -584,7 +603,9 @@ def _build_call_credit_spreads(
         short_bid = short_call.get("bid", 0) or 0
         short_ask = short_call.get("ask", 0) or 0
         short_mid = (short_bid + short_ask) / 2 if short_bid > 0 and short_ask > 0 else 0
-        short_iv = short_call.get("impliedVolatility") or short_call.get("iv") or 0.25
+        # Get IV with fallback - use 0.25 if IV is missing, None, or unrealistically low (< 5%)
+        raw_iv = short_call.get("impliedVolatility") or short_call.get("iv")
+        short_iv = raw_iv if raw_iv and raw_iv >= 0.05 else 0.25
         short_oi = short_call.get("openInterest", 0) or 0
         short_volume = short_call.get("volume", 0) or 0
 
@@ -681,6 +702,44 @@ def _build_call_credit_spreads(
                 "long_ask": long_ask,
             }
             spreads.append(spread)
+
+    # Log info when no CCS spreads found to help diagnose filtering issues
+    if len(spreads) == 0 and len(calls_array) > 0:
+        # Count filtering stages
+        delta_filtered = 0
+        credit_filtered = 0
+        roc_filtered = 0
+        for i, short_call in enumerate(calls_array):
+            short_strike = short_call["strike"]
+            raw_iv = short_call.get("impliedVolatility") or short_call.get("iv")
+            short_iv = raw_iv if raw_iv and raw_iv >= 0.05 else 0.25
+            short_delta = short_call.get("delta")
+            if short_delta is None or short_delta == 0:
+                short_delta = abs(estimate_delta(short_strike, underlying_price, dte, short_iv, "call"))
+            else:
+                short_delta = abs(short_delta)
+            if not (config.min_delta <= short_delta <= config.max_delta):
+                delta_filtered += 1
+
+        # Sample deltas
+        sample_deltas = []
+        for c in calls_array[:5]:
+            strike = c["strike"]
+            raw_iv = c.get("impliedVolatility") or c.get("iv")
+            iv = raw_iv if raw_iv and raw_iv >= 0.05 else 0.25
+            delta_raw = c.get("delta")
+            if delta_raw is None or delta_raw == 0:
+                delta_est = abs(estimate_delta(strike, underlying_price, dte, iv, "call"))
+                sample_deltas.append(f"${strike}:d={delta_est:.3f}(est)")
+            else:
+                sample_deltas.append(f"${strike}:d={abs(delta_raw):.3f}")
+
+        logger.info(
+            f"CCS {symbol} exp {expiration}: 0 spreads built. "
+            f"OTM calls={len(calls_array)}, delta_filtered={delta_filtered}. "
+            f"Delta range=[{config.min_delta:.2f},{config.max_delta:.2f}]. "
+            f"Sample: {', '.join(sample_deltas)}"
+        )
 
     return spreads
 
