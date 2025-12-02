@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iron Condor Screener - Option Chain Analysis</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">Option Chain Analysis</div>
+                <nav class="main-nav">
+                    <a href="/" class="nav-btn">LEAPS Ranker</a>
+                    <a href="/credit-spreads" class="nav-btn">Credit Spreads</a>
+                    <a href="/iron-condors" class="nav-btn active">Iron Condors</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Iron Condor Screener</h1>
+            <p class="page-subtitle">Find optimal Iron Condor opportunities - profit when price stays in range</p>
+        </div>
+
+        <!-- Controls Card -->
+        <section class="controls-card" id="controls">
+            <div class="simple-form">
+                <div class="simple-form-row">
+                    <div class="simple-form-group">
+                        <label for="tickerSelect">Underlying</label>
+                        <select id="tickerSelect" class="select-lg">
+                            <option value="QQQ" selected>QQQ</option>
+                            <option value="SPY">SPY</option>
+                        </select>
+                    </div>
+                    <div class="simple-form-group">
+                        <label for="minRocInput">Min ROC</label>
+                        <select id="minRocInput" class="select-lg">
+                            <option value="0.10">10%</option>
+                            <option value="0.15" selected>15%</option>
+                            <option value="0.20">20%</option>
+                            <option value="0.25">25%</option>
+                            <option value="0.30">30%</option>
+                        </select>
+                    </div>
+                    <div class="simple-form-group">
+                        <label for="minPopInput">Min POP</label>
+                        <select id="minPopInput" class="select-lg">
+                            <option value="0.40">40%</option>
+                            <option value="0.50" selected>50%</option>
+                            <option value="0.60">60%</option>
+                            <option value="0.70">70%</option>
+                        </select>
+                    </div>
+                    <div class="simple-form-group simple-form-action">
+                        <button class="btn btn-primary btn-lg btn-run" id="runScreenerBtn">
+                            <span class="btn-icon">&#9654;</span>
+                            Scan Iron Condors
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hidden default values -->
+            <input type="hidden" id="minDte" value="14">
+            <input type="hidden" id="maxDte" value="45">
+        </section>
+
+        <!-- Error Display -->
+        <div id="errorDisplay" class="error-banner" style="display: none;">
+            <span class="error-icon">!</span>
+            <span class="error-message"></span>
+        </div>
+
+        <!-- Results Summary Cards -->
+        <section class="summary-cards" id="infoCards" style="display: none;">
+            <div class="summary-card">
+                <div class="summary-card-icon">📈</div>
+                <div class="summary-card-content">
+                    <div class="summary-card-label">Symbol</div>
+                    <div class="summary-card-value" id="symbolDisplay">-</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-icon">💰</div>
+                <div class="summary-card-content">
+                    <div class="summary-card-label">Current Price</div>
+                    <div class="summary-card-value" id="underlyingPrice">-</div>
+                </div>
+            </div>
+            <div class="summary-card summary-card-highlight">
+                <div class="summary-card-icon">🦅</div>
+                <div class="summary-card-content">
+                    <div class="summary-card-label">Iron Condors Found</div>
+                    <div class="summary-card-value" id="totalCondors">-</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content Grid - Table and Chart side by side on desktop -->
+        <div class="iron-condor-layout" id="mainContent">
+            <!-- Results Section (Left side on desktop) -->
+            <section class="results-section" id="resultsSection">
+                <!-- Loading State -->
+                <div id="loadingState" class="loading-state" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Scanning for Iron Condors...</div>
+                    <div class="loading-subtext">Combining PCS + CCS and computing scores</div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-state-icon">🦅</div>
+                    <h3 class="empty-state-title">Ready to Screen</h3>
+                    <p class="empty-state-text">Select your parameters and click <strong>"Scan Iron Condors"</strong> to find opportunities.</p>
+                    <div class="empty-state-tips">
+                        <div class="tip">
+                            <span class="tip-icon">💡</span>
+                            <span><strong>Iron Condor</strong>: Sell a put spread (PCS) + sell a call spread (CCS)</span>
+                        </div>
+                        <div class="tip">
+                            <span class="tip-icon">💡</span>
+                            <span><strong>Profit zone</strong>: Between the two short strikes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Iron Condor Results Table -->
+                <div id="condorTableContainer" class="results-table-container" style="display: none;">
+                    <div class="results-table-header">
+                        <h3 class="results-table-title">
+                            <span class="ai-badge">AI</span> Recommended Iron Condors
+                            <span class="spread-badge spread-badge-neutral">Neutral</span>
+                        </h3>
+                        <p class="results-table-subtitle">Top 20 Iron Condors ranked by AI Score</p>
+                        <div class="simulator-hint-banner">
+                            <span class="simulator-hint-icon">👆</span>
+                            <span class="simulator-hint-text">Click any row to see the payoff chart</span>
+                        </div>
+                    </div>
+                    <div class="table-scroll-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-exp" title="Expiration date">Exp</th>
+                                    <th class="col-dte" title="Days to expiration">DTE</th>
+                                    <th class="col-strike" title="Short put strike">S.Put</th>
+                                    <th class="col-strike hide-mobile" title="Long put strike">L.Put</th>
+                                    <th class="col-strike" title="Short call strike">S.Call</th>
+                                    <th class="col-strike hide-mobile" title="Long call strike">L.Call</th>
+                                    <th class="col-money" title="Credit received per share">Credit</th>
+                                    <th class="col-money hide-mobile" title="Max profit / Max loss per contract">Max P/L</th>
+                                    <th class="col-pct" title="Return on Capital (Max Profit / Max Loss)">ROC</th>
+                                    <th class="col-pct" title="Probability of Profit">POP</th>
+                                    <th class="col-score" title="AI composite score (0-1)">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="condorBody"></tbody>
+                        </table>
+                    </div>
+                    <!-- Mobile Card View -->
+                    <div id="condorMobileCards" class="mobile-cards-container"></div>
+                </div>
+
+                <!-- No Results State -->
+                <div id="noResultsState" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">🔍</div>
+                    <h3 class="empty-state-title">No Iron Condors Found</h3>
+                    <p class="empty-state-text">No Iron Condors match your criteria. Try:</p>
+                    <ul class="empty-state-suggestions">
+                        <li>Lowering the Min ROC threshold</li>
+                        <li>Lowering the Min POP threshold</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Payoff Chart Section (Right side on desktop) -->
+            <section class="simulator-section" id="payoffSection" style="display: none;">
+                <div class="simulator-header">
+                    <h2 class="simulator-title">Payoff Chart</h2>
+                    <button class="simulator-close" id="closePayoff" aria-label="Close chart">&times;</button>
+                </div>
+
+                <!-- Selected Condor Info -->
+                <div class="simulator-spread-info" id="condorInfo">
+                    <div class="spread-info-grid">
+                        <div class="spread-info-item">
+                            <div class="spread-info-label">Symbol</div>
+                            <div class="spread-info-value" id="payoffSymbol">-</div>
+                        </div>
+                        <div class="spread-info-item">
+                            <div class="spread-info-label">Expiration</div>
+                            <div class="spread-info-value" id="payoffExpiration">-</div>
+                        </div>
+                        <div class="spread-info-item">
+                            <div class="spread-info-label">Put Spread</div>
+                            <div class="spread-info-value" id="payoffPutSpread">-</div>
+                        </div>
+                        <div class="spread-info-item">
+                            <div class="spread-info-label">Call Spread</div>
+                            <div class="spread-info-value" id="payoffCallSpread">-</div>
+                        </div>
+                        <div class="spread-info-item">
+                            <div class="spread-info-label">Total Credit</div>
+                            <div class="spread-info-value" id="payoffCredit">-</div>
+                        </div>
+                        <div class="spread-info-item">
+                            <div class="spread-info-label">Risk/Reward</div>
+                            <div class="spread-info-value" id="payoffRiskReward">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Summary -->
+                <div class="simulator-action-summary" id="condorActionSummary">
+                    <p class="action-profit-condition" id="payoffProfitCondition">-</p>
+                    <p class="action-trade-explanation" id="payoffTradeExplanation">-</p>
+                </div>
+
+                <!-- Summary Metrics -->
+                <div class="simulator-summary" id="payoffSummary">
+                    <div class="sim-summary-card sim-summary-gain">
+                        <div class="sim-summary-label">Max Profit</div>
+                        <div class="sim-summary-value positive" id="payoffMaxGain">-</div>
+                    </div>
+                    <div class="sim-summary-card sim-summary-loss">
+                        <div class="sim-summary-label">Max Loss</div>
+                        <div class="sim-summary-value negative" id="payoffMaxLoss">-</div>
+                    </div>
+                    <div class="sim-summary-card sim-summary-be">
+                        <div class="sim-summary-label">Breakevens</div>
+                        <div class="sim-summary-value" id="payoffBreakevens">-</div>
+                    </div>
+                </div>
+
+                <!-- P/L Chart -->
+                <div class="simulator-chart-container">
+                    <h3 class="simulator-chart-title">P/L at Expiration by % Move</h3>
+                    <p class="simulator-chart-subtitle">Shows profit/loss for 1 contract from -5% to +5% move</p>
+                    <div class="simulator-chart" id="payoffChart">
+                        <!-- Chart will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- P/L Table -->
+                <div class="simulator-table-container">
+                    <h3 class="simulator-table-title">P/L by Price Move</h3>
+                    <div class="table-scroll-container">
+                        <table class="data-table simulator-data-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-pct-move">% Move</th>
+                                    <th class="col-price">Price at Exp</th>
+                                    <th class="col-pl">P/L</th>
+                                    <th class="col-pct">ROI</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payoffTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Loading state for payoff -->
+                <div id="payoffLoadingState" class="sim-loading" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <span>Loading payoff...</span>
+                </div>
+            </section>
+        </div>
+
+        <!-- Legend Section -->
+        <section class="legend-card" id="legendSection" style="display: none;">
+            <div class="legend-header">
+                <h4 class="legend-title">Understanding the Metrics</h4>
+            </div>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <span class="legend-term">S.Put / L.Put</span>
+                    <span class="legend-def">Short put and long put strikes (lower side)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-term">S.Call / L.Call</span>
+                    <span class="legend-def">Short call and long call strikes (upper side)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-term">Credit</span>
+                    <span class="legend-def">Total credit received per share</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-term">ROC</span>
+                    <span class="legend-def">Return on Capital (Max Profit / Max Loss) as percentage</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-term">POP</span>
+                    <span class="legend-def">Probability of Profit at expiration</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-term">AI Score</span>
+                    <span class="legend-def">Composite ranking based on POP, ROC, width, liquidity</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>Option Chain Analysis - For educational purposes only. Not financial advice.</p>
+    </footer>
+
+    <script src="/static/js/iron_condors.js"></script>
+</body>
+</html>

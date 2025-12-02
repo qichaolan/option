@@ -2426,3 +2426,159 @@ tr.selected-for-sim::after {
     color: var(--primary-color);
     font-weight: 500;
 }
+
+/* ============================================
+   IRON CONDOR PAGE STYLES
+   ============================================ */
+
+/* Two-column layout for desktop */
+.iron-condor-layout {
+    display: grid;
+    gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+    .iron-condor-layout {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+    }
+
+    .iron-condor-layout .results-section {
+        position: sticky;
+        top: 1rem;
+    }
+
+    .iron-condor-layout .simulator-section {
+        position: sticky;
+        top: 1rem;
+    }
+}
+
+@media (max-width: 1023px) {
+    .iron-condor-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Neutral spread badge for Iron Condors */
+.spread-badge-neutral {
+    background: rgba(107, 114, 128, 0.12);
+    color: var(--text-secondary);
+    padding: 0.25rem 0.625rem;
+    border-radius: 100px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* Top-ranked row highlighting */
+.top-ranked-row {
+    background: rgba(245, 158, 11, 0.08) !important;
+}
+
+.top-ranked-row:hover {
+    background: rgba(245, 158, 11, 0.12) !important;
+}
+
+.top-ranked-card {
+    border-color: rgba(245, 158, 11, 0.4) !important;
+    background: rgba(245, 158, 11, 0.04);
+}
+
+/* Text divider for inline profit/loss */
+.text-divider {
+    color: var(--text-secondary);
+    margin: 0 0.25rem;
+}
+
+/* Compact strike columns for Iron Condor table */
+.iron-condor-layout .col-strike {
+    min-width: 55px;
+    padding: 0.5rem 0.25rem;
+}
+
+/* Make payoff section stand out when shown */
+.iron-condor-layout .simulator-section {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: var(--shadow-lg);
+    border: 2px solid var(--primary-color);
+}
+
+/* Adjust chart container in Iron Condor layout */
+.iron-condor-layout .simulator-chart {
+    min-height: 160px;
+}
+
+.iron-condor-layout .pl-chart-bars {
+    height: 140px;
+}
+
+/* Mobile adjustments for Iron Condor */
+@media (max-width: 768px) {
+    .iron-condor-layout .simulator-section {
+        padding: 1rem;
+    }
+
+    .iron-condor-layout .spread-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .iron-condor-layout .simulator-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .iron-condor-layout .sim-summary-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.625rem 0.875rem;
+    }
+
+    .iron-condor-layout .pl-chart-bars {
+        height: 120px;
+    }
+}
+
+/* Responsive nav for 3 items */
+@media (max-width: 640px) {
+    .main-nav {
+        gap: 0.375rem;
+    }
+
+    .nav-btn {
+        padding: 0.375rem 0.625rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Button loading state */
+.btn-loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.loading-spinner-sm {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+/* No data state for chart */
+.chart-no-data {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}

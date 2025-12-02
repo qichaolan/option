@@ -15,6 +15,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.routes.leaps import router as leaps_router
 from app.routes.credit_spreads import router as credit_spreads_router
+from app.routes.iron_condors import router as iron_condors_router
 
 # Configure logging
 logging.basicConfig(
@@ -88,6 +89,7 @@ templates = Jinja2Templates(directory=str(templates_path))
 # Include API routes
 app.include_router(leaps_router)
 app.include_router(credit_spreads_router)
+app.include_router(iron_condors_router)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -100,6 +102,12 @@ async def index(request: Request):
 async def credit_spreads_page(request: Request):
     """Serve the credit spreads screener page."""
     return templates.TemplateResponse("credit_spreads.html", {"request": request})
+
+
+@app.get("/iron-condors", response_class=HTMLResponse)
+async def iron_condors_page(request: Request):
+    """Serve the Iron Condor screener page."""
+    return templates.TemplateResponse("iron_condors.html", {"request": request})
 
 
 @app.get("/health")
