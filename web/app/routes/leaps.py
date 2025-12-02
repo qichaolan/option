@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List
 
+import numpy as np
 from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -127,9 +128,11 @@ async def get_leaps_ranking(request: Request, leaps_request: LEAPSRequest):
         ]
         for col in required_float_fields:
             if col in df_out.columns:
-                # Replace inf with NaN first, then fill NaN with 0
-                df_out[col] = df_out[col].replace([float('inf'), float('-inf')], float('nan'))
+                # Use numpy for reliable NaN/inf handling
+                df_out[col] = df_out[col].replace([np.inf, -np.inf], np.nan)
                 df_out[col] = df_out[col].fillna(0.0)
+                # Double-check: convert any remaining non-finite values
+                df_out[col] = df_out[col].apply(lambda x: 0.0 if not np.isfinite(x) else x)
 
         # Filter out rows with missing required string fields
         if "contract_symbol" in df_out.columns:
@@ -153,7 +156,14 @@ async def get_leaps_ranking(request: Request, leaps_request: LEAPSRequest):
 
         # Convert to list of dicts and then to Pydantic models
         records = df_out.to_dict(orient="records")
-        contracts = [LEAPSContract(**record) for record in records]
+        contracts = []
+        for record in records:
+            try:
+                contracts.append(LEAPSContract(**record))
+            except Exception as e:
+                # Log the problematic record and skip it
+                logger.warning(f"Skipping invalid contract record: {e}")
+                logger.debug(f"Record data: {record}")
 
         # Get underlying and target prices from first contract
         underlying_price = 0.0

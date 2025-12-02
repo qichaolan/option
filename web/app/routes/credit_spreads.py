@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List
 
+import numpy as np
 from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -149,13 +150,23 @@ async def screen_credit_spreads(request: Request, spread_request: CreditSpreadRe
         ]
         for col in required_float_fields:
             if col in df_out.columns:
-                df_out[col] = df_out[col].replace([float('inf'), float('-inf')], float('nan'))
+                # Use numpy for reliable NaN/inf handling
+                df_out[col] = df_out[col].replace([np.inf, -np.inf], np.nan)
                 df_out[col] = df_out[col].fillna(0.0)
+                # Double-check: convert any remaining non-finite values
+                df_out[col] = df_out[col].apply(lambda x: 0.0 if not np.isfinite(x) else x)
 
         # Convert to list of dicts and then to Pydantic models
         records = df_out.to_dict(orient="records")
         logger.info(f"Converting {len(records)} spreads to response model")
-        spreads = [CreditSpreadResult(**record) for record in records]
+        spreads = []
+        for record in records:
+            try:
+                spreads.append(CreditSpreadResult(**record))
+            except Exception as e:
+                # Log the problematic record and skip it
+                logger.warning(f"Skipping invalid spread record: {e}")
+                logger.debug(f"Record data: {record}")
 
         return CreditSpreadResponse(
             symbol=symbol,
