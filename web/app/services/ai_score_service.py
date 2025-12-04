@@ -17,7 +17,7 @@ from app.services import gcs_cache
 logger = logging.getLogger(__name__)
 
 # Configuration
-DEFAULT_STRATEGY = os.environ.get("DEFAULT_STRATEGY", "config/strategy.yaml")
+DEFAULT_STRATEGY = os.environ.get("DEFAULT_STRATEGY", "backtest/strategies/s.yaml")
 SCORE_LOOKBACK_DAYS = int(os.environ.get("SCORE_LOOKBACK_DAYS", "365"))
 SCORE_NORMALIZATION = os.environ.get("SCORE_NORMALIZATION", "zscore")
 
