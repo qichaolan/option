@@ -26,6 +26,25 @@ let state = {
     underlyingPrice: 0,
 };
 
+// AI Score Elements
+const aiScoreElements = {
+    box: document.getElementById('aiScoreBox'),
+    symbol: document.getElementById('aiScoreSymbol'),
+    value: document.getElementById('aiScoreValue'),
+    rating: document.getElementById('aiScoreRating'),
+    date: document.getElementById('aiScoreDate'),
+    refresh: document.getElementById('aiScoreRefresh'),
+};
+
+// Rating icons for color-blind accessibility
+const RATING_ICONS = {
+    'Strong Buy': '⬆️',
+    'Buy': '↗️',
+    'Hold': '➡️',
+    'Sell': '↘️',
+    'Must Sell': '⬇️',
+};
+
 // DOM Elements
 const elements = {
     tickerSelect: document.getElementById('tickerSelect'),
@@ -62,6 +81,10 @@ const elements = {
 document.addEventListener('DOMContentLoaded', async () => {
     await loadTickers();
     setupEventListeners();
+    // Fetch AI score for the initially selected ticker
+    if (elements.tickerSelect.value) {
+        fetchAIScore(elements.tickerSelect.value);
+    }
 });
 
 // Load supported tickers
@@ -89,14 +112,118 @@ async function loadTickers() {
     }
 }
 
+// Fetch AI Score for a symbol
+async function fetchAIScore(symbol, forceRefresh = false) {
+    if (!symbol || !aiScoreElements.box) return;
+
+    // Show loading state
+    aiScoreElements.box.style.display = 'block';
+    aiScoreElements.box.classList.add('loading');
+    aiScoreElements.box.classList.remove('error');
+    aiScoreElements.symbol.textContent = symbol;
+    aiScoreElements.value.textContent = '...';
+    aiScoreElements.rating.textContent = 'Loading';
+    aiScoreElements.rating.className = 'ai-score-rating';
+    aiScoreElements.date.textContent = '';
+
+    // Spin the refresh button while loading
+    if (aiScoreElements.refresh) {
+        aiScoreElements.refresh.classList.add('spinning');
+        aiScoreElements.refresh.disabled = true;
+    }
+
+    try {
+        const url = `/api/ai-score?symbol=${encodeURIComponent(symbol)}${forceRefresh ? '&refresh=true' : ''}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch AI score');
+        }
+
+        const data = await response.json();
+        updateAIScoreDisplay(data);
+
+    } catch (err) {
+        console.error('Error fetching AI score:', err);
+        aiScoreElements.box.classList.add('error');
+        aiScoreElements.value.textContent = 'N/A';
+        aiScoreElements.rating.textContent = '❌ Error';
+        aiScoreElements.rating.className = 'ai-score-rating';
+        aiScoreElements.date.textContent = 'Click refresh to retry';
+    } finally {
+        aiScoreElements.box.classList.remove('loading');
+        if (aiScoreElements.refresh) {
+            aiScoreElements.refresh.classList.remove('spinning');
+            aiScoreElements.refresh.disabled = false;
+        }
+    }
+}
+
+// Update AI Score display
+function updateAIScoreDisplay(data) {
+    aiScoreElements.symbol.textContent = data.symbol;
+    aiScoreElements.value.textContent = data.score_0_1.toFixed(2);
+    aiScoreElements.date.textContent = formatRelativeDate(data.date);
+
+    // Set rating with icon for color-blind accessibility
+    const rating = data.ai_rating;
+    const icon = RATING_ICONS[rating] || '';
+    aiScoreElements.rating.textContent = `${icon} ${rating}`;
+
+    // Map rating to CSS class
+    let ratingClass = 'ai-score-rating ';
+    switch (rating) {
+        case 'Strong Buy':
+            ratingClass += 'strong-buy';
+            break;
+        case 'Buy':
+            ratingClass += 'buy';
+            break;
+        case 'Hold':
+            ratingClass += 'hold';
+            break;
+        case 'Sell':
+            ratingClass += 'sell';
+            break;
+        case 'Must Sell':
+            ratingClass += 'must-sell';
+            break;
+        default:
+            ratingClass += 'hold';
+    }
+    aiScoreElements.rating.className = ratingClass;
+}
+
+// Format date as relative time (e.g., "Updated today", "Updated yesterday")
+function formatRelativeDate(dateStr) {
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+        return 'Updated today';
+    } else if (diffDays === 1) {
+        return 'Updated yesterday';
+    } else if (diffDays < 7) {
+        return `Updated ${diffDays} days ago`;
+    } else {
+        return `as of ${dateStr}`;
+    }
+}
+
 // Setup event listeners
 function setupEventListeners() {
-    // Ticker change - update default target
+    // Ticker change - update default target and fetch AI score
     elements.tickerSelect.addEventListener('change', () => {
         const selected = elements.tickerSelect.selectedOptions[0];
         if (selected) {
             const targetPct = parseFloat(selected.dataset.target);
             elements.targetPctInput.value = (targetPct * 100).toFixed(0);
+            // Fetch AI score for the new ticker
+            fetchAIScore(selected.value);
         }
     });
 
@@ -106,6 +233,16 @@ function setupEventListeners() {
     // Close simulator button
     if (elements.closeSimulator) {
         elements.closeSimulator.addEventListener('click', closeSimulator);
+    }
+
+    // AI Score refresh button
+    if (aiScoreElements.refresh) {
+        aiScoreElements.refresh.addEventListener('click', () => {
+            const symbol = elements.tickerSelect.value;
+            if (symbol) {
+                fetchAIScore(symbol, true); // Force refresh
+            }
+        });
     }
 
     // Keyboard shortcut: Enter to fetch

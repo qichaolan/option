@@ -1,0 +1,28 @@
+strategies:
+  - name: "Breakout_Volume_Confirmed"
+    weight: 1.0
+    combine: "all"
+    rules:
+      - indicator: "close"
+        operator: ">"
+        value_indicator: "bb_upper_20_2"
+        action: "buy"
+        strength: 1.0
+
+      - indicator: "Volume"
+        operator: ">"
+        value_indicator: "vol_sma_20"
+        action: "buy"
+        strength: 0.7
+
+      - indicator: "obv"
+        operator: ">"
+        value_indicator: "obv_lag_1"
+        action: "buy"
+        strength: 0.7
+
+      - indicator: "close"
+        operator: "<"
+        value_indicator: "bb_mid_20_2"
+        action: "sell"
+        strength: 0.8

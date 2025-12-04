@@ -1,0 +1,28 @@
+strategies:
+  - name: "MACD_Momentum_ShortTerm"
+    weight: 1.0
+    combine: "any"
+    rules:
+      - indicator: "macd_hist_12_26_9"
+        operator: ">"
+        value: -0.2
+        action: "buy"
+        strength: 1.0
+
+      - indicator: "macd_12_26_9"
+        operator: ">"
+        value_indicator: "macd_signal_12_26_9"
+        action: "buy"
+        strength: 0.8
+
+      - indicator: "macd_hist_12_26_9"
+        operator: "<"
+        value: -0.3
+        action: "sell"
+        strength: 1.0
+
+      - indicator: "macd_12_26_9"
+        operator: "<"
+        value_indicator: "macd_signal_12_26_9"
+        action: "sell"
+        strength: 0.8

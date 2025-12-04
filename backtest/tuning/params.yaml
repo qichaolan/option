@@ -1,0 +1,37 @@
+parameters:
+
+  # ============================================================
+  # Strategy Weights (should sum to 1.0, but engine normalizes)
+  # ============================================================
+
+  # MAIN SIGNAL 1: BB + RSI Mean Reversion
+  - name: weight_mean_reversion
+    path: strategies[0].weight
+    start: 0.1
+    end: 0.3
+    step: 0.05
+    # Tests → 0.1, 0.2, 0.3, 0.4, 0.5, 0.6
+
+  # MAIN SIGNAL 2: Money Flow (MFI + Volume)
+  - name: weight_money_flow
+    path: strategies[1].weight
+    start: 0.3
+    end: 0.8
+    step: 0.05
+    # Tests → 0.1, 0.2, 0.3, 0.4, 0.5, 0.6
+
+  # CONFIRMATION 1: SMA200 Trend Filter
+  - name: weight_sma200
+    path: strategies[2].weight
+    start: 0.0
+    end: 0.15
+    step: 0.01
+    # Tests → 0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3
+
+  # CONFIRMATION 2: MACD Momentum
+  - name: weight_macd
+    path: strategies[3].weight
+    start: 0.0
+    end: 0.15
+    step: 0.01
+    # Tests → 0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3

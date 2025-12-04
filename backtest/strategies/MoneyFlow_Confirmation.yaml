@@ -1,0 +1,36 @@
+strategies:
+  - name: "MoneyFlow_Confirmation"
+    weight: 1.0
+    combine: "any"
+    # Use "any" because each rule independently signals potential buying/selling pressure.
+    # This strategy fires when *any* strong money flow condition is detected.
+
+    rules:
+      # ---- BUY: Oversold Money Flow ----
+      - indicator: "mfi_14"
+        operator: "<"
+        value: 30
+        action: "buy"
+        strength: 1.0
+        # BUY when MFI14 < 20 (oversold).
+        # MFI is price + volume combined signal.
+        # Oversold readings suggest seller exhaustion and possible rebound.
+
+      # ---- SELL: Overbought Money Flow ----
+      - indicator: "mfi_14"
+        operator: ">"
+        value: 90
+        action: "sell"
+        strength: 1.0
+        # SELL when MFI14 > 80 (overbought).
+        # Indicates excessive buying pressure and potential mean reversion pullback.
+
+      # ---- BUY: Volume Confirmation ----
+      - indicator: "Volume"
+        operator: ">"
+        value_indicator: "vol_sma_20"
+        action: "buy"
+        strength: 0.4
+        # BUY when today's volume > 20-day volume SMA.
+        # This is a weaker confirmation signal (strength 0.4).
+        # It indicates accumulation or increased activity supporting a potential rebound.

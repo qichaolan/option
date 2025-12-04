@@ -1,0 +1,136 @@
+strategies:
+  # ================================
+  # MAIN SIGNAL 1: BB + RSI Mean Reversion
+  # ================================
+  - name: "MeanReversion_BB_RSI_Main"
+    weight: 0.10
+    combine: "any"
+    rules:
+      - indicator: "close"
+        operator: "<"
+        value_indicator: "bb_lower_20_2"
+        action: "buy"
+        strength: 1.0
+        # Price below lower Bollinger band → strong mean-reversion buy zone.
+
+      - indicator: "rsi_14"
+        operator: "<"
+        value: 35
+        action: "buy"
+        strength: 0.8
+        # RSI oversold → supports buy.
+
+      - indicator: "close"
+        operator: ">"
+        value_indicator: "bb_upper_20_2"
+        action: "sell"
+        strength: 1.0
+        # Price above upper band → overextended, mean-reversion sell.
+
+      - indicator: "rsi_14"
+        operator: ">"
+        value: 50
+        action: "sell"
+        strength: 0.8
+        # RSI overbought → supports sell/trim.
+
+  # ================================
+  # MAIN SIGNAL 2: Money Flow (MFI + Volume)
+  # ================================
+  - name: "MoneyFlow_Confirmation_Main"
+    weight: 0.60
+    combine: "any"
+    rules:
+      - indicator: "mfi_14"
+        operator: "<"
+        value: 30
+        action: "buy"
+        strength: 1.0
+        # Oversold money flow → potential rebound.
+
+      - indicator: "mfi_14"
+        operator: ">"
+        value: 85
+        action: "sell"
+        strength: 1.0
+        # Overbought money flow → potential pullback.
+
+      - indicator: "Volume"
+        operator: ">"
+        value_indicator: "vol_sma_20"
+        action: "buy"
+        strength: 0.4
+        # Volume spike as weaker confirmation of accumulation.
+
+  # ================================
+  # CONFIRMATION 1: SMA200 Trend Filter
+  # ================================
+  - name: "TrendConfirm_SMA200"
+    weight: 0.15
+    combine: "all"
+    rules:
+      # BUY only when price is in long-term uptrend
+      - indicator: "close"
+        operator: ">"
+        value_indicator: "sma_200"
+        action: "buy"
+        strength: 1.0
+        # Price above SMA200 → bullish regime.
+
+      - indicator: "sma_200"
+        operator: ">"
+        value_indicator: "sma_200_lag_1"
+        action: "buy"
+        strength: 0.6
+        # SMA200 rising → uptrend strengthening.
+        # NOTE: requires 'sma_200_lag_1' column = sma_200 shifted by 1 day.
+
+      # SELL only when price is in long-term downtrend
+      - indicator: "close"
+        operator: "<"
+        value_indicator: "sma_200"
+        action: "sell"
+        strength: 1.0
+        # Price below SMA200 → bearish regime.
+
+      - indicator: "sma_200"
+        operator: "<="
+        value_indicator: "sma_200_lag_1"
+        action: "sell"
+        strength: 0.6
+        # SMA200 flat/down → long-term trend deteriorating.
+
+  # ================================
+  # CONFIRMATION 2: MACD Momentum
+  # ================================
+  - name: "MACD_Confirmation"
+    weight: 0.15
+    combine: "any"
+    rules:
+      - indicator: "macd_hist_12_26_9"
+        operator: ">"
+        value: -0.2
+        action: "buy"
+        strength: 1.0
+        # Positive MACD histogram → bullish momentum.
+
+      - indicator: "macd_12_26_9"
+        operator: ">"
+        value_indicator: "macd_signal_12_26_9"
+        action: "buy"
+        strength: 0.8
+        # MACD line above signal line → bullish crossover confirmation.
+
+      - indicator: "macd_hist_12_26_9"
+        operator: "<"
+        value: 0
+        action: "sell"
+        strength: 1.0
+        # Negative histogram → bearish momentum.
+
+      - indicator: "macd_12_26_9"
+        operator: "<"
+        value_indicator: "macd_signal_12_26_9"
+        action: "sell"
+        strength: 0.8
+        # MACD below signal → bearish crossover confirmation.

@@ -1,0 +1,44 @@
+strategies:
+  - name: "MediumTerm_Trend_SMA_EMA"
+    weight: 1.0
+    combine: "all"  
+    # All buy (or all sell) conditions must be satisfied to trigger a signal.
+    # This avoids false signals and only acts when both medium-term trend and momentum agree.
+
+    rules:
+      # ---- BUY CONDITIONS ----
+      - indicator: "sma_20"
+        operator: ">"
+        value_indicator: "sma_50"
+        action: "buy"
+        strength: 1.0
+        # BUY when short-term trend (SMA20) is above medium-term trend (SMA50).
+        # Classic medium-term trend-following signal.
+        # Indicates a new uptrend or continuation of existing uptrend.
+
+      - indicator: "ema_21"
+        operator: ">"
+        value_indicator: "ema_21_lag_1"
+        action: "buy"
+        strength: 0.6
+        # BUY when EMA21 is rising day-over-day.
+        # ema_21_lag_1 = yesterday’s EMA21 → slope > 0 means positive momentum.
+        # This is a slope confirmation filter that ensures the uptrend is strengthening.
+
+      # ---- SELL CONDITIONS ----
+      - indicator: "sma_20"
+        operator: "<"
+        value_indicator: "sma_50"
+        action: "sell"
+        strength: 1.0
+        # SELL when SMA20 crosses below SMA50.
+        # This identifies medium-term trend breakdown.
+        # Strong trend reversal or correction signal.
+
+      - indicator: "ema_21"
+        operator: "<"
+        value_indicator: "ema_21_lag_1"
+        action: "sell"
+        strength: 0.6
+        # SELL when EMA21 is declining relative to yesterday.
+        # Confirms weakening momentum and short-term deterioration.

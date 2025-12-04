@@ -1,0 +1,28 @@
+strategies:
+  - name: "LongTerm_Trend_Confirmation"
+    weight: 1.0
+    combine: "all"
+    rules:
+      - indicator: "close"
+        operator: ">"
+        value_indicator: "sma_200"
+        action: "buy"
+        strength: 1.0
+
+      - indicator: "sma_200"
+        operator: ">"
+        value_indicator: "sma_200_lag_1"
+        action: "buy"
+        strength: 0.7
+
+      - indicator: "close"
+        operator: "<"
+        value_indicator: "sma_200"
+        action: "sell"
+        strength: 1.0
+
+      - indicator: "sma_200"
+        operator: "<="
+        value_indicator: "sma_200_lag_1"
+        action: "sell"
+        strength: 0.7

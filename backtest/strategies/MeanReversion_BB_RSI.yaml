@@ -1,0 +1,28 @@
+strategies:
+  - name: "MeanReversion_BB_RSI"
+    weight: 1.0
+    combine: "any"
+    rules:
+      - indicator: "close"
+        operator: "<"
+        value_indicator: "bb_lower_20_2"
+        action: "buy"
+        strength: 1.0
+
+      - indicator: "rsi_14"
+        operator: "<"
+        value: 35
+        action: "buy"
+        strength: 0.8
+
+      - indicator: "close"
+        operator: ">"
+        value_indicator: "bb_upper_20_2"
+        action: "sell"
+        strength: 1.0
+
+      - indicator: "rsi_14"
+        operator: ">"
+        value: 80
+        action: "sell"
+        strength: 0.8

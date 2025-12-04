@@ -28,6 +28,25 @@
             <p class="page-subtitle-compact">Long-term options (1–3 years) ranked by ease of reaching target and ROI potential.</p>
         </div>
 
+        <!-- AI Score Box -->
+        <section class="ai-score-box" id="aiScoreBox" role="region" aria-label="AI Signal Score" style="display: none;">
+            <div class="ai-score-content">
+                <div class="ai-score-left">
+                    <div class="ai-score-icon" aria-hidden="true">🤖</div>
+                    <div class="ai-score-info">
+                        <div class="ai-score-label">AI Signal</div>
+                        <div class="ai-score-symbol" id="aiScoreSymbol" aria-label="Symbol">SPY</div>
+                    </div>
+                </div>
+                <div class="ai-score-right">
+                    <div class="ai-score-value" id="aiScoreValue" aria-label="Score" title="Score from 0 (bearish) to 1 (bullish)">-</div>
+                    <div class="ai-score-rating" id="aiScoreRating" role="status" aria-live="polite">-</div>
+                    <div class="ai-score-date" id="aiScoreDate">-</div>
+                    <button class="ai-score-refresh" id="aiScoreRefresh" aria-label="Refresh AI Score" title="Refresh">↻</button>
+                </div>
+            </div>
+        </section>
+
         <!-- Controls Card - Matches Credit Spreads layout -->
         <section class="controls-card" id="controls">
             <div class="simple-form">

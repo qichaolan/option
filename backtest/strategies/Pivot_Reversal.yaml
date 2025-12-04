@@ -1,0 +1,16 @@
+strategies:
+  - name: "Pivot_Reversal"
+    weight: 1.0
+    combine: "any"
+    rules:
+      - indicator: "pivot_low_3"
+        operator: "=="
+        value: 1
+        action: "buy"
+        strength: 1.0
+
+      - indicator: "pivot_high_3"
+        operator: "=="
+        value: 1
+        action: "sell"
+        strength: 1.0
