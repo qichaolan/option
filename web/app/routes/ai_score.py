@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from web.app.services.ai_score_service import get_ai_score
+from app.services.ai_score_service import get_ai_score
 
 logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)

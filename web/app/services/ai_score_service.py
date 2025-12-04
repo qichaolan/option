@@ -12,7 +12,7 @@ from typing import Optional
 
 from backtest.daily_scorer.scorer import DailyScorer
 from backtest.daily_scorer.exceptions import DailyScorerError
-from web.app.services import gcs_cache
+from app.services import gcs_cache
 
 logger = logging.getLogger(__name__)
 

@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 def client():
     """Create test client for AI score API."""
     from fastapi import FastAPI
-    from web.app.routes.ai_score import router
+    from app.routes.ai_score import router
 
     app = FastAPI()
     app.include_router(router)
@@ -24,7 +24,7 @@ def client():
 class TestGetAIScoreEndpoint:
     """Tests for GET /api/ai-score endpoint."""
 
-    @patch("web.app.routes.ai_score.get_ai_score")
+    @patch("app.routes.ai_score.get_ai_score")
     def test_returns_score_for_valid_symbol(self, mock_get_score, client):
         """Should return score for valid symbol."""
         mock_get_score.return_value = {
@@ -45,7 +45,7 @@ class TestGetAIScoreEndpoint:
         assert data["score_0_1"] == 0.75
         assert data["ai_rating"] == "Buy"
 
-    @patch("web.app.routes.ai_score.get_ai_score")
+    @patch("app.routes.ai_score.get_ai_score")
     def test_passes_refresh_parameter(self, mock_get_score, client):
         """Should pass refresh parameter to service."""
         mock_get_score.return_value = {
@@ -66,7 +66,7 @@ class TestGetAIScoreEndpoint:
 
         assert response.status_code == 422
 
-    @patch("web.app.routes.ai_score.get_ai_score")
+    @patch("app.routes.ai_score.get_ai_score")
     def test_returns_404_for_not_found(self, mock_get_score, client):
         """Should return 404 when symbol not found."""
         mock_get_score.side_effect = ValueError("No data not found for INVALID")
@@ -81,7 +81,7 @@ class TestGetAIScoreEndpoint:
         response = client.get("/api/ai-score?symbol=123")
         assert response.status_code == 422
 
-    @patch("web.app.routes.ai_score.get_ai_score")
+    @patch("app.routes.ai_score.get_ai_score")
     def test_returns_400_for_invalid_symbol_from_service(self, mock_get_score, client):
         """Should return 400 for invalid symbol from service layer."""
         mock_get_score.side_effect = ValueError("Invalid symbol format")
@@ -90,7 +90,7 @@ class TestGetAIScoreEndpoint:
 
         assert response.status_code == 400
 
-    @patch("web.app.routes.ai_score.get_ai_score")
+    @patch("app.routes.ai_score.get_ai_score")
     def test_returns_500_for_server_error(self, mock_get_score, client):
         """Should return 500 for unexpected errors."""
         mock_get_score.side_effect = RuntimeError("Database connection failed")
@@ -100,7 +100,7 @@ class TestGetAIScoreEndpoint:
         assert response.status_code == 500
         assert "Server error" in response.json()["detail"]
 
-    @patch("web.app.routes.ai_score.get_ai_score")
+    @patch("app.routes.ai_score.get_ai_score")
     def test_handles_all_ai_ratings(self, mock_get_score, client):
         """Should handle all AI rating values."""
         ratings = ["Strong Buy", "Buy", "Hold", "Sell", "Must Sell"]
@@ -125,7 +125,7 @@ class TestGetAIScoreEndpoint:
 
         assert response.status_code == 422
 
-    @patch("web.app.routes.ai_score.get_ai_score")
+    @patch("app.routes.ai_score.get_ai_score")
     def test_uppercases_symbol(self, mock_get_score, client):
         """Should accept lowercase symbols."""
         mock_get_score.return_value = {

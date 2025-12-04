@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from web.app.services import gcs_cache
+from app.services import gcs_cache
 
 
 class TestValidateSymbol:

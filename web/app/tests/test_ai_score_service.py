@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from web.app.services import ai_score_service
+from app.services import ai_score_service
 
 
 class TestValidateScore:
@@ -114,19 +114,19 @@ class TestGetAIRating:
 class TestIsMarketClosedToday:
     """Tests for _is_market_closed_today function."""
 
-    @patch("web.app.services.ai_score_service.date")
+    @patch("app.services.ai_score_service.date")
     def test_returns_true_on_saturday(self, mock_date):
         """Should return True on Saturday."""
         mock_date.today.return_value = date(2024, 1, 6)  # Saturday
         assert ai_score_service._is_market_closed_today() is True
 
-    @patch("web.app.services.ai_score_service.date")
+    @patch("app.services.ai_score_service.date")
     def test_returns_true_on_sunday(self, mock_date):
         """Should return True on Sunday."""
         mock_date.today.return_value = date(2024, 1, 7)  # Sunday
         assert ai_score_service._is_market_closed_today() is True
 
-    @patch("web.app.services.ai_score_service.date")
+    @patch("app.services.ai_score_service.date")
     def test_returns_false_on_weekday(self, mock_date):
         """Should return False on weekdays."""
         mock_date.today.return_value = date(2024, 1, 8)  # Monday
@@ -144,8 +144,8 @@ class TestGetAIScore:
         with pytest.raises(ValueError, match="Symbol is required"):
             ai_score_service.get_ai_score("   ")
 
-    @patch("web.app.services.ai_score_service.gcs_cache")
-    @patch("web.app.services.ai_score_service.date")
+    @patch("app.services.ai_score_service.gcs_cache")
+    @patch("app.services.ai_score_service.date")
     def test_returns_cached_score_for_today(self, mock_date, mock_cache):
         """Should return cached score if it's from today."""
         today = date(2024, 1, 15)
@@ -165,9 +165,9 @@ class TestGetAIScore:
         assert result["score_0_1"] == 0.75
         assert result["ai_rating"] == "Buy"
 
-    @patch("web.app.services.ai_score_service.gcs_cache")
-    @patch("web.app.services.ai_score_service._is_market_closed_today")
-    @patch("web.app.services.ai_score_service.date")
+    @patch("app.services.ai_score_service.gcs_cache")
+    @patch("app.services.ai_score_service._is_market_closed_today")
+    @patch("app.services.ai_score_service.date")
     def test_returns_cached_score_on_weekend(self, mock_date, mock_market, mock_cache):
         """Should return Friday's score on weekend."""
         today = date(2024, 1, 13)  # Saturday
@@ -186,9 +186,9 @@ class TestGetAIScore:
         assert result["date"] == "2024-01-12"
         assert result["ai_rating"] == "Buy"
 
-    @patch("web.app.services.ai_score_service.gcs_cache")
-    @patch("web.app.services.ai_score_service.DailyScorer")
-    @patch("web.app.services.ai_score_service.date")
+    @patch("app.services.ai_score_service.gcs_cache")
+    @patch("app.services.ai_score_service.DailyScorer")
+    @patch("app.services.ai_score_service.date")
     def test_refreshes_when_cache_stale(self, mock_date, MockScorer, mock_cache):
         """Should refresh when cache is stale."""
         today = date(2024, 1, 15)
@@ -220,8 +220,8 @@ class TestGetAIScore:
         mock_scorer.refresh.assert_called_once()
         mock_cache.add_score.assert_called_once()
 
-    @patch("web.app.services.ai_score_service.gcs_cache")
-    @patch("web.app.services.ai_score_service.DailyScorer")
+    @patch("app.services.ai_score_service.gcs_cache")
+    @patch("app.services.ai_score_service.DailyScorer")
     def test_force_refresh_bypasses_cache(self, MockScorer, mock_cache):
         """Should bypass cache when force_refresh is True."""
         mock_scorer = MagicMock()
@@ -241,8 +241,8 @@ class TestGetAIScore:
         # get_latest_score should not be called when force_refresh=True
         mock_cache.get_latest_score.assert_not_called()
 
-    @patch("web.app.services.ai_score_service.gcs_cache")
-    @patch("web.app.services.ai_score_service.DailyScorer")
+    @patch("app.services.ai_score_service.gcs_cache")
+    @patch("app.services.ai_score_service.DailyScorer")
     def test_falls_back_to_cache_on_refresh_none(self, MockScorer, mock_cache):
         """Should fall back to cache if refresh returns None."""
         mock_scorer = MagicMock()
@@ -261,8 +261,8 @@ class TestGetAIScore:
         assert result["symbol"] == "SPY"
         assert result["score_raw"] == 0.5
 
-    @patch("web.app.services.ai_score_service.gcs_cache")
-    @patch("web.app.services.ai_score_service.DailyScorer")
+    @patch("app.services.ai_score_service.gcs_cache")
+    @patch("app.services.ai_score_service.DailyScorer")
     def test_raises_when_no_data_available(self, MockScorer, mock_cache):
         """Should raise ValueError when no data available."""
         mock_scorer = MagicMock()
@@ -276,8 +276,8 @@ class TestGetAIScore:
 
     def test_uppercases_symbol(self):
         """Should uppercase the symbol."""
-        with patch("web.app.services.ai_score_service.gcs_cache") as mock_cache:
-            with patch("web.app.services.ai_score_service.date") as mock_date:
+        with patch("app.services.ai_score_service.gcs_cache") as mock_cache:
+            with patch("app.services.ai_score_service.date") as mock_date:
                 mock_date.today.return_value = date(2024, 1, 15)
                 mock_cache.get_latest_score.return_value = {
                     "date": datetime(2024, 1, 15),
@@ -293,7 +293,7 @@ class TestGetAIScore:
 class TestGetAIScoresBatch:
     """Tests for get_ai_scores_batch function."""
 
-    @patch("web.app.services.ai_score_service.get_ai_score")
+    @patch("app.services.ai_score_service.get_ai_score")
     def test_returns_scores_for_multiple_symbols(self, mock_get_score):
         """Should return scores for all symbols."""
         mock_get_score.side_effect = [
@@ -307,7 +307,7 @@ class TestGetAIScoresBatch:
         assert results[0]["symbol"] == "SPY"
         assert results[1]["symbol"] == "AAPL"
 
-    @patch("web.app.services.ai_score_service.get_ai_score")
+    @patch("app.services.ai_score_service.get_ai_score")
     def test_handles_errors_gracefully(self, mock_get_score):
         """Should return error dict for failed symbols."""
         mock_get_score.side_effect = [
@@ -322,7 +322,7 @@ class TestGetAIScoresBatch:
         assert "error" in results[1]
         assert results[1]["symbol"] == "INVALID"
 
-    @patch("web.app.services.ai_score_service.get_ai_score")
+    @patch("app.services.ai_score_service.get_ai_score")
     def test_passes_force_refresh(self, mock_get_score):
         """Should pass force_refresh to individual calls."""
         mock_get_score.return_value = {
@@ -354,8 +354,8 @@ class TestExtractDate:
 class TestGetAIScoreEdgeCases:
     """Additional edge case tests for get_ai_score."""
 
-    @patch("web.app.services.ai_score_service.gcs_cache")
-    @patch("web.app.services.ai_score_service.DailyScorer")
+    @patch("app.services.ai_score_service.gcs_cache")
+    @patch("app.services.ai_score_service.DailyScorer")
     def test_continues_when_cache_fails(self, MockScorer, mock_cache):
         """Should continue even when caching the new score fails."""
         mock_scorer = MagicMock()
@@ -376,8 +376,8 @@ class TestGetAIScoreEdgeCases:
         assert result["score_raw"] == 0.6
         assert result["score_0_1"] == 0.8
 
-    @patch("web.app.services.ai_score_service.gcs_cache")
-    @patch("web.app.services.ai_score_service.DailyScorer")
+    @patch("app.services.ai_score_service.gcs_cache")
+    @patch("app.services.ai_score_service.DailyScorer")
     def test_raises_on_daily_scorer_error(self, MockScorer, mock_cache):
         """Should raise ValueError when DailyScorer raises DailyScorerError."""
         from backtest.daily_scorer.exceptions import DailyScorerError
@@ -387,8 +387,8 @@ class TestGetAIScoreEdgeCases:
         with pytest.raises(ValueError, match="Error computing score for SPY"):
             ai_score_service.get_ai_score("SPY", force_refresh=True)
 
-    @patch("web.app.services.ai_score_service.gcs_cache")
-    @patch("web.app.services.ai_score_service.date")
+    @patch("app.services.ai_score_service.gcs_cache")
+    @patch("app.services.ai_score_service.date")
     def test_returns_cached_with_date_object(self, mock_date, mock_cache):
         """Should handle cached score with date object (not datetime)."""
         today = date(2024, 1, 15)

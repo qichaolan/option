@@ -9,4 +9,6 @@ numpy>=1.24.0
 yfinance>=0.2.33
 slowapi>=0.1.9
 scipy>=1.11.0
+google-cloud-storage>=2.10.0
+pyarrow>=14.0.0
 # openbb removed - too heavy for Cloud Run, yfinance fallback is used instead
