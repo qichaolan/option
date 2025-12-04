@@ -198,7 +198,7 @@ function updateAIScoreDisplay(data) {
         aiScoreElements.modalDate.textContent = formattedDate;
     }
     if (aiScoreElements.rawScore) {
-        aiScoreElements.rawScore.textContent = data.score_raw.toFixed(4);
+        aiScoreElements.rawScore.textContent = data.score_0_1.toFixed(4);
     }
 }
 

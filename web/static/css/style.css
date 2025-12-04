@@ -3149,17 +3149,18 @@ tr.selected-for-sim::after {
     margin-bottom: 0;
 }
 
-/* The Badge itself - solid blue accent, darker than Fetch button */
+/* The Badge itself - solid blue accent, sized to match Fetch button */
 .ai-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.625rem;
     background: #1e40af; /* Solid dark blue */
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
     font-size: 0.75rem;
     white-space: nowrap;
-    box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
+    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.25);
+    height: 44px; /* Match Fetch button height */
 }
 
 /* AI Label with robot icon - visually loud */
@@ -3251,8 +3252,8 @@ tr.selected-for-sim::after {
 }
 
 .ai-badge-details:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: #e2e8f0;
+    background: #f1f5f9; /* slate-100 */
+    color: #475569; /* slate-600 */
 }
 
 .ai-badge-refresh {
