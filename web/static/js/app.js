@@ -26,19 +26,24 @@ let state = {
     underlyingPrice: 0,
 };
 
-// AI Score Elements
+// AI Score Elements (Badge + Modal)
 const aiScoreElements = {
+    // Badge elements
     box: document.getElementById('aiScoreBox'),
     symbol: document.getElementById('aiScoreSymbol'),
     value: document.getElementById('aiScoreValue'),
     rating: document.getElementById('aiScoreRating'),
     date: document.getElementById('aiScoreDate'),
     refresh: document.getElementById('aiScoreRefresh'),
-    infoBtn: document.getElementById('aiScoreInfoBtn'),
-    tooltip: document.getElementById('aiScoreTooltip'),
-    rawScore: document.getElementById('aiScoreRaw'),
     detailsToggle: document.getElementById('aiScoreDetailsToggle'),
-    detailsPanel: document.getElementById('aiScoreDetailsPanel'),
+    // Modal elements
+    modalOverlay: document.getElementById('aiScoreModalOverlay'),
+    modalClose: document.getElementById('aiScoreModalClose'),
+    modalSymbol: document.getElementById('aiModalSymbol'),
+    modalScore: document.getElementById('aiModalScore'),
+    modalRating: document.getElementById('aiModalRating'),
+    modalDate: document.getElementById('aiModalDate'),
+    rawScore: document.getElementById('aiScoreRaw'),
 };
 
 // Rating icons for color-blind accessibility
@@ -164,44 +169,57 @@ async function fetchAIScore(symbol, forceRefresh = false) {
     }
 }
 
-// Update AI Score display
+// Update AI Score display (Badge + Modal)
 function updateAIScoreDisplay(data) {
+    const rating = data.ai_rating;
+    const ratingClass = getRatingClass(rating);
+    const formattedDate = formatExactDate(data.date);
+    const shortDate = formatShortDate(data.date);
+
+    // Update Badge
     aiScoreElements.symbol.textContent = data.symbol;
     aiScoreElements.value.textContent = data.score_0_1.toFixed(2);
-    aiScoreElements.date.textContent = formatExactDate(data.date);
+    aiScoreElements.date.textContent = shortDate;
+    aiScoreElements.rating.textContent = rating;
+    aiScoreElements.rating.className = `ai-badge-rating ${ratingClass}`;
 
-    // Update raw score in details section
+    // Update Modal
+    if (aiScoreElements.modalSymbol) {
+        aiScoreElements.modalSymbol.textContent = data.symbol;
+    }
+    if (aiScoreElements.modalScore) {
+        aiScoreElements.modalScore.textContent = data.score_0_1.toFixed(2);
+    }
+    if (aiScoreElements.modalRating) {
+        aiScoreElements.modalRating.textContent = rating;
+        aiScoreElements.modalRating.className = `ai-modal-rating ${ratingClass}`;
+    }
+    if (aiScoreElements.modalDate) {
+        aiScoreElements.modalDate.textContent = formattedDate;
+    }
     if (aiScoreElements.rawScore) {
         aiScoreElements.rawScore.textContent = data.score_raw.toFixed(4);
     }
+}
 
-    // Set rating with icon for color-blind accessibility
-    const rating = data.ai_rating;
-    const icon = RATING_ICONS[rating] || '';
-    aiScoreElements.rating.textContent = `${icon} ${rating}`;
-
-    // Map rating to CSS class
-    let ratingClass = 'ai-score-rating ';
+// Get CSS class for rating
+function getRatingClass(rating) {
     switch (rating) {
-        case 'Strong Buy':
-            ratingClass += 'strong-buy';
-            break;
-        case 'Buy':
-            ratingClass += 'buy';
-            break;
-        case 'Hold':
-            ratingClass += 'hold';
-            break;
-        case 'Sell':
-            ratingClass += 'sell';
-            break;
-        case 'Must Sell':
-            ratingClass += 'must-sell';
-            break;
-        default:
-            ratingClass += 'hold';
+        case 'Strong Buy': return 'strong-buy';
+        case 'Buy': return 'buy';
+        case 'Hold': return 'hold';
+        case 'Sell': return 'sell';
+        case 'Must Sell': return 'must-sell';
+        default: return 'hold';
     }
-    aiScoreElements.rating.className = ratingClass;
+}
+
+// Format date for badge (short format)
+function formatShortDate(dateStr) {
+    const date = new Date(dateStr);
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const day = date.getDate();
+    return `${month} ${day}`;
 }
 
 // Format date as relative time (e.g., "Updated today", "Updated yesterday")
@@ -242,32 +260,34 @@ function setupEventListeners() {
         });
     }
 
-    // AI Score info tooltip toggle
-    if (aiScoreElements.infoBtn && aiScoreElements.tooltip) {
-        aiScoreElements.infoBtn.addEventListener('click', (e) => {
+    // AI Score Details button - opens modal
+    if (aiScoreElements.detailsToggle && aiScoreElements.modalOverlay) {
+        aiScoreElements.detailsToggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            const isVisible = aiScoreElements.tooltip.style.display !== 'none';
-            aiScoreElements.tooltip.style.display = isVisible ? 'none' : 'block';
+            openAIModal();
         });
+    }
 
-        // Close tooltip when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!aiScoreElements.box.contains(e.target)) {
-                aiScoreElements.tooltip.style.display = 'none';
+    // AI Modal close button
+    if (aiScoreElements.modalClose) {
+        aiScoreElements.modalClose.addEventListener('click', closeAIModal);
+    }
+
+    // Close modal when clicking overlay
+    if (aiScoreElements.modalOverlay) {
+        aiScoreElements.modalOverlay.addEventListener('click', (e) => {
+            if (e.target === aiScoreElements.modalOverlay) {
+                closeAIModal();
             }
         });
     }
 
-    // AI Score details toggle
-    if (aiScoreElements.detailsToggle && aiScoreElements.detailsPanel) {
-        aiScoreElements.detailsToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isVisible = aiScoreElements.detailsPanel.style.display !== 'none';
-            aiScoreElements.detailsPanel.style.display = isVisible ? 'none' : 'block';
-            aiScoreElements.detailsToggle.classList.toggle('active', !isVisible);
-            aiScoreElements.detailsToggle.textContent = isVisible ? 'Details' : 'Hide';
-        });
-    }
+    // Close modal with Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && aiScoreElements.modalOverlay?.style.display !== 'none') {
+            closeAIModal();
+        }
+    });
 
     // Keyboard shortcut: Enter to fetch
     document.addEventListener('keydown', (e) => {
@@ -275,6 +295,22 @@ function setupEventListeners() {
             fetchLEAPS();
         }
     });
+}
+
+// Open AI Market View modal
+function openAIModal() {
+    if (aiScoreElements.modalOverlay) {
+        aiScoreElements.modalOverlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+    }
+}
+
+// Close AI Market View modal
+function closeAIModal() {
+    if (aiScoreElements.modalOverlay) {
+        aiScoreElements.modalOverlay.style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling
+    }
 }
 
 // Close the simulator panel

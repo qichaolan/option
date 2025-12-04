@@ -3138,171 +3138,115 @@ tr.selected-for-sim::after {
     }
 }
 
-/* AI Score Box - Inline with Controls (Light Theme) */
-.ai-score-box {
-    background: #F4F7FF;
-    border: 1px solid #d1daf0;
-    border-radius: 8px;
-    padding: 0.5rem 0.75rem;
-    position: relative;
-    /* Fixed width for desktop inline layout */
-    width: 240px;
-    min-width: 220px;
-    max-width: 260px;
-    height: auto;
-    min-height: 70px;
-    max-height: 90px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+/* ============================================
+   AI MARKET VIEW - Compact Badge Design
+   ============================================ */
+
+/* Badge Wrapper - Positioned inline on desktop, above Ticker on mobile */
+.ai-badge-wrapper {
+    order: 3; /* Between Scoring Mode and Fetch button on desktop */
     align-self: flex-end;
     margin-bottom: 0;
 }
 
-.ai-score-content {
-    display: flex;
+/* The Badge itself - compact single-line design */
+.ai-badge {
+    display: inline-flex;
     align-items: center;
-    gap: 0.625rem;
+    gap: 0.5rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* Header section with title and symbol */
-.ai-score-header {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-    min-width: 0;
-}
-
-.ai-score-title-row {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-.ai-score-title {
+.ai-badge-label {
     font-size: 0.5625rem;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    font-weight: 600;
-}
-
-.ai-score-info-btn {
-    background: none;
-    border: none;
-    color: #94a3b8;
-    font-size: 0.6875rem;
-    cursor: pointer;
-    padding: 0.125rem;
-    border-radius: 50%;
-    transition: all 0.2s ease;
-    line-height: 1;
-}
-
-.ai-score-info-btn:hover {
+    font-weight: 700;
     color: #3b82f6;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.125rem 0.25rem;
+    background: #eff6ff;
+    border-radius: 3px;
 }
 
-.ai-score-symbol {
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: #1e3a5f;
-}
-
-/* Main score section - inline with rating */
-.ai-score-main {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    flex: 1;
-    justify-content: center;
-}
-
-.ai-score-value {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: #1e3a5f;
-    font-family: 'SF Mono', Monaco, 'Consolas', monospace;
-    line-height: 1;
-}
-
-.ai-score-rating {
-    padding: 0.1875rem 0.375rem;
-    border-radius: 4px;
+.ai-badge-symbol {
+    font-size: 0.75rem;
     font-weight: 600;
+    color: #1e293b;
+}
+
+.ai-badge-score {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #1e293b;
+    font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+}
+
+.ai-badge-rating {
     font-size: 0.5625rem;
+    font-weight: 600;
+    padding: 0.125rem 0.3125rem;
+    border-radius: 3px;
     text-transform: uppercase;
     letter-spacing: 0.02em;
-    white-space: nowrap;
 }
 
-/* AI Rating Colors - Professional, readable on light background */
-.ai-score-rating.strong-buy {
+/* Rating Colors */
+.ai-badge-rating.strong-buy {
     background: #dcfce7;
     color: #166534;
 }
 
-.ai-score-rating.buy {
-    background: #dcfce7;
-    color: #22c55e;
+.ai-badge-rating.buy {
+    background: #d1fae5;
+    color: #059669;
 }
 
-.ai-score-rating.hold {
+.ai-badge-rating.hold {
     background: #fef9c3;
     color: #a16207;
 }
 
-.ai-score-rating.sell {
+.ai-badge-rating.sell {
     background: #ffedd5;
     color: #c2410c;
 }
 
-.ai-score-rating.must-sell {
+.ai-badge-rating.must-sell {
     background: #fee2e2;
     color: #b91c1c;
 }
 
-/* Footer with date and refresh - single row */
-.ai-score-footer {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    margin-left: auto;
-}
-
-.ai-score-date {
+.ai-badge-date {
     font-size: 0.5rem;
     color: #94a3b8;
-    white-space: nowrap;
 }
 
-/* AI Score Details Toggle Button */
-.ai-score-details-toggle {
-    background: none;
-    border: none;
-    color: #3b82f6;
+.ai-badge-details {
     font-size: 0.5rem;
     font-weight: 500;
+    color: #3b82f6;
+    background: none;
+    border: none;
     cursor: pointer;
     padding: 0.125rem 0.25rem;
     border-radius: 3px;
-    transition: all 0.2s ease;
     text-transform: uppercase;
     letter-spacing: 0.03em;
+    transition: all 0.15s ease;
 }
 
-.ai-score-details-toggle:hover {
-    background: rgba(59, 130, 246, 0.1);
+.ai-badge-details:hover {
+    background: #eff6ff;
     color: #2563eb;
 }
 
-.ai-score-details-toggle.active {
-    background: rgba(59, 130, 246, 0.15);
-    color: #1d4ed8;
-}
-
-/* AI Score Refresh Button */
-.ai-score-refresh {
+.ai-badge-refresh {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3311,19 +3255,19 @@ tr.selected-for-sim::after {
     padding: 0;
     border: none;
     border-radius: 4px;
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
+    background: transparent;
+    color: #94a3b8;
     font-size: 0.6875rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
 }
 
-.ai-score-refresh:hover {
-    background: rgba(59, 130, 246, 0.2);
-    color: #2563eb;
+.ai-badge-refresh:hover {
+    background: #f1f5f9;
+    color: #3b82f6;
 }
 
-.ai-score-refresh.spinning {
+.ai-badge-refresh.spinning {
     animation: spin 1s linear infinite;
 }
 
@@ -3332,146 +3276,52 @@ tr.selected-for-sim::after {
     to { transform: rotate(360deg); }
 }
 
-/* Tooltip */
-.ai-score-tooltip {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    margin-top: 0.25rem;
-    z-index: 100;
-}
-
-.ai-score-tooltip-content {
-    background: #1e293b;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding: 0.625rem 0.75rem;
-    font-size: 0.6875rem;
-    color: rgba(255, 255, 255, 0.9);
-    line-height: 1.4;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.ai-score-tooltip-content strong {
-    color: white;
-}
-
-/* AI Score Loading State */
-.ai-score-box.loading .ai-score-value,
-.ai-score-box.loading .ai-score-rating {
+/* Loading State */
+.ai-badge-wrapper.loading .ai-badge-score,
+.ai-badge-wrapper.loading .ai-badge-rating {
     opacity: 0.5;
 }
 
-/* AI Score Error State */
-.ai-score-box.error {
-    background: #fef2f2;
+/* Error State */
+.ai-badge-wrapper.error .ai-badge {
     border-color: #fecaca;
+    background: #fef2f2;
 }
 
-/* Mobile Responsive */
+/* Mobile: Badge above Ticker, full width */
 @media (max-width: 768px) {
-    .ai-score-box {
-        /* Full width on mobile, stacked below form fields */
+    .ai-badge-wrapper {
+        order: -1; /* Move to top on mobile */
         width: 100%;
-        min-width: unset;
-        max-width: none;
-        min-height: auto;
-        max-height: none;
+        margin-bottom: 0.75rem;
+    }
+
+    .ai-badge {
+        width: 100%;
+        justify-content: space-between;
         padding: 0.5rem 0.75rem;
-        margin-top: 0.5rem;
-        order: 10; /* Push to end on mobile */
+        border-radius: 8px;
     }
 
-    .ai-score-content {
-        gap: 0.5rem;
-    }
-
-    .ai-score-header {
-        flex-direction: row;
-        align-items: center;
-        gap: 0.375rem;
-    }
-
-    .ai-score-symbol {
-        font-size: 0.8125rem;
-    }
-
-    .ai-score-value {
-        font-size: 1rem;
-    }
-
-    .ai-score-rating {
-        font-size: 0.5625rem;
-        padding: 0.1875rem 0.3125rem;
-    }
-
-    .ai-score-date {
+    .ai-badge-date {
         display: none;
     }
 }
 
-/* AI Score Details Panel - Expandable deep-dive below controls */
-.ai-score-details-panel {
-    background: #F4F7FF;
-    border: 1px solid #d1daf0;
-    border-top: none;
-    border-radius: 0 0 8px 8px;
-    margin-top: -0.5rem;
-    margin-bottom: 0.75rem;
-    padding: 0.75rem 1rem;
-    animation: slideDown 0.15s ease-out;
-}
+/* ============================================
+   AI MARKET VIEW - Modal/Drawer
+   ============================================ */
 
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* AI Score Expandable Details - Hidden in inline mode */
-.ai-score-details {
-    display: none; /* Hide details in compact inline mode */
-}
-
-.ai-score-details-summary {
+.ai-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 1000;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    padding: 0.25rem 0;
-    font-size: 0.5625rem;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    user-select: none;
-    list-style: none;
-}
-
-.ai-score-details-summary::-webkit-details-marker {
-    display: none;
-}
-
-.ai-score-details-summary:hover {
-    color: #3b82f6;
-}
-
-.ai-score-details-icon {
-    transition: transform 0.2s ease;
-    font-size: 0.5rem;
-}
-
-.ai-score-details[open] .ai-score-details-icon {
-    transform: rotate(180deg);
-}
-
-.ai-score-details-content {
-    padding: 0.5rem 0 0.25rem;
+    justify-content: center;
+    padding: 1rem;
     animation: fadeIn 0.15s ease;
 }
 
@@ -3480,51 +3330,202 @@ tr.selected-for-sim::after {
     to { opacity: 1; }
 }
 
-.ai-score-details-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
+.ai-modal {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 400px;
+    max-height: 90vh;
+    overflow: auto;
+    animation: slideUp 0.2s ease;
 }
 
-.ai-score-detail-item {
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ai-modal-header {
     display: flex;
-    flex-direction: column;
-    gap: 0.0625rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
 }
 
-.ai-score-detail-label {
-    font-size: 0.5rem;
+.ai-modal-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.ai-modal-close {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 6px;
     color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
 }
 
-.ai-score-detail-value {
-    font-size: 0.6875rem;
-    color: #1e3a5f;
+.ai-modal-close:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.ai-modal-body {
+    padding: 1.25rem;
+}
+
+.ai-modal-summary {
+    text-align: center;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 1rem;
+}
+
+.ai-modal-score-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.ai-modal-symbol {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.ai-modal-score {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
     font-family: 'SF Mono', Monaco, 'Consolas', monospace;
 }
 
-.ai-score-details-note {
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid #e2e8f0;
-    font-size: 0.5625rem;
-    color: #94a3b8;
-    line-height: 1.4;
+.ai-modal-rating {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
 }
 
-@media (max-width: 768px) {
-    .ai-score-details-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.375rem;
+.ai-modal-rating.strong-buy {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.ai-modal-rating.buy {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.ai-modal-rating.hold {
+    background: #fef9c3;
+    color: #a16207;
+}
+
+.ai-modal-rating.sell {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+.ai-modal-rating.must-sell {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.ai-modal-description {
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.ai-modal-description strong {
+    color: #1e293b;
+}
+
+.ai-modal-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.ai-modal-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.ai-modal-detail-row:last-child {
+    border-bottom: none;
+}
+
+.ai-modal-detail-label {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.ai-modal-detail-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #1e293b;
+    font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+}
+
+.ai-modal-note {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.6875rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* Mobile: Bottom drawer style */
+@media (max-width: 640px) {
+    .ai-modal-overlay {
+        align-items: flex-end;
+        padding: 0;
     }
 
-    .ai-score-detail-value {
-        font-size: 0.625rem;
+    .ai-modal {
+        max-width: none;
+        border-radius: 16px 16px 0 0;
+        max-height: 85vh;
+        animation: slideUpDrawer 0.25s ease;
     }
 
-    .ai-score-details-note {
-        font-size: 0.5rem;
+    @keyframes slideUpDrawer {
+        from {
+            opacity: 0;
+            transform: translateY(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 }
