@@ -35,14 +35,17 @@
                     <!-- AI Market View Badge - Shows above Ticker on mobile, inline on desktop -->
                     <div class="ai-badge-wrapper" id="aiScoreBox" role="region" aria-label="AI Market View" style="display: none;">
                         <div class="ai-badge">
-                            <span class="ai-badge-label">AI</span>
+                            <span class="ai-badge-label"><span class="ai-badge-icon">🤖</span> AI Market View</span>
                             <span class="ai-badge-symbol" id="aiScoreSymbol">SPY</span>
-                            <span class="ai-badge-score" id="aiScoreValue">-</span>
                             <span class="ai-badge-rating" id="aiScoreRating" role="status" aria-live="polite">-</span>
-                            <span class="ai-badge-date" id="aiScoreDate">-</span>
-                            <button class="ai-badge-details" id="aiScoreDetailsToggle" aria-label="View details" title="View AI Market View details">Details</button>
-                            <button class="ai-badge-refresh" id="aiScoreRefresh" aria-label="Refresh" title="Refresh score">↻</button>
+                            <span class="ai-badge-meta">
+                                <span class="ai-badge-date" id="aiScoreDate">-</span>
+                                <button class="ai-badge-details" id="aiScoreDetailsToggle" aria-label="View details" title="View AI Market View details">Details</button>
+                                <button class="ai-badge-refresh" id="aiScoreRefresh" aria-label="Refresh" title="Refresh score">↻</button>
+                            </span>
                         </div>
+                        <!-- Hidden score value for JS updates -->
+                        <input type="hidden" id="aiScoreValue" value="-">
                     </div>
                     <div class="simple-form-group">
                         <label for="tickerSelect">Ticker</label>
@@ -72,29 +75,28 @@
         <div class="ai-modal-overlay" id="aiScoreModalOverlay" style="display: none;">
             <div class="ai-modal" role="dialog" aria-labelledby="aiModalTitle" aria-modal="true">
                 <div class="ai-modal-header">
-                    <h3 class="ai-modal-title" id="aiModalTitle">AI Market View</h3>
+                    <h3 class="ai-modal-title" id="aiModalTitle">🤖 AI Market View</h3>
                     <button class="ai-modal-close" id="aiScoreModalClose" aria-label="Close">&times;</button>
                 </div>
                 <div class="ai-modal-body">
                     <div class="ai-modal-summary">
                         <div class="ai-modal-score-row">
                             <span class="ai-modal-symbol" id="aiModalSymbol">SPY</span>
-                            <span class="ai-modal-score" id="aiModalScore">0.75</span>
                             <span class="ai-modal-rating" id="aiModalRating">Strong Buy</span>
                         </div>
                         <p class="ai-modal-description">
-                            AI Score evaluates trend, momentum, and volume signals.<br>
+                            AI evaluates trend, momentum, and volume signals.<br>
                             <strong>0</strong> = Strong Sell &rarr; <strong>1</strong> = Strong Buy
                         </p>
                     </div>
                     <div class="ai-modal-details">
                         <div class="ai-modal-detail-row">
-                            <span class="ai-modal-detail-label">Raw Score</span>
+                            <span class="ai-modal-detail-label">Normalized Score</span>
                             <span class="ai-modal-detail-value" id="aiScoreRaw">-</span>
                         </div>
                         <div class="ai-modal-detail-row">
-                            <span class="ai-modal-detail-label">Model</span>
-                            <span class="ai-modal-detail-value">Trend + MFI</span>
+                            <span class="ai-modal-detail-label">Trained with</span>
+                            <span class="ai-modal-detail-value">30 years data</span>
                         </div>
                         <div class="ai-modal-detail-row">
                             <span class="ai-modal-detail-label">Lookback</span>

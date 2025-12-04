@@ -3149,88 +3149,97 @@ tr.selected-for-sim::after {
     margin-bottom: 0;
 }
 
-/* The Badge itself - compact single-line design */
+/* The Badge itself - solid blue accent, darker than Fetch button */
 .ai-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    gap: 0.625rem;
+    background: #1e40af; /* Solid dark blue */
     border-radius: 6px;
-    padding: 0.375rem 0.625rem;
+    padding: 0.5rem 0.75rem;
     font-size: 0.75rem;
     white-space: nowrap;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
 }
 
+/* AI Label with robot icon - visually loud */
 .ai-badge-label {
-    font-size: 0.5625rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.625rem;
     font-weight: 700;
-    color: #3b82f6;
+    color: #ffffff;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.125rem 0.25rem;
-    background: #eff6ff;
-    border-radius: 3px;
+    letter-spacing: 0.04em;
 }
 
-.ai-badge-symbol {
+.ai-badge-icon {
     font-size: 0.75rem;
-    font-weight: 600;
-    color: #1e293b;
 }
 
-.ai-badge-score {
+/* Symbol - slate-800, medium weight */
+.ai-badge-symbol {
     font-size: 0.8125rem;
-    font-weight: 700;
-    color: #1e293b;
-    font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+    font-weight: 500;
+    color: #e2e8f0; /* Light for contrast on dark bg */
 }
 
+/* Rating badge - deeper colors with white text */
 .ai-badge-rating {
     font-size: 0.5625rem;
-    font-weight: 600;
-    padding: 0.125rem 0.3125rem;
+    font-weight: 700;
+    padding: 0.1875rem 0.4375rem;
     border-radius: 3px;
     text-transform: uppercase;
     letter-spacing: 0.02em;
 }
 
-/* Rating Colors */
+/* Rating Colors - deeper, white text */
 .ai-badge-rating.strong-buy {
-    background: #dcfce7;
-    color: #166534;
+    background: #16a34a; /* green-600 */
+    color: #ffffff;
 }
 
 .ai-badge-rating.buy {
-    background: #d1fae5;
-    color: #059669;
+    background: #22c55e; /* green-500 */
+    color: #ffffff;
 }
 
 .ai-badge-rating.hold {
-    background: #fef9c3;
-    color: #a16207;
+    background: #ca8a04; /* yellow-600 */
+    color: #ffffff;
 }
 
 .ai-badge-rating.sell {
-    background: #ffedd5;
-    color: #c2410c;
+    background: #ea580c; /* orange-600 */
+    color: #ffffff;
 }
 
 .ai-badge-rating.must-sell {
-    background: #fee2e2;
-    color: #b91c1c;
+    background: #dc2626; /* red-600 */
+    color: #ffffff;
 }
 
+/* Meta section - date, details, refresh */
+.ai-badge-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+/* Date - low contrast */
 .ai-badge-date {
-    font-size: 0.5rem;
-    color: #94a3b8;
+    font-size: 0.625rem;
+    color: #94a3b8; /* slate-400 */
+    text-transform: uppercase;
 }
 
+/* Details button - low contrast */
 .ai-badge-details {
-    font-size: 0.5rem;
+    font-size: 0.625rem;
     font-weight: 500;
-    color: #3b82f6;
+    color: #94a3b8; /* slate-400 */
     background: none;
     border: none;
     cursor: pointer;
@@ -3242,8 +3251,8 @@ tr.selected-for-sim::after {
 }
 
 .ai-badge-details:hover {
-    background: #eff6ff;
-    color: #2563eb;
+    background: rgba(255, 255, 255, 0.15);
+    color: #e2e8f0;
 }
 
 .ai-badge-refresh {
@@ -3256,15 +3265,15 @@ tr.selected-for-sim::after {
     border: none;
     border-radius: 4px;
     background: transparent;
-    color: #94a3b8;
+    color: #94a3b8; /* slate-400 */
     font-size: 0.6875rem;
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .ai-badge-refresh:hover {
-    background: #f1f5f9;
-    color: #3b82f6;
+    background: rgba(255, 255, 255, 0.15);
+    color: #e2e8f0;
 }
 
 .ai-badge-refresh.spinning {
@@ -3277,15 +3286,13 @@ tr.selected-for-sim::after {
 }
 
 /* Loading State */
-.ai-badge-wrapper.loading .ai-badge-score,
 .ai-badge-wrapper.loading .ai-badge-rating {
     opacity: 0.5;
 }
 
 /* Error State */
 .ai-badge-wrapper.error .ai-badge {
-    border-color: #fecaca;
-    background: #fef2f2;
+    background: #7f1d1d; /* red-900 */
 }
 
 /* Mobile: Badge above Ticker, full width */
