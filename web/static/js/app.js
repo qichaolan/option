@@ -37,6 +37,8 @@ const aiScoreElements = {
     infoBtn: document.getElementById('aiScoreInfoBtn'),
     tooltip: document.getElementById('aiScoreTooltip'),
     rawScore: document.getElementById('aiScoreRaw'),
+    detailsToggle: document.getElementById('aiScoreDetailsToggle'),
+    detailsPanel: document.getElementById('aiScoreDetailsPanel'),
 };
 
 // Rating icons for color-blind accessibility
@@ -119,8 +121,8 @@ async function loadTickers() {
 async function fetchAIScore(symbol, forceRefresh = false) {
     if (!symbol || !aiScoreElements.box) return;
 
-    // Show loading state
-    aiScoreElements.box.style.display = 'block';
+    // Show loading state (use flex for inline layout)
+    aiScoreElements.box.style.display = 'flex';
     aiScoreElements.box.classList.add('loading');
     aiScoreElements.box.classList.remove('error');
     aiScoreElements.symbol.textContent = symbol;
@@ -253,6 +255,17 @@ function setupEventListeners() {
             if (!aiScoreElements.box.contains(e.target)) {
                 aiScoreElements.tooltip.style.display = 'none';
             }
+        });
+    }
+
+    // AI Score details toggle
+    if (aiScoreElements.detailsToggle && aiScoreElements.detailsPanel) {
+        aiScoreElements.detailsToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = aiScoreElements.detailsPanel.style.display !== 'none';
+            aiScoreElements.detailsPanel.style.display = isVisible ? 'none' : 'block';
+            aiScoreElements.detailsToggle.classList.toggle('active', !isVisible);
+            aiScoreElements.detailsToggle.textContent = isVisible ? 'Details' : 'Hide';
         });
     }
 

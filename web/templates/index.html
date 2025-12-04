@@ -28,66 +28,7 @@
             <p class="page-subtitle-compact">Long-term options (1–3 years) ranked by ease of reaching target and ROI potential.</p>
         </div>
 
-        <!-- AI Score Box -->
-        <section class="ai-score-box" id="aiScoreBox" role="region" aria-label="AI Market View" style="display: none;">
-            <div class="ai-score-content">
-                <div class="ai-score-header">
-                    <div class="ai-score-title-row">
-                        <span class="ai-score-title">AI</span>
-                        <span class="ai-score-icon" aria-hidden="true">🤖</span>
-                        <button class="ai-score-info-btn" id="aiScoreInfoBtn" aria-label="What is AI Score?" title="What is AI Score?">ⓘ</button>
-                    </div>
-                    <div class="ai-score-symbol" id="aiScoreSymbol" aria-label="Symbol">SPY</div>
-                </div>
-                <div class="ai-score-main">
-                    <div class="ai-score-value" id="aiScoreValue" aria-label="Score">-</div>
-                    <div class="ai-score-rating" id="aiScoreRating" role="status" aria-live="polite">-</div>
-                </div>
-                <div class="ai-score-footer">
-                    <div class="ai-score-date" id="aiScoreDate">-</div>
-                    <button class="ai-score-refresh" id="aiScoreRefresh" aria-label="Refresh AI Score" title="Fetch latest score from market data">↻</button>
-                </div>
-            </div>
-            <!-- Tooltip -->
-            <div class="ai-score-tooltip" id="aiScoreTooltip" role="tooltip" style="display: none;">
-                <div class="ai-score-tooltip-content">
-                    <strong>AI Score</strong> evaluates trend, momentum, and volume signals.<br>
-                    <strong>0</strong> = Strong Sell &rarr; <strong>1</strong> = Strong Buy
-                </div>
-            </div>
-            <!-- Expandable Details -->
-            <details class="ai-score-details" id="aiScoreDetails">
-                <summary class="ai-score-details-summary">
-                    <span>Details</span>
-                    <span class="ai-score-details-icon">&#9662;</span>
-                </summary>
-                <div class="ai-score-details-content">
-                    <div class="ai-score-details-grid">
-                        <div class="ai-score-detail-item">
-                            <span class="ai-score-detail-label">Raw</span>
-                            <span class="ai-score-detail-value" id="aiScoreRaw">-</span>
-                        </div>
-                        <div class="ai-score-detail-item">
-                            <span class="ai-score-detail-label">Model</span>
-                            <span class="ai-score-detail-value">Trend+MFI</span>
-                        </div>
-                        <div class="ai-score-detail-item">
-                            <span class="ai-score-detail-label">Lookback</span>
-                            <span class="ai-score-detail-value">365d</span>
-                        </div>
-                        <div class="ai-score-detail-item">
-                            <span class="ai-score-detail-label">Norm</span>
-                            <span class="ai-score-detail-value">Z-Score</span>
-                        </div>
-                    </div>
-                    <p class="ai-score-details-note">
-                        Combines SMA, EMA, RSI, MACD, Bollinger Bands, and MFI for directional bias.
-                    </p>
-                </div>
-            </details>
-        </section>
-
-        <!-- Controls Card - Matches Credit Spreads layout -->
+        <!-- Controls Card with AI Score inline -->
         <section class="controls-card" id="controls">
             <div class="simple-form">
                 <div class="simple-form-row">
@@ -105,6 +46,34 @@
                             <option value="high_convexity">High Convexity</option>
                         </select>
                     </div>
+                    <!-- AI Score Card - Inline on desktop -->
+                    <div class="ai-score-box" id="aiScoreBox" role="region" aria-label="AI Market View" style="display: none;">
+                        <div class="ai-score-content">
+                            <div class="ai-score-header">
+                                <div class="ai-score-title-row">
+                                    <span class="ai-score-title">AI Score</span>
+                                    <button class="ai-score-info-btn" id="aiScoreInfoBtn" aria-label="What is AI Score?" title="What is AI Score?">ⓘ</button>
+                                </div>
+                                <div class="ai-score-symbol" id="aiScoreSymbol" aria-label="Symbol">SPY</div>
+                            </div>
+                            <div class="ai-score-main">
+                                <div class="ai-score-value" id="aiScoreValue" aria-label="Score">-</div>
+                                <div class="ai-score-rating" id="aiScoreRating" role="status" aria-live="polite">-</div>
+                            </div>
+                            <div class="ai-score-footer">
+                                <div class="ai-score-date" id="aiScoreDate">-</div>
+                                <button class="ai-score-details-toggle" id="aiScoreDetailsToggle" aria-label="Show details" title="Show score details">Details</button>
+                                <button class="ai-score-refresh" id="aiScoreRefresh" aria-label="Refresh AI Score" title="Fetch latest score from market data">↻</button>
+                            </div>
+                        </div>
+                        <!-- Tooltip -->
+                        <div class="ai-score-tooltip" id="aiScoreTooltip" role="tooltip" style="display: none;">
+                            <div class="ai-score-tooltip-content">
+                                <strong>AI Score</strong> evaluates trend, momentum, and volume signals.<br>
+                                <strong>0</strong> = Strong Sell &rarr; <strong>1</strong> = Strong Buy
+                            </div>
+                        </div>
+                    </div>
                     <div class="simple-form-group simple-form-action">
                         <button class="btn btn-primary btn-lg btn-run" id="fetchBtn">
                             <span class="btn-icon">&#9654;</span>
@@ -114,6 +83,33 @@
                 </div>
             </div>
         </section>
+
+        <!-- AI Score Details Panel - Expandable deep-dive -->
+        <div class="ai-score-details-panel" id="aiScoreDetailsPanel" style="display: none;">
+            <div class="ai-score-details-content">
+                <div class="ai-score-details-grid">
+                    <div class="ai-score-detail-item">
+                        <span class="ai-score-detail-label">Raw Score</span>
+                        <span class="ai-score-detail-value" id="aiScoreRaw">-</span>
+                    </div>
+                    <div class="ai-score-detail-item">
+                        <span class="ai-score-detail-label">Model</span>
+                        <span class="ai-score-detail-value">Trend+MFI</span>
+                    </div>
+                    <div class="ai-score-detail-item">
+                        <span class="ai-score-detail-label">Lookback</span>
+                        <span class="ai-score-detail-value">365d</span>
+                    </div>
+                    <div class="ai-score-detail-item">
+                        <span class="ai-score-detail-label">Normalization</span>
+                        <span class="ai-score-detail-value">Z-Score</span>
+                    </div>
+                </div>
+                <p class="ai-score-details-note">
+                    Combines SMA, EMA, RSI, MACD, Bollinger Bands, and MFI for directional bias.
+                </p>
+            </div>
+        </div>
 
         <!-- Error Display -->
         <div id="errorDisplay" class="error-banner" style="display: none;">
