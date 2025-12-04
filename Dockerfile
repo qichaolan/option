@@ -19,6 +19,9 @@ COPY credit_spread_screener.py ./credit_spread_screener.py
 COPY iron_condor.py ./iron_condor.py
 COPY config/ ./config/
 
+# Copy backtest module (required for AI scoring)
+COPY backtest/ ./backtest/
+
 # Copy web application
 COPY web/app/ ./app/
 COPY web/static/ ./static/
