@@ -34,6 +34,9 @@ const aiScoreElements = {
     rating: document.getElementById('aiScoreRating'),
     date: document.getElementById('aiScoreDate'),
     refresh: document.getElementById('aiScoreRefresh'),
+    infoBtn: document.getElementById('aiScoreInfoBtn'),
+    tooltip: document.getElementById('aiScoreTooltip'),
+    rawScore: document.getElementById('aiScoreRaw'),
 };
 
 // Rating icons for color-blind accessibility
@@ -163,7 +166,12 @@ async function fetchAIScore(symbol, forceRefresh = false) {
 function updateAIScoreDisplay(data) {
     aiScoreElements.symbol.textContent = data.symbol;
     aiScoreElements.value.textContent = data.score_0_1.toFixed(2);
-    aiScoreElements.date.textContent = formatRelativeDate(data.date);
+    aiScoreElements.date.textContent = formatExactDate(data.date);
+
+    // Update raw score in details section
+    if (aiScoreElements.rawScore) {
+        aiScoreElements.rawScore.textContent = data.score_raw.toFixed(4);
+    }
 
     // Set rating with icon for color-blind accessibility
     const rating = data.ai_rating;
@@ -195,23 +203,10 @@ function updateAIScoreDisplay(data) {
 }
 
 // Format date as relative time (e.g., "Updated today", "Updated yesterday")
-function formatRelativeDate(dateStr) {
+function formatExactDate(dateStr) {
     const date = new Date(dateStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    date.setHours(0, 0, 0, 0);
-
-    const diffDays = Math.floor((today - date) / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-        return 'Updated today';
-    } else if (diffDays === 1) {
-        return 'Updated yesterday';
-    } else if (diffDays < 7) {
-        return `Updated ${diffDays} days ago`;
-    } else {
-        return `as of ${dateStr}`;
-    }
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return `Updated: ${date.toLocaleDateString('en-US', options)}`;
 }
 
 // Setup event listeners
@@ -241,6 +236,22 @@ function setupEventListeners() {
             const symbol = elements.tickerSelect.value;
             if (symbol) {
                 fetchAIScore(symbol, true); // Force refresh
+            }
+        });
+    }
+
+    // AI Score info tooltip toggle
+    if (aiScoreElements.infoBtn && aiScoreElements.tooltip) {
+        aiScoreElements.infoBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = aiScoreElements.tooltip.style.display !== 'none';
+            aiScoreElements.tooltip.style.display = isVisible ? 'none' : 'block';
+        });
+
+        // Close tooltip when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!aiScoreElements.box.contains(e.target)) {
+                aiScoreElements.tooltip.style.display = 'none';
             }
         });
     }

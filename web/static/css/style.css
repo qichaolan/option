@@ -3142,66 +3142,92 @@ tr.selected-for-sim::after {
 .ai-score-box {
     background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
     border-radius: 12px;
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
     margin-bottom: 1rem;
     box-shadow: var(--shadow-lg);
+    position: relative;
 }
 
 .ai-score-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 1.5rem;
 }
 
-.ai-score-left {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.ai-score-icon {
-    font-size: 2rem;
-}
-
-.ai-score-info {
+/* Header section with title and symbol */
+.ai-score-header {
     display: flex;
     flex-direction: column;
+    gap: 0.25rem;
 }
 
-.ai-score-label {
+.ai-score-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ai-score-title {
     font-size: 0.75rem;
     color: rgba(255, 255, 255, 0.7);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    font-weight: 500;
+}
+
+.ai-score-icon {
+    font-size: 1rem;
+}
+
+.ai-score-info-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.875rem;
+    cursor: pointer;
+    padding: 0.125rem 0.25rem;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.ai-score-info-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .ai-score-symbol {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: white;
-}
-
-.ai-score-right {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.ai-score-value {
     font-size: 1.5rem;
     font-weight: 700;
     color: white;
+    letter-spacing: -0.02em;
+}
+
+/* Main score section - hero element */
+.ai-score-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.ai-score-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: white;
     font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+    line-height: 1;
 }
 
 .ai-score-rating {
     padding: 0.375rem 0.75rem;
     border-radius: 6px;
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     text-transform: uppercase;
     letter-spacing: 0.025em;
+    white-space: nowrap;
 }
 
 /* AI Rating Colors */
@@ -3230,9 +3256,18 @@ tr.selected-for-sim::after {
     color: white;
 }
 
+/* Footer with date and refresh */
+.ai-score-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
 .ai-score-date {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.6875rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: right;
 }
 
 /* AI Score Refresh Button */
@@ -3240,14 +3275,14 @@ tr.selected-for-sim::after {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     padding: 0;
     border: none;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.15);
     color: white;
-    font-size: 1.125rem;
+    font-size: 1rem;
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -3270,6 +3305,32 @@ tr.selected-for-sim::after {
     to { transform: rotate(360deg); }
 }
 
+/* Tooltip */
+.ai-score-tooltip {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 0.5rem;
+    z-index: 100;
+    width: 280px;
+}
+
+.ai-score-tooltip-content {
+    background: #1a1a2e;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.5;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.ai-score-tooltip-content strong {
+    color: white;
+}
+
 /* AI Score Loading State */
 .ai-score-box.loading .ai-score-value,
 .ai-score-box.loading .ai-score-rating {
@@ -3284,30 +3345,147 @@ tr.selected-for-sim::after {
 /* Mobile Responsive */
 @media (max-width: 640px) {
     .ai-score-box {
-        padding: 0.875rem 1rem;
+        padding: 1rem;
     }
 
     .ai-score-content {
         flex-direction: column;
-        align-items: stretch;
-        gap: 0.75rem;
+        align-items: center;
+        gap: 1rem;
+        text-align: center;
     }
 
-    .ai-score-left {
-        justify-content: flex-start;
+    .ai-score-header {
+        align-items: center;
+        width: 100%;
     }
 
-    .ai-score-right {
-        justify-content: space-between;
-        padding-top: 0.5rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.2);
+    .ai-score-title-row {
+        justify-content: center;
     }
 
-    .ai-score-value {
+    .ai-score-symbol {
         font-size: 1.25rem;
     }
 
-    .ai-score-icon {
-        font-size: 1.5rem;
+    .ai-score-main {
+        padding: 0.5rem 0;
+    }
+
+    .ai-score-value {
+        font-size: 2rem;
+    }
+
+    .ai-score-footer {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding-top: 0.75rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        gap: 1rem;
+    }
+
+    .ai-score-date {
+        text-align: center;
+    }
+
+    .ai-score-tooltip {
+        width: calc(100% - 2rem);
+        left: 1rem;
+        transform: none;
+    }
+}
+
+/* AI Score Expandable Details */
+.ai-score-details {
+    margin-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    padding-top: 0.75rem;
+}
+
+.ai-score-details-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    user-select: none;
+    list-style: none;
+}
+
+.ai-score-details-summary::-webkit-details-marker {
+    display: none;
+}
+
+.ai-score-details-summary:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.ai-score-details-icon {
+    transition: transform 0.2s ease;
+    font-size: 0.625rem;
+}
+
+.ai-score-details[open] .ai-score-details-icon {
+    transform: rotate(180deg);
+}
+
+.ai-score-details-content {
+    padding: 0.75rem 0 0.25rem;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.ai-score-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.ai-score-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.ai-score-detail-label {
+    font-size: 0.625rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ai-score-detail-value {
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+}
+
+.ai-score-details-note {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.6875rem;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+    .ai-score-details-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+
+    .ai-score-detail-value {
+        font-size: 0.75rem;
     }
 }
