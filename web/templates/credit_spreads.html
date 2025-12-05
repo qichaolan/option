@@ -28,29 +28,64 @@
             <p class="page-subtitle-compact">Defined-risk income trades. Profit when price stays in your favor.</p>
         </div>
 
-        <!-- Simplified Controls Card - Only Ticker and Spread Type -->
-        <section class="controls-card" id="controls">
-            <div class="simple-form">
-                <div class="simple-form-row">
-                    <div class="simple-form-group">
-                        <label for="tickerSelect">Underlying</label>
-                        <select id="tickerSelect" class="select-lg">
-                            <option value="SPY">SPY</option>
-                            <option value="QQQ">QQQ</option>
-                        </select>
+        <!-- Simplified Controls Card with Inline Summary Cards -->
+        <section class="controls-card controls-card-with-summary" id="controls">
+            <div class="controls-summary-layout">
+                <!-- Left side: Form controls -->
+                <div class="simple-form">
+                    <div class="simple-form-row simple-form-row-inline">
+                        <div class="simple-form-group">
+                            <label for="tickerSelect">Underlying</label>
+                            <select id="tickerSelect" class="select-lg">
+                                <option value="SPY">SPY</option>
+                                <option value="QQQ">QQQ</option>
+                            </select>
+                        </div>
+                        <div class="simple-form-group">
+                            <label for="spreadTypeSelect">Strategy</label>
+                            <select id="spreadTypeSelect" class="select-lg">
+                                <option value="PCS">Bullish (Put Credit Spread)</option>
+                                <option value="CCS">Bearish (Call Credit Spread)</option>
+                            </select>
+                        </div>
+                        <div class="simple-form-group simple-form-action">
+                            <button class="btn btn-primary btn-lg btn-run" id="runScreenerBtn">
+                                <span class="btn-icon">&#9654;</span>
+                                Find Spreads
+                            </button>
+                        </div>
                     </div>
-                    <div class="simple-form-group">
-                        <label for="spreadTypeSelect">Strategy</label>
-                        <select id="spreadTypeSelect" class="select-lg">
-                            <option value="PCS">Bullish (Put Credit Spread)</option>
-                            <option value="CCS">Bearish (Call Credit Spread)</option>
-                        </select>
+                </div>
+
+                <!-- Right side: Summary Cards (2x2 grid on desktop) -->
+                <div class="summary-cards-inline" id="infoCards" style="display: none;">
+                    <div class="summary-card-mini">
+                        <div class="summary-card-mini-icon">📈</div>
+                        <div class="summary-card-mini-content">
+                            <div class="summary-card-mini-label">Symbol</div>
+                            <div class="summary-card-mini-value" id="symbolDisplay">-</div>
+                        </div>
                     </div>
-                    <div class="simple-form-group simple-form-action">
-                        <button class="btn btn-primary btn-lg btn-run" id="runScreenerBtn">
-                            <span class="btn-icon">&#9654;</span>
-                            Find Spreads
-                        </button>
+                    <div class="summary-card-mini">
+                        <div class="summary-card-mini-icon">💰</div>
+                        <div class="summary-card-mini-content">
+                            <div class="summary-card-mini-label">Price</div>
+                            <div class="summary-card-mini-value" id="underlyingPrice">-</div>
+                        </div>
+                    </div>
+                    <div class="summary-card-mini">
+                        <div class="summary-card-mini-icon">📊</div>
+                        <div class="summary-card-mini-content">
+                            <div class="summary-card-mini-label">IV%</div>
+                            <div class="summary-card-mini-value" id="ivpDisplay">-</div>
+                        </div>
+                    </div>
+                    <div class="summary-card-mini summary-card-mini-highlight">
+                        <div class="summary-card-mini-icon">🎯</div>
+                        <div class="summary-card-mini-content">
+                            <div class="summary-card-mini-label">Found</div>
+                            <div class="summary-card-mini-value" id="totalSpreads">-</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -69,43 +104,6 @@
             <span class="error-icon">!</span>
             <span class="error-message"></span>
         </div>
-
-        <!-- Results Summary Cards - Key metrics at a glance -->
-        <section class="summary-cards" id="infoCards" style="display: none;">
-            <div class="summary-card">
-                <div class="summary-card-icon">📈</div>
-                <div class="summary-card-content">
-                    <div class="summary-card-label">Symbol</div>
-                    <div class="summary-card-value" id="symbolDisplay">-</div>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-card-icon">💰</div>
-                <div class="summary-card-content">
-                    <div class="summary-card-label">Current Price</div>
-                    <div class="summary-card-value" id="underlyingPrice">-</div>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-card-icon">📊</div>
-                <div class="summary-card-content">
-                    <div class="summary-card-label">IV Percentile</div>
-                    <div class="summary-card-value" id="ivpDisplay">-</div>
-                </div>
-            </div>
-            <div class="summary-card summary-card-highlight">
-                <div class="summary-card-icon">🎯</div>
-                <div class="summary-card-content">
-                    <div class="summary-card-label">Total Spreads Found</div>
-                    <div class="summary-card-value" id="totalSpreads">-</div>
-                    <div class="summary-card-breakdown">
-                        <span class="breakdown-pcs"><span id="pcsCount">0</span> PCS</span>
-                        <span class="breakdown-divider">|</span>
-                        <span class="breakdown-ccs"><span id="ccsCount">0</span> CCS</span>
-                    </div>
-                </div>
-            </div>
-        </section>
 
         <!-- Main Content Grid - Table and Simulator side by side on desktop -->
         <div class="page-layout" id="mainContent">
