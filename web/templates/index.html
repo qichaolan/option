@@ -28,44 +28,78 @@
             <p class="page-subtitle-compact">Long-term options (1–3 years) ranked by ease of reaching target and ROI potential.</p>
         </div>
 
-        <!-- Controls Card with AI Market View badge -->
-        <section class="controls-card" id="controls">
-            <div class="simple-form">
-                <div class="simple-form-row">
-                    <!-- AI Market View Badge - Shows above Ticker on mobile, inline on desktop -->
-                    <div class="ai-badge-wrapper" id="aiScoreBox" role="region" aria-label="AI Market View" style="display: none;">
-                        <div class="ai-badge">
-                            <span class="ai-badge-label"><span class="ai-badge-icon">🤖</span> AI Market View</span>
-                            <span class="ai-badge-symbol" id="aiScoreSymbol">SPY</span>
-                            <span class="ai-badge-rating" id="aiScoreRating" role="status" aria-live="polite">-</span>
-                            <span class="ai-badge-meta">
-                                <span class="ai-badge-date" id="aiScoreDate">-</span>
-                                <button class="ai-badge-details" id="aiScoreDetailsToggle" aria-label="View details" title="View AI Market View details">Details</button>
-                                <button class="ai-badge-refresh" id="aiScoreRefresh" aria-label="Refresh" title="Refresh score">↻</button>
-                            </span>
+        <!-- Controls Card with Inline Summary Cards -->
+        <section class="controls-card controls-card-with-summary" id="controls">
+            <div class="controls-summary-layout">
+                <!-- Left side: Form controls -->
+                <div class="simple-form">
+                    <div class="simple-form-row simple-form-row-inline">
+                        <!-- AI Market View Badge -->
+                        <div class="ai-badge-wrapper" id="aiScoreBox" role="region" aria-label="AI Market View" style="display: none;">
+                            <div class="ai-badge">
+                                <span class="ai-badge-label"><span class="ai-badge-icon">🤖</span> AI Market View</span>
+                                <span class="ai-badge-symbol" id="aiScoreSymbol">SPY</span>
+                                <span class="ai-badge-rating" id="aiScoreRating" role="status" aria-live="polite">-</span>
+                                <span class="ai-badge-meta">
+                                    <span class="ai-badge-date" id="aiScoreDate">-</span>
+                                    <button class="ai-badge-details" id="aiScoreDetailsToggle" aria-label="View details" title="View AI Market View details">Details</button>
+                                    <button class="ai-badge-refresh" id="aiScoreRefresh" aria-label="Refresh" title="Refresh score">↻</button>
+                                </span>
+                            </div>
+                            <input type="hidden" id="aiScoreValue" value="-">
                         </div>
-                        <!-- Hidden score value for JS updates -->
-                        <input type="hidden" id="aiScoreValue" value="-">
+                        <div class="simple-form-group">
+                            <label for="tickerSelect">Ticker</label>
+                            <select id="tickerSelect" class="select-lg">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <input type="hidden" id="targetPct" value="50">
+                        <div class="simple-form-group">
+                            <label for="modeSelect">Scoring Mode</label>
+                            <select id="modeSelect" class="select-lg">
+                                <option value="high_prob">High Probability</option>
+                                <option value="high_convexity">High Convexity</option>
+                            </select>
+                        </div>
+                        <div class="simple-form-group simple-form-action">
+                            <button class="btn btn-primary btn-run" id="fetchBtn">
+                                <span class="btn-icon">&#9654;</span>
+                                Fetch LEAPS
+                            </button>
+                        </div>
                     </div>
-                    <div class="simple-form-group">
-                        <label for="tickerSelect">Ticker</label>
-                        <select id="tickerSelect" class="select-lg">
-                            <option value="">Loading...</option>
-                        </select>
+                </div>
+
+                <!-- Right side: Summary Cards (4 columns inline) -->
+                <div class="summary-cards-inline" id="infoCards" style="display: none;">
+                    <div class="summary-card-mini">
+                        <div class="summary-card-mini-icon">📈</div>
+                        <div class="summary-card-mini-content">
+                            <div class="summary-card-mini-label">Symbol</div>
+                            <div class="summary-card-mini-value" id="symbolDisplay">-</div>
+                        </div>
                     </div>
-                    <input type="hidden" id="targetPct" value="50">
-                    <div class="simple-form-group">
-                        <label for="modeSelect">Scoring Mode</label>
-                        <select id="modeSelect" class="select-lg">
-                            <option value="high_prob">High Probability</option>
-                            <option value="high_convexity">High Convexity</option>
-                        </select>
+                    <div class="summary-card-mini">
+                        <div class="summary-card-mini-icon">💰</div>
+                        <div class="summary-card-mini-content">
+                            <div class="summary-card-mini-label">Price</div>
+                            <div class="summary-card-mini-value" id="underlyingPrice">-</div>
+                        </div>
                     </div>
-                    <div class="simple-form-group simple-form-action">
-                        <button class="btn btn-primary btn-run" id="fetchBtn">
-                            <span class="btn-icon">&#9654;</span>
-                            Fetch LEAPS
-                        </button>
+                    <div class="summary-card-mini">
+                        <div class="summary-card-mini-icon">🎯</div>
+                        <div class="summary-card-mini-content">
+                            <div class="summary-card-mini-label">Target</div>
+                            <div class="summary-card-mini-value" id="targetPrice">-</div>
+                        </div>
+                    </div>
+                    <div class="summary-card-mini summary-card-mini-highlight">
+                        <div class="summary-card-mini-icon">📊</div>
+                        <div class="summary-card-mini-content">
+                            <div class="summary-card-mini-label">Move</div>
+                            <div class="summary-card-mini-value positive" id="targetPctDisplay">-</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -123,38 +157,6 @@
             <span class="error-icon">!</span>
             <span class="error-message"></span>
         </div>
-
-        <!-- Summary Cards - Compact 4-column layout matching Credit Spreads -->
-        <section class="summary-cards summary-cards-compact" id="infoCards" style="display: none;">
-            <div class="summary-card summary-card-sm">
-                <div class="summary-card-icon">📈</div>
-                <div class="summary-card-content">
-                    <div class="summary-card-label">Symbol</div>
-                    <div class="summary-card-value" id="symbolDisplay">-</div>
-                </div>
-            </div>
-            <div class="summary-card summary-card-sm">
-                <div class="summary-card-icon">💰</div>
-                <div class="summary-card-content">
-                    <div class="summary-card-label">Current Price</div>
-                    <div class="summary-card-value" id="underlyingPrice">-</div>
-                </div>
-            </div>
-            <div class="summary-card summary-card-sm">
-                <div class="summary-card-icon">🎯</div>
-                <div class="summary-card-content">
-                    <div class="summary-card-label">Target Price</div>
-                    <div class="summary-card-value" id="targetPrice">-</div>
-                </div>
-            </div>
-            <div class="summary-card summary-card-sm summary-card-highlight">
-                <div class="summary-card-icon">📊</div>
-                <div class="summary-card-content">
-                    <div class="summary-card-label">Target Move</div>
-                    <div class="summary-card-value positive" id="targetPctDisplay">-</div>
-                </div>
-            </div>
-        </section>
 
         <!-- Main Content Grid - Table and Simulator side by side on desktop -->
         <div class="page-layout" id="mainContent">

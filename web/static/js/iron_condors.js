@@ -314,7 +314,7 @@ function updateUI(data) {
 
     // Show info cards
     if (elements.infoCards) {
-        elements.infoCards.style.display = 'flex';
+        elements.infoCards.style.display = 'grid';
     }
 
     hideLoading();

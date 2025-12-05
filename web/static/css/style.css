@@ -1970,12 +1970,13 @@ tr[data-contract] {
     gap: 0.75rem;
 }
 
-/* Inline summary cards - 4 columns in one row on desktop */
+/* Inline summary cards - auto-fit for 3 or 4 cards in one row on desktop */
 .summary-cards-inline {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
     gap: 0.5rem;
     flex: 1;
+    max-width: 340px;
 }
 
 /* Mini summary card styling */
@@ -2088,9 +2089,9 @@ tr[data-contract] {
         gap: 0.5rem;
     }
 
-    /* Mobile: 4 cards in one row below button */
+    /* Mobile: cards in one row below button (auto-fit for 3 or 4 cards) */
     .summary-cards-inline {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
         max-width: 100%;
         gap: 0.375rem;
     }

@@ -28,41 +28,69 @@
             <p class="page-subtitle-compact">Neutral strategy profiting when price stays within a range.</p>
         </div>
 
-        <!-- Controls Card -->
-        <section class="controls-card" id="controls">
-            <div class="simple-form">
-                <div class="simple-form-row">
-                    <div class="simple-form-group">
-                        <label for="tickerSelect">Underlying</label>
-                        <select id="tickerSelect" class="select-lg">
-                            <option value="QQQ" selected>QQQ</option>
-                            <option value="SPY">SPY</option>
-                        </select>
+        <!-- Controls Card with Inline Summary Cards -->
+        <section class="controls-card controls-card-with-summary" id="controls">
+            <div class="controls-summary-layout">
+                <!-- Left side: Form controls -->
+                <div class="simple-form">
+                    <div class="simple-form-row simple-form-row-inline">
+                        <div class="simple-form-group">
+                            <label for="tickerSelect">Underlying</label>
+                            <select id="tickerSelect" class="select-lg">
+                                <option value="QQQ" selected>QQQ</option>
+                                <option value="SPY">SPY</option>
+                            </select>
+                        </div>
+                        <div class="simple-form-group">
+                            <label for="minRocInput">Min ROC</label>
+                            <select id="minRocInput" class="select-lg">
+                                <option value="0.10">10%</option>
+                                <option value="0.15" selected>15%</option>
+                                <option value="0.20">20%</option>
+                                <option value="0.25">25%</option>
+                                <option value="0.30">30%</option>
+                            </select>
+                        </div>
+                        <div class="simple-form-group">
+                            <label for="minPopInput">Min POP</label>
+                            <select id="minPopInput" class="select-lg">
+                                <option value="0.40">40%</option>
+                                <option value="0.50" selected>50%</option>
+                                <option value="0.60">60%</option>
+                                <option value="0.70">70%</option>
+                            </select>
+                        </div>
+                        <div class="simple-form-group simple-form-action">
+                            <button class="btn btn-primary btn-lg btn-run" id="runScreenerBtn">
+                                <span class="btn-icon">&#9654;</span>
+                                Scan Condors
+                            </button>
+                        </div>
                     </div>
-                    <div class="simple-form-group">
-                        <label for="minRocInput">Min ROC</label>
-                        <select id="minRocInput" class="select-lg">
-                            <option value="0.10">10%</option>
-                            <option value="0.15" selected>15%</option>
-                            <option value="0.20">20%</option>
-                            <option value="0.25">25%</option>
-                            <option value="0.30">30%</option>
-                        </select>
+                </div>
+
+                <!-- Right side: Summary Cards (3 columns inline) -->
+                <div class="summary-cards-inline" id="infoCards" style="display: none;">
+                    <div class="summary-card-mini">
+                        <div class="summary-card-mini-icon">📈</div>
+                        <div class="summary-card-mini-content">
+                            <div class="summary-card-mini-label">Symbol</div>
+                            <div class="summary-card-mini-value" id="symbolDisplay">-</div>
+                        </div>
                     </div>
-                    <div class="simple-form-group">
-                        <label for="minPopInput">Min POP</label>
-                        <select id="minPopInput" class="select-lg">
-                            <option value="0.40">40%</option>
-                            <option value="0.50" selected>50%</option>
-                            <option value="0.60">60%</option>
-                            <option value="0.70">70%</option>
-                        </select>
+                    <div class="summary-card-mini">
+                        <div class="summary-card-mini-icon">💰</div>
+                        <div class="summary-card-mini-content">
+                            <div class="summary-card-mini-label">Price</div>
+                            <div class="summary-card-mini-value" id="underlyingPrice">-</div>
+                        </div>
                     </div>
-                    <div class="simple-form-group simple-form-action">
-                        <button class="btn btn-primary btn-lg btn-run" id="runScreenerBtn">
-                            <span class="btn-icon">&#9654;</span>
-                            Scan Iron Condors
-                        </button>
+                    <div class="summary-card-mini summary-card-mini-highlight">
+                        <div class="summary-card-mini-icon">🦅</div>
+                        <div class="summary-card-mini-content">
+                            <div class="summary-card-mini-label">Found</div>
+                            <div class="summary-card-mini-value" id="totalCondors">-</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -77,31 +105,6 @@
             <span class="error-icon">!</span>
             <span class="error-message"></span>
         </div>
-
-        <!-- Results Summary Cards -->
-        <section class="summary-cards" id="infoCards" style="display: none;">
-            <div class="summary-card">
-                <div class="summary-card-icon">📈</div>
-                <div class="summary-card-content">
-                    <div class="summary-card-label">Symbol</div>
-                    <div class="summary-card-value" id="symbolDisplay">-</div>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-card-icon">💰</div>
-                <div class="summary-card-content">
-                    <div class="summary-card-label">Current Price</div>
-                    <div class="summary-card-value" id="underlyingPrice">-</div>
-                </div>
-            </div>
-            <div class="summary-card summary-card-highlight">
-                <div class="summary-card-icon">🦅</div>
-                <div class="summary-card-content">
-                    <div class="summary-card-label">Iron Condors Found</div>
-                    <div class="summary-card-value" id="totalCondors">-</div>
-                </div>
-            </div>
-        </section>
 
         <!-- Main Content Grid - Table and Chart side by side on desktop -->
         <div class="iron-condor-layout" id="mainContent">
