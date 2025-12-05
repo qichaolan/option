@@ -91,9 +91,13 @@ const elements = {
 document.addEventListener('DOMContentLoaded', async () => {
     await loadTickers();
     setupEventListeners();
-    // Fetch AI score for the initially selected ticker
+    // Fetch AI score for the initially selected ticker (SPY by default)
     if (elements.tickerSelect.value) {
         fetchAIScore(elements.tickerSelect.value);
+    }
+    // Auto-fetch SPY High Probability LEAPS on page load
+    if (elements.tickerSelect.value === 'SPY' && elements.modeSelect.value === 'high_prob') {
+        fetchLEAPS();
     }
 });
 
@@ -352,7 +356,7 @@ async function fetchLEAPS() {
                 symbol,
                 target_pct: targetPct,
                 mode,
-                top_n: 20,
+                top_n: 10, // Display top 10 LEAPS only
             }),
         });
 
@@ -409,6 +413,12 @@ function updateUI(data) {
         if (elements.noResultsState) {
             elements.noResultsState.style.display = 'block';
         }
+        // Clear selected contracts and hide simulator when no results
+        state.selectedContracts = [];
+        elements.simContracts.value = '';
+        if (elements.simulator) {
+            elements.simulator.style.display = 'none';
+        }
     } else {
         elements.emptyState.style.display = 'none';
         if (elements.noResultsState) {
@@ -416,13 +426,20 @@ function updateUI(data) {
         }
         elements.tableContainer.style.display = 'block';
         renderTable(data.contracts);
-    }
 
-    // Clear selected contracts and hide simulator
-    state.selectedContracts = [];
-    elements.simContracts.value = '';
-    if (elements.simulator) {
-        elements.simulator.style.display = 'none';
+        // Auto-select top contract and run simulator
+        const topContract = data.contracts[0];
+        state.selectedContracts = [topContract];
+        elements.simContracts.value = topContract.contract_symbol;
+
+        // Highlight the first row as selected
+        const firstRow = document.querySelector('[data-contract="0"]');
+        if (firstRow) {
+            firstRow.classList.add('selected');
+        }
+
+        // Show simulator with top contract
+        showSimulator(topContract);
     }
 }
 
