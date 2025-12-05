@@ -245,8 +245,9 @@ function updateUI(data) {
     elements.underlyingPrice.textContent = formatCurrency(data.underlying_price);
     elements.ivpDisplay.textContent = data.ivp.toFixed(0) + '%';
     elements.totalSpreads.textContent = data.spreads.length;
-    elements.pcsCount.textContent = data.total_pcs;
-    elements.ccsCount.textContent = data.total_ccs;
+    // pcsCount and ccsCount are optional (removed in compact layout)
+    if (elements.pcsCount) elements.pcsCount.textContent = data.total_pcs;
+    if (elements.ccsCount) elements.ccsCount.textContent = data.total_ccs;
 
     // Show summary cards
     elements.infoCards.style.display = 'grid';
