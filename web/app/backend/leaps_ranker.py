@@ -145,68 +145,145 @@ def _get_yfinance_options_chain(
 
     logger.info(f"Fetching options via yfinance for {symbol}")
 
+    # Retry logic for transient failures (timeouts, network issues)
+    max_retries = 3
+    last_error = None
+
+    for attempt in range(max_retries):
+        try:
+            ticker = yf.Ticker(symbol.upper())
+
+            # Get all expiration dates first (this is fast)
+            expirations = ticker.options
+            if not expirations:
+                raise ValueError(f"No options expirations found for {symbol}")
+
+            logger.info(f"Found {len(expirations)} expiration dates for {symbol}")
+
+            # Fetch all chains and combine
+            all_chains = []
+            underlying_price = 0
+            failed_count = 0
+
+            for exp in expirations:
+                try:
+                    opt_chain = ticker.option_chain(exp)
+                    if option_type == "call":
+                        chain = opt_chain.calls.copy()
+                    else:
+                        chain = opt_chain.puts.copy()
+
+                    chain["expiration"] = exp
+                    all_chains.append(chain)
+
+                    # Extract underlying price from the option chain if available
+                    if underlying_price == 0 and hasattr(opt_chain, 'underlying'):
+                        underlying_price = opt_chain.underlying.get('regularMarketPrice', 0)
+                except Exception as e:
+                    failed_count += 1
+                    logger.debug(f"Failed to fetch chain for {exp}: {e}")
+                    # If too many failures, might be a systemic issue
+                    if failed_count > 5 and len(all_chains) == 0:
+                        raise RuntimeError(f"Too many chain fetch failures for {symbol}")
+                    continue
+
+            if not all_chains:
+                raise ValueError(f"No {option_type} options data found for {symbol}")
+
+            df = pd.concat(all_chains, ignore_index=True)
+
+            # Calculate DTE
+            today = pd.Timestamp.now().normalize()
+            df["expiration_dt"] = pd.to_datetime(df["expiration"])
+            df["dte"] = (df["expiration_dt"] - today).dt.days
+
+            # Standardize column names from yfinance format
+            col_mapping = {
+                "contractSymbol": "contract_symbol",
+                "lastPrice": "last_trade_price",
+                "openInterest": "open_interest",
+                "impliedVolatility": "implied_volatility",
+            }
+            df = df.rename(columns=col_mapping)
+
+            # Add mark as mid price
+            if "bid" in df.columns and "ask" in df.columns:
+                df["mark"] = (df["bid"].fillna(0) + df["ask"].fillna(0)) / 2
+
+            # If we still don't have underlying price, try to get it from ticker.info
+            # with a short timeout, or estimate from ATM options
+            if underlying_price == 0:
+                underlying_price = _get_underlying_price_fallback(ticker, df, symbol)
+
+            # Add underlying price
+            df["underlying_price"] = underlying_price
+
+            return df, underlying_price
+
+        except Exception as e:
+            last_error = e
+            error_msg = str(e).lower()
+            # Only retry on timeout/network errors
+            if "timeout" in error_msg or "curl" in error_msg or "connection" in error_msg:
+                if attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 2  # 2, 4, 6 seconds
+                    logger.warning(f"Attempt {attempt + 1} failed for {symbol}, retrying in {wait_time}s: {e}")
+                    import time
+                    time.sleep(wait_time)
+                    continue
+            # Non-retryable error, raise immediately
+            raise RuntimeError(f"yfinance failed for {symbol}: {e}") from e
+
+    # All retries exhausted
+    raise RuntimeError(f"yfinance failed for {symbol} after {max_retries} attempts: {last_error}") from last_error
+
+
+def _get_underlying_price_fallback(ticker, df: pd.DataFrame, symbol: str) -> float:
+    """
+    Get underlying price using fallback methods when ticker.info times out.
+
+    Tries multiple approaches:
+    1. Fast history lookup (1 day)
+    2. Estimate from ATM option strikes
+    """
+    import yfinance as yf
+
+    # Method 1: Try fast history (usually faster than ticker.info)
     try:
-        ticker = yf.Ticker(symbol.upper())
-
-        # Get underlying price
-        info = ticker.info
-        underlying_price = info.get("regularMarketPrice") or info.get(
-            "previousClose", 0
-        )
-
-        # Get all expiration dates
-        expirations = ticker.options
-        if not expirations:
-            raise ValueError(f"No options expirations found for {symbol}")
-
-        logger.info(f"Found {len(expirations)} expiration dates for {symbol}")
-
-        # Fetch all chains and combine
-        all_chains = []
-        for exp in expirations:
-            try:
-                opt_chain = ticker.option_chain(exp)
-                if option_type == "call":
-                    chain = opt_chain.calls.copy()
-                else:
-                    chain = opt_chain.puts.copy()
-
-                chain["expiration"] = exp
-                all_chains.append(chain)
-            except Exception as e:
-                logger.debug(f"Failed to fetch chain for {exp}: {e}")
-                continue
-
-        if not all_chains:
-            raise ValueError(f"No {option_type} options data found for {symbol}")
-
-        df = pd.concat(all_chains, ignore_index=True)
-
-        # Calculate DTE
-        today = pd.Timestamp.now().normalize()
-        df["expiration_dt"] = pd.to_datetime(df["expiration"])
-        df["dte"] = (df["expiration_dt"] - today).dt.days
-
-        # Standardize column names from yfinance format
-        col_mapping = {
-            "contractSymbol": "contract_symbol",
-            "lastPrice": "last_trade_price",
-            "openInterest": "open_interest",
-            "impliedVolatility": "implied_volatility",
-        }
-        df = df.rename(columns=col_mapping)
-
-        # Add mark as mid price
-        if "bid" in df.columns and "ask" in df.columns:
-            df["mark"] = (df["bid"].fillna(0) + df["ask"].fillna(0)) / 2
-
-        # Add underlying price
-        df["underlying_price"] = underlying_price
-
-        return df, underlying_price
-
+        hist = ticker.history(period="1d", timeout=10)
+        if not hist.empty:
+            price = hist["Close"].iloc[-1]
+            logger.info(f"Got {symbol} price from history: ${price:.2f}")
+            return float(price)
     except Exception as e:
-        raise RuntimeError(f"yfinance failed for {symbol}: {e}") from e
+        logger.debug(f"History lookup failed for {symbol}: {e}")
+
+    # Method 2: Estimate from option strikes (ATM options have strike ≈ underlying)
+    # Find strikes where calls and puts have similar prices (ATM region)
+    try:
+        if "strike" in df.columns and len(df) > 0:
+            # Get unique strikes sorted
+            strikes = sorted(df["strike"].unique())
+            if len(strikes) >= 3:
+                # ATM is typically in the middle of the strike range
+                mid_idx = len(strikes) // 2
+                estimated_price = strikes[mid_idx]
+                logger.info(f"Estimated {symbol} price from strikes: ${estimated_price:.2f}")
+                return float(estimated_price)
+    except Exception as e:
+        logger.debug(f"Strike estimation failed for {symbol}: {e}")
+
+    # Method 3: Last resort - try ticker.info with awareness it might timeout
+    try:
+        info = ticker.info
+        price = info.get("regularMarketPrice") or info.get("previousClose", 0)
+        if price > 0:
+            logger.info(f"Got {symbol} price from info: ${price:.2f}")
+            return float(price)
+    except Exception as e:
+        logger.warning(f"ticker.info failed for {symbol}: {e}")
+
+    raise ValueError(f"Could not determine underlying price for {symbol}")
 
 
 def fetch_options_chain(
@@ -567,6 +644,28 @@ def select_premium(df: pd.DataFrame) -> pd.DataFrame:
 # =============================================================================
 
 
+def compute_compounded_target_pct(annual_target_pct: float, dte: int) -> float:
+    """
+    Convert annual target percentage to effective target percentage based on DTE.
+
+    Uses compound growth formula: (1 + annual_rate)^years - 1
+
+    For example, if you expect 10% annual growth and DTE is 770 days (2.1 years):
+    - YOE = round(770 / 365, 1) = 2.1
+    - effective_target_pct = (1.10)^2.1 - 1 = 0.2155 (21.55% total growth)
+
+    Args:
+        annual_target_pct: Annual target percentage (e.g., 0.10 for 10% annual growth)
+        dte: Days to expiration
+
+    Returns:
+        Effective target percentage for the given time period
+    """
+    yoe = round(dte / 365, 1)  # Years to expiration, rounded to 1 decimal
+    effective_target_pct = (1 + annual_target_pct) ** yoe - 1
+    return effective_target_pct
+
+
 def compute_metrics(
     df: pd.DataFrame,
     underlying_price: float,
@@ -592,8 +691,23 @@ def compute_metrics(
 
     df = df.copy()
 
-    # Set underlying and target prices
-    target_price = underlying_price * (1.0 + target_pct)
+    # Get DTE from dataframe to compute compounded target percentage
+    # Use the max DTE (typically all same if longest_only=True)
+    if "dte" in df.columns and not df.empty:
+        dte = int(df["dte"].max())
+        effective_target_pct = compute_compounded_target_pct(target_pct, dte)
+        yoe = round(dte / 365, 1)
+        logger.info(
+            f"Compounding annual target {target_pct:.1%} over {yoe} years "
+            f"(DTE={dte}) -> effective target {effective_target_pct:.2%}"
+        )
+    else:
+        # Fallback to simple target_pct if no DTE available
+        effective_target_pct = target_pct
+        logger.warning("No DTE column found, using simple target_pct without compounding")
+
+    # Set underlying and target prices using compounded target
+    target_price = underlying_price * (1.0 + effective_target_pct)
     df["current_underlying_price"] = underlying_price
     df["target_price"] = target_price
 
@@ -608,11 +722,20 @@ def compute_metrics(
     df["cost"] = df["premium"] * contract_size
 
     # Compute ROI at target (as percentage)
-    df["roi_target"] = ((df["payoff_target"] - df["cost"]) / df["cost"]) * 100
+    # Avoid division by zero - set ROI to 0 for zero-cost contracts
+    df["roi_target"] = np.where(
+        df["cost"] > 0,
+        ((df["payoff_target"] - df["cost"]) / df["cost"]) * 100,
+        0.0
+    )
 
-    # Handle infinite ROI values
+    # Handle infinite/NaN ROI values - replace with 0 for safety
     df["roi_target"] = df["roi_target"].replace([np.inf, -np.inf], np.nan)
-    df["roi_target"] = df["roi_target"].fillna(df["roi_target"].min())
+    min_roi = df["roi_target"].min()
+    # If min is still NaN (all values are NaN), use 0
+    if pd.isna(min_roi):
+        min_roi = 0.0
+    df["roi_target"] = df["roi_target"].fillna(min_roi)
 
     # Compute ease score based on strike position relative to midpoint
     df = _compute_ease_score(df, underlying_price, target_price)
@@ -620,10 +743,17 @@ def compute_metrics(
     # Normalize ROI to 0-1 scale
     df = _normalize_roi_score(df)
 
+    # Ensure no NaN values in scores before computing final score
+    df["ease_score"] = df["ease_score"].fillna(0.0)
+    df["roi_score"] = df["roi_score"].fillna(0.0)
+
     # Compute final combined score
     ease_weight = weights["ease_weight"]
     roi_weight = weights["roi_weight"]
     df["score"] = (ease_weight * df["ease_score"]) + (roi_weight * df["roi_score"])
+
+    # Final safety check - ensure score is never NaN
+    df["score"] = df["score"].fillna(0.0)
 
     # Ensure numeric columns for volume and open interest
     for col in ["open_interest", "volume"]:
@@ -644,12 +774,14 @@ def _compute_ease_score(
     """
     Compute ease score based on how likely the option is to be profitable.
 
-    Uses three anchor points with linear interpolation:
-    - Deep ITM (strike << underlying): score = 1.00
-    - ATM (strike = underlying): score = 0.90
-    - Target price (strike = target): score = 0.70
+    Uses wider score ranges to better differentiate ITM vs OTM options:
+    - Deep ITM (strike <= 85% of underlying): score = 1.00
+    - ATM (strike = underlying): score = 0.70
+    - Target price (strike = target): score = 0.40
+    - Beyond target: rapidly decreasing score
 
-    For strikes beyond target, deduct 0.05 for every 1% farther from target.
+    This wider range (1.0 -> 0.4) creates stronger differentiation between
+    high-probability ITM options and speculative OTM options.
 
     Args:
         df: Options DataFrame with 'strike' column.
@@ -661,11 +793,11 @@ def _compute_ease_score(
     """
     df = df.copy()
 
-    # Anchor point scores
+    # Anchor point scores - wider range for better differentiation
     DEEP_ITM_SCORE = 1.00
-    ATM_SCORE = 0.90
-    TARGET_SCORE = 0.70
-    BEYOND_TARGET_PENALTY_PER_PCT = 0.05
+    ATM_SCORE = 0.70       # Was 0.90 - now much lower to separate from ITM
+    TARGET_SCORE = 0.40    # Was 0.70 - now much lower for OTM options
+    BEYOND_TARGET_PENALTY_PER_PCT = 0.08  # Was 0.05 - steeper penalty
 
     # Calculate position of each strike relative to underlying and target
     strikes = df["strike"]
@@ -673,15 +805,14 @@ def _compute_ease_score(
     # Initialize ease_score column
     df["ease_score"] = 0.0
 
-    # Case 1: Deep ITM (strike <= underlying) - linear interpolation from 1.0 to 0.9
-    # We consider "deep ITM" as strikes that are 10% or more below underlying
-    deep_itm_threshold = underlying_price * 0.90
+    # Case 1: Deep ITM - strikes that are 15% or more below underlying
+    deep_itm_threshold = underlying_price * 0.85  # Was 0.90
 
     # Strikes at or below deep ITM threshold get 1.0
     mask_deep_itm = strikes <= deep_itm_threshold
     df.loc[mask_deep_itm, "ease_score"] = DEEP_ITM_SCORE
 
-    # Strikes between deep ITM and ATM: linear interpolation 1.0 -> 0.9
+    # Strikes between deep ITM and ATM: linear interpolation 1.0 -> 0.70
     mask_itm_to_atm = (strikes > deep_itm_threshold) & (strikes <= underlying_price)
     if mask_itm_to_atm.any():
         # Distance from deep ITM threshold to underlying
@@ -689,12 +820,12 @@ def _compute_ease_score(
         if itm_range > 0:
             # Position ratio: 0 at deep ITM threshold, 1 at underlying
             position_in_itm = (strikes[mask_itm_to_atm] - deep_itm_threshold) / itm_range
-            # Linear interpolation: 1.0 -> 0.9
+            # Linear interpolation: 1.0 -> 0.70
             df.loc[mask_itm_to_atm, "ease_score"] = DEEP_ITM_SCORE - (DEEP_ITM_SCORE - ATM_SCORE) * position_in_itm
         else:
             df.loc[mask_itm_to_atm, "ease_score"] = ATM_SCORE
 
-    # Case 2: ATM to Target - linear interpolation from 0.9 to 0.70
+    # Case 2: ATM to Target - linear interpolation from 0.70 to 0.40
     mask_atm_to_target = (strikes > underlying_price) & (strikes <= target_price)
     if mask_atm_to_target.any():
         # Distance from underlying to target
@@ -702,17 +833,17 @@ def _compute_ease_score(
         if otm_range > 0:
             # Position ratio: 0 at underlying, 1 at target
             position_in_otm = (strikes[mask_atm_to_target] - underlying_price) / otm_range
-            # Linear interpolation: 0.9 -> 0.70
+            # Linear interpolation: 0.70 -> 0.40
             df.loc[mask_atm_to_target, "ease_score"] = ATM_SCORE - (ATM_SCORE - TARGET_SCORE) * position_in_otm
         else:
             df.loc[mask_atm_to_target, "ease_score"] = TARGET_SCORE
 
-    # Case 3: Beyond target - start at 0.70 and deduct 0.05 per 1% beyond target
+    # Case 3: Beyond target - start at 0.40 and deduct 0.08 per 1% beyond target
     mask_beyond_target = strikes > target_price
     if mask_beyond_target.any():
         # Calculate how many percent beyond target each strike is
         pct_beyond_target = ((strikes[mask_beyond_target] - target_price) / target_price) * 100
-        # Deduct 0.05 for each 1% beyond target
+        # Deduct 0.08 for each 1% beyond target (steeper penalty)
         penalty = pct_beyond_target * BEYOND_TARGET_PENALTY_PER_PCT
         df.loc[mask_beyond_target, "ease_score"] = TARGET_SCORE - penalty
 
@@ -724,14 +855,16 @@ def _compute_ease_score(
 
 def _normalize_roi_score(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Normalize ROI into a 0-1 score.
+    Normalize ROI into a 0-1 score using logarithmic scaling.
 
-    Uses 50% ROI as the floor (score = 0) and normalizes linearly to
-    the highest ROI in the dataset (score = 1).
+    Uses log scaling to better differentiate high-ROI options:
+    - ROI <= 0%: score = 0.0
+    - ROI = 100%: score ~= 0.5 (anchor point)
+    - ROI = 500%: score ~= 0.85
+    - ROI = 1000%+: score -> 1.0
 
-    - ROI <= 50%: score = 0.0
-    - ROI = max ROI: score = 1.0
-    - ROI between 50% and max: linearly interpolated
+    Log scaling helps separate OTM options with high potential ROI
+    from ITM options with lower but safer ROI.
 
     Args:
         df: Options DataFrame with 'roi_target' column.
@@ -743,16 +876,27 @@ def _normalize_roi_score(df: pd.DataFrame) -> pd.DataFrame:
 
     roi = df["roi_target"]
 
-    # Floor at 50% ROI
-    ROI_FLOOR = 50.0
-    roi_max = roi.max()
+    # Use log scaling for better differentiation at high ROI values
+    # Formula: score = log(1 + roi/100) / log(1 + max_roi/100)
+    # This gives more separation between 100%, 200%, 500%, 1000% ROI options
 
-    if roi_max <= ROI_FLOOR:
-        # All ROIs are at or below floor, give all 0
+    # Floor: ROI <= 0% gets score 0
+    roi_adjusted = roi.clip(lower=0)
+
+    # Log scale: log(1 + x) where x is ROI as decimal (100% = 1.0)
+    roi_decimal = roi_adjusted / 100.0
+    log_roi = np.log1p(roi_decimal)  # log(1 + roi_decimal)
+
+    # Normalize to max in dataset
+    log_max = log_roi.max()
+
+    # Handle edge cases: NaN or zero max
+    if pd.isna(log_max) or log_max <= 0:
         df["roi_score"] = 0.0
     else:
-        # Normalize: 50% -> 0, max -> 1
-        df["roi_score"] = (roi - ROI_FLOOR) / (roi_max - ROI_FLOOR)
+        df["roi_score"] = log_roi / log_max
+        # Replace any remaining NaN with 0
+        df["roi_score"] = df["roi_score"].fillna(0.0)
 
     # Clamp to [0, 1]
     df["roi_score"] = df["roi_score"].clip(0, 1)
@@ -835,10 +979,14 @@ def format_output(
 
     for col in price_cols:
         if col in result.columns:
+            # Replace inf/NaN with 0 before rounding
+            result[col] = result[col].replace([np.inf, -np.inf], np.nan).fillna(0.0)
             result[col] = result[col].round(price_decimals)
 
     for col in pct_cols:
         if col in result.columns:
+            # Replace inf/NaN with 0 before rounding
+            result[col] = result[col].replace([np.inf, -np.inf], np.nan).fillna(0.0)
             result[col] = result[col].round(pct_decimals)
 
     return result
@@ -915,11 +1063,30 @@ def rank_leaps(
     else:
         underlying_price = get_underlying_price(symbol, provider)
 
-    # Calculate target price for filtering
-    target_price = underlying_price * (1.0 + target_pct)
+    # Determine the DTE for compounding by finding max DTE in LEAPS range
+    # (contracts with dte >= min_dte, taking the longest if longest_only=True)
+    if "dte" in df.columns:
+        leaps_dte = df[df["dte"] >= min_dte]["dte"]
+        if not leaps_dte.empty:
+            max_dte = int(leaps_dte.max())
+            effective_target_pct = compute_compounded_target_pct(target_pct, max_dte)
+            yoe = round(max_dte / 365, 1)
+            logger.info(
+                f"Annual target {target_pct:.1%} compounded over {yoe} years "
+                f"(DTE={max_dte}) -> effective target {effective_target_pct:.2%}"
+            )
+        else:
+            effective_target_pct = target_pct
+            logger.warning("No LEAPS contracts found, using simple target_pct")
+    else:
+        effective_target_pct = target_pct
+        logger.warning("No DTE column, using simple target_pct")
+
+    # Calculate target price for filtering using compounded target
+    target_price = underlying_price * (1.0 + effective_target_pct)
     logger.info(
         f"Underlying: ${underlying_price:.2f}, "
-        f"Target (+{target_pct:.0%}): ${target_price:.2f}"
+        f"Target (+{effective_target_pct:.1%}): ${target_price:.2f}"
     )
 
     # Step 3: Filter to LEAPS
@@ -1020,7 +1187,7 @@ Modes:
         "--target-pct",
         type=float,
         default=None,
-        help="Target upside as fraction (e.g., 0.5 for +50%% move)",
+        help="Annual target growth rate (e.g., 0.10 for 10%%/yr, compounded over DTE)",
     )
 
     parser.add_argument(
@@ -1102,11 +1269,16 @@ def main() -> int:
         # Determine final parameter values (CLI overrides config)
         provider = args.provider or provider_config.get("default", "cboe")
         mode = args.mode or config.get("default_mode", "high_prob")
-        target_pct = (
-            args.target_pct
-            if args.target_pct is not None
-            else target_config.get("default_target_pct", 0.5)
-        )
+
+        # Check for ticker-specific target_pct, then CLI arg, then default
+        tickers_config = config.get("tickers", {})
+        ticker_settings = tickers_config.get(args.symbol.upper(), {})
+        if args.target_pct is not None:
+            target_pct = args.target_pct
+        elif ticker_settings.get("target_pct") is not None:
+            target_pct = ticker_settings.get("target_pct")
+        else:
+            target_pct = target_config.get("default_target_pct", 0.5)
         min_dte = (
             args.min_dte
             if args.min_dte is not None
@@ -1143,7 +1315,7 @@ def main() -> int:
         # Print results
         print(f"\n{'='*80}")
         print(f"LEAPS Ranking for {args.symbol.upper()}")
-        print(f"Mode: {mode} | Target: +{target_pct:.0%} | Min DTE: {min_dte}")
+        print(f"Mode: {mode} | Annual Target: +{target_pct:.0%}/yr (compounded) | Min DTE: {min_dte}")
         print(f"{'='*80}\n")
 
         # Configure pandas display for wide output

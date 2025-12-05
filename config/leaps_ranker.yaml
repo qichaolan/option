@@ -48,9 +48,29 @@ filtering:
 # Target Price Parameters
 # -----------------------------------------------------------------------------
 target:
-  # Default target percentage move in the underlying
-  # 0.5 = 50% move (target_price = current_price * 1.5)
-  default_target_pct: 0.3
+  # Default ANNUAL target percentage (compounded over DTE)
+  # Based on SPY Median Annual Total Returns 2010-2024: 16.00%
+  # For QQQ, use --target-pct 0.1956 (19.56% median annual)
+  # Formula: effective_target = (1 + annual_rate)^years - 1
+  default_target_pct: 0.16
+
+# -----------------------------------------------------------------------------
+# Ticker-Specific Settings
+# -----------------------------------------------------------------------------
+# Override default target percentages for specific tickers
+tickers:
+  IWM:
+    # Russell 2000 ETF - lower expected annual return
+    target_pct: 0.14
+  GOOG:
+    # Alphabet - higher growth target
+    target_pct: 0.30
+  NVDA:
+    # NVIDIA - higher growth target
+    target_pct: 0.30
+  MSFT:
+    # Microsoft - higher growth target
+    target_pct: 0.25
 
 # -----------------------------------------------------------------------------
 # Contract Parameters

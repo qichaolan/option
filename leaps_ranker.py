@@ -644,6 +644,28 @@ def select_premium(df: pd.DataFrame) -> pd.DataFrame:
 # =============================================================================
 
 
+def compute_compounded_target_pct(annual_target_pct: float, dte: int) -> float:
+    """
+    Convert annual target percentage to effective target percentage based on DTE.
+
+    Uses compound growth formula: (1 + annual_rate)^years - 1
+
+    For example, if you expect 10% annual growth and DTE is 770 days (2.1 years):
+    - YOE = round(770 / 365, 1) = 2.1
+    - effective_target_pct = (1.10)^2.1 - 1 = 0.2155 (21.55% total growth)
+
+    Args:
+        annual_target_pct: Annual target percentage (e.g., 0.10 for 10% annual growth)
+        dte: Days to expiration
+
+    Returns:
+        Effective target percentage for the given time period
+    """
+    yoe = round(dte / 365, 1)  # Years to expiration, rounded to 1 decimal
+    effective_target_pct = (1 + annual_target_pct) ** yoe - 1
+    return effective_target_pct
+
+
 def compute_metrics(
     df: pd.DataFrame,
     underlying_price: float,
@@ -669,8 +691,23 @@ def compute_metrics(
 
     df = df.copy()
 
-    # Set underlying and target prices
-    target_price = underlying_price * (1.0 + target_pct)
+    # Get DTE from dataframe to compute compounded target percentage
+    # Use the max DTE (typically all same if longest_only=True)
+    if "dte" in df.columns and not df.empty:
+        dte = int(df["dte"].max())
+        effective_target_pct = compute_compounded_target_pct(target_pct, dte)
+        yoe = round(dte / 365, 1)
+        logger.info(
+            f"Compounding annual target {target_pct:.1%} over {yoe} years "
+            f"(DTE={dte}) -> effective target {effective_target_pct:.2%}"
+        )
+    else:
+        # Fallback to simple target_pct if no DTE available
+        effective_target_pct = target_pct
+        logger.warning("No DTE column found, using simple target_pct without compounding")
+
+    # Set underlying and target prices using compounded target
+    target_price = underlying_price * (1.0 + effective_target_pct)
     df["current_underlying_price"] = underlying_price
     df["target_price"] = target_price
 
@@ -1026,11 +1063,30 @@ def rank_leaps(
     else:
         underlying_price = get_underlying_price(symbol, provider)
 
-    # Calculate target price for filtering
-    target_price = underlying_price * (1.0 + target_pct)
+    # Determine the DTE for compounding by finding max DTE in LEAPS range
+    # (contracts with dte >= min_dte, taking the longest if longest_only=True)
+    if "dte" in df.columns:
+        leaps_dte = df[df["dte"] >= min_dte]["dte"]
+        if not leaps_dte.empty:
+            max_dte = int(leaps_dte.max())
+            effective_target_pct = compute_compounded_target_pct(target_pct, max_dte)
+            yoe = round(max_dte / 365, 1)
+            logger.info(
+                f"Annual target {target_pct:.1%} compounded over {yoe} years "
+                f"(DTE={max_dte}) -> effective target {effective_target_pct:.2%}"
+            )
+        else:
+            effective_target_pct = target_pct
+            logger.warning("No LEAPS contracts found, using simple target_pct")
+    else:
+        effective_target_pct = target_pct
+        logger.warning("No DTE column, using simple target_pct")
+
+    # Calculate target price for filtering using compounded target
+    target_price = underlying_price * (1.0 + effective_target_pct)
     logger.info(
         f"Underlying: ${underlying_price:.2f}, "
-        f"Target (+{target_pct:.0%}): ${target_price:.2f}"
+        f"Target (+{effective_target_pct:.1%}): ${target_price:.2f}"
     )
 
     # Step 3: Filter to LEAPS
@@ -1131,7 +1187,7 @@ Modes:
         "--target-pct",
         type=float,
         default=None,
-        help="Target upside as fraction (e.g., 0.5 for +50%% move)",
+        help="Annual target growth rate (e.g., 0.10 for 10%%/yr, compounded over DTE)",
     )
 
     parser.add_argument(
@@ -1213,11 +1269,16 @@ def main() -> int:
         # Determine final parameter values (CLI overrides config)
         provider = args.provider or provider_config.get("default", "cboe")
         mode = args.mode or config.get("default_mode", "high_prob")
-        target_pct = (
-            args.target_pct
-            if args.target_pct is not None
-            else target_config.get("default_target_pct", 0.5)
-        )
+
+        # Check for ticker-specific target_pct, then CLI arg, then default
+        tickers_config = config.get("tickers", {})
+        ticker_settings = tickers_config.get(args.symbol.upper(), {})
+        if args.target_pct is not None:
+            target_pct = args.target_pct
+        elif ticker_settings.get("target_pct") is not None:
+            target_pct = ticker_settings.get("target_pct")
+        else:
+            target_pct = target_config.get("default_target_pct", 0.5)
         min_dte = (
             args.min_dte
             if args.min_dte is not None
@@ -1254,7 +1315,7 @@ def main() -> int:
         # Print results
         print(f"\n{'='*80}")
         print(f"LEAPS Ranking for {args.symbol.upper()}")
-        print(f"Mode: {mode} | Target: +{target_pct:.0%} | Min DTE: {min_dte}")
+        print(f"Mode: {mode} | Annual Target: +{target_pct:.0%}/yr (compounded) | Min DTE: {min_dte}")
         print(f"{'='*80}\n")
 
         # Configure pandas display for wide output

@@ -54,10 +54,11 @@ def get_config_path() -> Path:
             return p
     raise FileNotFoundError(f"Config file not found. Tried: {possible_paths}")
 
-# Supported tickers with default target percentages
+# Supported tickers with default annual target percentages
+# Based on Median Annual Total Returns from 2010-2024
 SUPPORTED_TICKERS = {
-    "SPY": {"name": "S&P 500 ETF", "default_target_pct": 0.32},
-    "QQQ": {"name": "Nasdaq 100 ETF", "default_target_pct": 0.45},
+    "SPY": {"name": "S&P 500 ETF", "default_target_pct": 0.16},      # 16.00% median annual
+    "QQQ": {"name": "Nasdaq 100 ETF", "default_target_pct": 0.1956},  # 19.56% median annual
 }
 
 
