@@ -170,18 +170,24 @@ async def get_leaps_ranking(request: Request, leaps_request: LEAPSRequest):
                 logger.warning(f"Skipping invalid contract record: {e}")
                 logger.debug(f"Record data: {record}")
 
-        # Get underlying and target prices from first contract
+        # Get underlying and target prices from dataframe
+        # Use the actual underlying price from the data, not reverse-calculated
         underlying_price = 0.0
         target_price = 0.0
-        if contracts:
-            target_price = contracts[0].target_price
-            underlying_price = target_price / (1 + leaps_request.target_pct)
+        if not df.empty:
+            if "current_underlying_price" in df.columns:
+                underlying_price = float(df["current_underlying_price"].iloc[0])
+            if "target_price" in df.columns:
+                target_price = float(df["target_price"].iloc[0])
+
+        # Calculate effective target_pct from actual prices (compounded, not annual)
+        effective_target_pct = (target_price / underlying_price - 1) if underlying_price > 0 else leaps_request.target_pct
 
         return LEAPSResponse(
             symbol=symbol,
             underlying_price=round(underlying_price, 2),
             target_price=round(target_price, 2),
-            target_pct=leaps_request.target_pct,
+            target_pct=effective_target_pct,
             mode=leaps_request.mode,
             contracts=contracts,
             timestamp=datetime.utcnow().isoformat(),
