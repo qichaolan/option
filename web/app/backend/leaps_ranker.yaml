@@ -104,6 +104,7 @@ display:
     - contract_symbol
     - expiration
     - strike
+    - current_underlying_price
     - target_price
     - premium
     - cost

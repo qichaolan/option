@@ -172,11 +172,12 @@ async def get_leaps_ranking(request: Request, leaps_request: LEAPSRequest):
 
         # Get underlying and target prices from dataframe
         # Use the actual underlying price from the data, not reverse-calculated
+        # Note: compute_metrics sets "current_underlying_price" column
         underlying_price = 0.0
         target_price = 0.0
         if not df.empty:
-            if "underlying_price" in df.columns:
-                underlying_price = float(df["underlying_price"].iloc[0])
+            if "current_underlying_price" in df.columns:
+                underlying_price = float(df["current_underlying_price"].iloc[0])
             if "target_price" in df.columns:
                 target_price = float(df["target_price"].iloc[0])
 
