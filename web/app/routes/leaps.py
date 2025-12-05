@@ -57,8 +57,12 @@ def get_config_path() -> Path:
 # Supported tickers with default annual target percentages
 # Based on Median Annual Total Returns from 2010-2024
 SUPPORTED_TICKERS = {
-    "SPY": {"name": "S&P 500 ETF", "default_target_pct": 0.16},      # 16.00% median annual
-    "QQQ": {"name": "Nasdaq 100 ETF", "default_target_pct": 0.1956},  # 19.56% median annual
+    "SPY": {"name": "S&P 500 ETF", "default_target_pct": 0.16},
+    "QQQ": {"name": "Nasdaq 100 ETF", "default_target_pct": 0.1956},
+    "IWM": {"name": "Russell 2000 ETF", "default_target_pct": 0.14},
+    "GOOG": {"name": "Alphabet Inc.", "default_target_pct": 0.30},
+    "NVDA": {"name": "NVIDIA Corp.", "default_target_pct": 0.30},
+    "MSFT": {"name": "Microsoft Corp.", "default_target_pct": 0.25},
 }
 
 
