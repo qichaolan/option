@@ -686,12 +686,16 @@ async function runSpreadSimulation(spread) {
         const longStrikeFormatted = formatCurrency(spread.long_strike, 0);
         const optionType = spread.spread_type === 'PCS' ? 'puts' : 'calls';
 
-        if (spread.spread_type === 'PCS') {
-            elements.simProfitRange.textContent = `${breakevenFormatted} → ∞`;
-        } else {
-            elements.simProfitRange.textContent = `-∞ → ${breakevenFormatted}`;
+        if (elements.simProfitRange) {
+            if (spread.spread_type === 'PCS') {
+                elements.simProfitRange.textContent = `${breakevenFormatted} → ∞`;
+            } else {
+                elements.simProfitRange.textContent = `-∞ → ${breakevenFormatted}`;
+            }
         }
-        elements.simLegsText.textContent = `Sell ${shortStrikeFormatted} / Buy ${longStrikeFormatted} ${optionType}`;
+        if (elements.simLegsText) {
+            elements.simLegsText.textContent = `Sell ${shortStrikeFormatted} / Buy ${longStrikeFormatted} ${optionType}`;
+        }
 
         // Update summary
         elements.simMaxGain.textContent = '+' + formatCurrency(data.summary.max_gain, 0);
