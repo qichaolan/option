@@ -17,6 +17,7 @@ from app.routes.leaps import router as leaps_router
 from app.routes.credit_spreads import router as credit_spreads_router
 from app.routes.iron_condors import router as iron_condors_router
 from app.routes.ai_score import router as ai_score_router
+from app.routes.ai_explainer import router as ai_explainer_router
 
 # Configure logging
 logging.basicConfig(
@@ -92,6 +93,7 @@ app.include_router(leaps_router)
 app.include_router(credit_spreads_router)
 app.include_router(iron_condors_router)
 app.include_router(ai_score_router)
+app.include_router(ai_explainer_router)
 
 
 @app.get("/", response_class=HTMLResponse)

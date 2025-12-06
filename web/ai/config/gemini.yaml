@@ -1,0 +1,69 @@
+# Gemini AI Configuration
+# =======================
+# Configuration for GCP Vertex AI / Gemini integration
+
+# Model Configuration
+model:
+  # Model name - use gemini-2.0-flash for cost-effective responses
+  name: "gemini-2.5-flash-lite"
+
+  # Generation parameters
+  temperature: 0.3  # Lower for more consistent, factual responses
+  max_output_tokens: 10000  # Sufficient for structured JSON responses
+  top_p: 0.8  # Nucleus sampling parameter
+  top_k: 40  # Top-k sampling parameter
+
+# Request Configuration
+request:
+  # Timeout in seconds for Gemini API calls
+  timeout_seconds: 30
+
+  # Maximum retries on transient failures
+  max_retries: 2
+
+  # Retry delay in seconds (exponential backoff base)
+  retry_delay_seconds: 1
+
+# Rate Limiting
+rate_limits:
+  # Maximum API calls per user per hour
+  hourly_max: 100
+
+  # Maximum API calls per user per day
+  daily_max: 500
+
+  # Minimum seconds between requests from same user
+  min_interval_seconds: 2
+
+# Caching Configuration
+cache:
+  # Default TTL in seconds (24 hours)
+  ttl_seconds: 86400
+
+  # Enable/disable caching
+  enabled: true
+
+  # Cache backend: "memory" or "gcs"
+  backend: "memory"
+
+# Feature Flags
+features:
+  # Master switch to enable/disable AI Explainer
+  enabled: true
+
+  # Enable detailed logging (disable in production)
+  debug_logging: false
+
+  # Enable metrics collection
+  metrics_enabled: true
+
+# Safety Settings
+safety:
+  # Block harmful content categories
+  block_dangerous_content: true
+
+  # Maximum input metadata size (bytes)
+  max_metadata_bytes: 10240
+
+  # Sanitize PII from metadata before sending to Gemini
+  sanitize_pii: true

@@ -3724,3 +3724,456 @@ tr.selected-for-sim::after {
         }
     }
 }
+
+/* =============================================================================
+   AI Explainer Styles
+   ============================================================================= */
+
+/* AI Explainer Button */
+.ai-explainer-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.ai-explainer-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-dark), #1e40af);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
+}
+
+.ai-explainer-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.ai-explainer-btn.loading {
+    background: var(--text-secondary);
+}
+
+.ai-explainer-btn.loading .ai-explainer-btn-icon {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.ai-explainer-btn-icon {
+    font-size: 1.1rem;
+}
+
+.ai-explainer-btn-text {
+    white-space: nowrap;
+}
+
+/* AI Explainer Button Container - Positioned in simulator */
+.ai-explainer-btn-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
+}
+
+/* AI Explainer Panel */
+.ai-explainer-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-top: 1rem;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ai-explainer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.875rem 1rem;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(37, 99, 235, 0.02));
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ai-explainer-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.ai-explainer-title-icon {
+    font-size: 1.1rem;
+}
+
+.ai-explainer-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.ai-explainer-cache-status {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.ai-explainer-collapse {
+    background: transparent;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.ai-explainer-collapse:hover {
+    color: var(--text-primary);
+}
+
+.ai-explainer-content {
+    padding: 1rem;
+}
+
+/* Loading State */
+.ai-explainer-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+.ai-explainer-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.ai-explainer-loading-text {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.ai-explainer-loading-subtext {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+/* Error State */
+.ai-explainer-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem;
+    text-align: center;
+}
+
+.ai-explainer-error-icon {
+    font-size: 2rem;
+    color: var(--warning-color);
+    margin-bottom: 0.75rem;
+}
+
+.ai-explainer-error-message {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    max-width: 300px;
+}
+
+.ai-explainer-retry-btn {
+    padding: 0.5rem 1rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.ai-explainer-retry-btn:hover {
+    background: var(--primary-dark);
+}
+
+/* Result Content */
+.ai-explainer-result {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Summary */
+.ai-summary {
+    padding: 0.75rem 1rem;
+    background: rgba(37, 99, 235, 0.04);
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.ai-summary p {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Sections */
+.ai-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ai-section-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+
+/* Key Insights */
+.ai-insights-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ai-insight {
+    padding: 0.625rem 0.75rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    border-left: 3px solid var(--text-secondary);
+}
+
+.ai-insight.sentiment-positive {
+    border-left-color: var(--success-color);
+    background: rgba(22, 163, 74, 0.03);
+}
+
+.ai-insight.sentiment-negative {
+    border-left-color: var(--danger-color);
+    background: rgba(239, 68, 68, 0.03);
+}
+
+.ai-insight.sentiment-neutral {
+    border-left-color: var(--primary-color);
+    background: rgba(37, 99, 235, 0.03);
+}
+
+.ai-insight-header {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.25rem;
+}
+
+.ai-insight-icon {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+.ai-insight-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ai-insight-description {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* Risks */
+.ai-risks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.ai-risk {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0.625rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+.ai-risk-severity {
+    flex-shrink: 0;
+    font-size: 0.625rem;
+    font-weight: 700;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ai-risk.severity-low .ai-risk-severity {
+    background: rgba(22, 163, 74, 0.1);
+    color: var(--success-color);
+}
+
+.ai-risk.severity-medium .ai-risk-severity {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+}
+
+.ai-risk.severity-high .ai-risk-severity {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+}
+
+.ai-risk-text {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+/* Watch Items */
+.ai-watch-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.ai-watch-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0.625rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+.ai-watch-icon {
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+.ai-watch-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.ai-watch-text {
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+}
+
+.ai-watch-trigger {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Disclaimer */
+.ai-disclaimer {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    background: rgba(100, 116, 139, 0.05);
+    border-radius: 6px;
+    margin-top: 0.5rem;
+}
+
+.ai-disclaimer-icon {
+    flex-shrink: 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.ai-disclaimer p {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* Cache Note */
+.ai-explainer-cache-note {
+    display: block;
+    font-size: 0.6875rem;
+    color: var(--text-secondary);
+    text-align: right;
+    margin-top: 0.5rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+    .ai-explainer-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.75rem 1rem;
+    }
+
+    .ai-explainer-panel {
+        margin-top: 0.75rem;
+        border-radius: 10px;
+    }
+
+    .ai-explainer-header {
+        padding: 0.75rem;
+    }
+
+    .ai-explainer-content {
+        padding: 0.75rem;
+    }
+
+    .ai-summary {
+        padding: 0.625rem 0.75rem;
+    }
+
+    .ai-insight {
+        padding: 0.5rem 0.625rem;
+    }
+}

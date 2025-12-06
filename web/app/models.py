@@ -250,3 +250,147 @@ class CreditSpreadSimulatorResponse(BaseModel):
     underlying_price_now: float
     summary: CreditSpreadSimulatorSummary
     points: List[CreditSpreadSimulatorPoint]
+
+
+# =============================================================================
+# AI Explainer Models
+# =============================================================================
+
+# Whitelisted page IDs for AI Explainer
+VALID_PAGE_IDS = {"leaps_ranker", "credit_spread_screener", "iron_condor_screener"}
+
+# Whitelisted context types for AI Explainer
+VALID_CONTEXT_TYPES = {"roi_simulator", "spread_simulator", "options_analysis"}
+
+# Maximum metadata JSON size in bytes (10KB)
+MAX_METADATA_SIZE = 10 * 1024
+
+
+class AiExplainerRequest(BaseModel):
+    """Request model for AI Explainer endpoint."""
+
+    pageId: str = Field(
+        ...,
+        description="Page identifier (e.g., 'leaps_ranker')",
+        min_length=1,
+        max_length=50,
+    )
+    contextType: str = Field(
+        ...,
+        description="Context type (e.g., 'roi_simulator')",
+        min_length=1,
+        max_length=50,
+    )
+    timestamp: str = Field(
+        ...,
+        description="Client timestamp in ISO format",
+        min_length=1,
+        max_length=50,
+    )
+    metadata: dict = Field(
+        ...,
+        description="Domain-specific data for AI analysis",
+    )
+
+    @field_validator("pageId")
+    @classmethod
+    def validate_page_id(cls, v: str) -> str:
+        """Validate pageId is whitelisted."""
+        v = v.strip().lower()
+        if v not in VALID_PAGE_IDS:
+            raise ValueError(f"Invalid pageId. Must be one of: {VALID_PAGE_IDS}")
+        return v
+
+    @field_validator("contextType")
+    @classmethod
+    def validate_context_type(cls, v: str) -> str:
+        """Validate contextType is whitelisted."""
+        v = v.strip().lower()
+        if v not in VALID_CONTEXT_TYPES:
+            raise ValueError(f"Invalid contextType. Must be one of: {VALID_CONTEXT_TYPES}")
+        return v
+
+    @field_validator("metadata")
+    @classmethod
+    def validate_metadata_size(cls, v: dict) -> dict:
+        """Validate metadata size doesn't exceed limit."""
+        import json
+        metadata_json = json.dumps(v)
+        if len(metadata_json) > MAX_METADATA_SIZE:
+            raise ValueError(f"Metadata exceeds maximum size of {MAX_METADATA_SIZE} bytes")
+        return v
+
+
+class AiExplainerKeyInsight(BaseModel):
+    """Single key insight from AI explanation."""
+
+    title: str = Field(..., description="Short title for the insight")
+    description: str = Field(..., description="Detailed description")
+    sentiment: Literal["positive", "neutral", "negative"] = Field(
+        default="neutral",
+        description="Sentiment indicator for the insight",
+    )
+
+
+class AiExplainerRisk(BaseModel):
+    """Risk item from AI explanation."""
+
+    risk: str = Field(..., description="Description of the risk")
+    severity: Literal["low", "medium", "high"] = Field(
+        default="medium",
+        description="Severity level of the risk",
+    )
+
+
+class AiExplainerWatchItem(BaseModel):
+    """Watch item from AI explanation."""
+
+    item: str = Field(..., description="What to watch for")
+    trigger: Optional[str] = Field(None, description="Trigger condition")
+
+
+class AiExplainerContent(BaseModel):
+    """Structured content from AI explanation."""
+
+    summary: str = Field(..., description="Brief summary of the analysis")
+    key_insights: List[AiExplainerKeyInsight] = Field(
+        default_factory=list,
+        description="Key insights from the analysis (3-5 items)",
+    )
+    risks: List[AiExplainerRisk] = Field(
+        default_factory=list,
+        description="Risk factors to consider",
+    )
+    watch_items: List[AiExplainerWatchItem] = Field(
+        default_factory=list,
+        description="Items to watch going forward",
+    )
+    disclaimer: str = Field(
+        default="This analysis is for educational purposes only and should not be considered financial advice. Always do your own research and consult with a qualified financial advisor before making investment decisions.",
+        description="Legal disclaimer",
+    )
+
+
+class AiExplainerResponse(BaseModel):
+    """Response model for AI Explainer endpoint."""
+
+    success: bool = Field(..., description="Whether the request was successful")
+    pageId: str = Field(..., description="Echo of the page identifier")
+    contextType: str = Field(..., description="Echo of the context type")
+    content: Optional[AiExplainerContent] = Field(
+        None,
+        description="Structured explanation content",
+    )
+    cached: bool = Field(
+        default=False,
+        description="Whether this response was served from cache",
+    )
+    cachedAt: Optional[str] = Field(
+        None,
+        description="Timestamp when the response was cached (ISO format)",
+    )
+    error: Optional[str] = Field(
+        None,
+        description="Error message if success is False",
+    )
+    timestamp: str = Field(..., description="Server timestamp")

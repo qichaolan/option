@@ -327,6 +327,8 @@ function closeSimulator() {
     document.querySelectorAll('[data-contract].selected').forEach(row => {
         row.classList.remove('selected');
     });
+    // Update AI Explainer state (hide button when no simulation)
+    updateAiExplainerState();
 }
 
 // Fetch LEAPS data
@@ -526,6 +528,9 @@ function showSimulator(contract) {
 
     // Run simulation automatically
     runSimulation();
+
+    // Update AI Explainer state
+    updateAiExplainerState();
 }
 
 // Update contracts info display (with XSS protection)
@@ -741,3 +746,107 @@ function showError(message) {
 function hideError() {
     elements.errorDisplay.style.display = 'none';
 }
+
+// =====================================================
+// AI Explainer Integration
+// =====================================================
+
+// Global reference to AI Explainer controller
+let aiExplainerController = null;
+
+// Get current simulation metadata for AI Explainer
+function getSimulationMetadata() {
+    // Check if we have selected contracts
+    if (state.selectedContracts.length === 0) {
+        return null;
+    }
+
+    const contract = state.selectedContracts[0];
+    const underlying = parseFloat(elements.simUnderlying.value);
+    const symbol = elements.tickerSelect.value;
+    const mode = elements.modeSelect.value;
+
+    // Calculate key metrics
+    const strike = contract.strike;
+    const premium = contract.premium;
+    const cost = premium * 100;
+    const breakeven = strike + premium;
+    const breakevenPct = ((breakeven / underlying) - 1) * 100;
+
+    // Calculate ROI at various target levels
+    const targetPcts = [10, 20, 30, 40, 50];
+    const roiByTarget = {};
+    targetPcts.forEach(pct => {
+        const targetPrice = underlying * (1 + pct / 100);
+        const intrinsic = Math.max(targetPrice - strike, 0);
+        const payoff = intrinsic * 100;
+        const profit = payoff - cost;
+        const roi = (profit / cost) * 100;
+        roiByTarget[`+${pct}%`] = {
+            target_price: parseFloat(targetPrice.toFixed(2)),
+            roi: parseFloat(roi.toFixed(1)),
+            profit: parseFloat(profit.toFixed(0))
+        };
+    });
+
+    // Build metadata object
+    return {
+        symbol: symbol,
+        underlying_price: underlying,
+        scoring_mode: mode,
+        contract: {
+            symbol: contract.contract_symbol,
+            expiration: contract.expiration,
+            strike: strike,
+            premium: premium,
+            cost: cost,
+            breakeven: parseFloat(breakeven.toFixed(2)),
+            breakeven_pct: parseFloat(breakevenPct.toFixed(1)),
+            implied_volatility: contract.implied_volatility ? parseFloat((contract.implied_volatility * 100).toFixed(1)) : null,
+            open_interest: contract.open_interest || null,
+            ease_score: contract.ease_score ? parseFloat(contract.ease_score.toFixed(2)) : null,
+            roi_score: contract.roi_score ? parseFloat(contract.roi_score.toFixed(2)) : null,
+            composite_score: contract.score ? parseFloat(contract.score.toFixed(2)) : null
+        },
+        roi_simulation: roiByTarget,
+        context: {
+            target_pct_config: parseFloat(elements.targetPctInput.value),
+            contracts_analyzed: state.contracts.length
+        }
+    };
+}
+
+// Initialize AI Explainer after DOM is ready
+function initAiExplainer() {
+    // Check if AiExplainerController is available
+    if (typeof AiExplainerController === 'undefined') {
+        console.warn('AiExplainerController not available');
+        return;
+    }
+
+    // Initialize the controller
+    aiExplainerController = new AiExplainerController({
+        buttonContainerId: 'aiExplainerBtnContainer',
+        panelContainerId: 'aiExplainerPanelContainer',
+        pageId: 'leaps_ranker',
+        contextType: 'roi_simulator',
+        getMetadata: getSimulationMetadata
+    });
+
+    // Render the button (initially may be disabled if no simulation)
+    aiExplainerController.render();
+}
+
+// Re-render AI Explainer button when simulation state changes
+function updateAiExplainerState() {
+    if (aiExplainerController) {
+        aiExplainerController.render();
+    }
+}
+
+// Add AI Explainer initialization to DOMContentLoaded
+const originalDOMContentLoaded = document.addEventListener;
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize AI Explainer after a short delay to ensure DOM is ready
+    setTimeout(initAiExplainer, 100);
+});
