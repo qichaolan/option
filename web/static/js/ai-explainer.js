@@ -392,6 +392,39 @@ function renderCreditSpreadContent(content) {
         `;
     }
 
+    // Visualization (profit zone, loss zone, transition zone)
+    if (content.visualization) {
+        const viz = content.visualization;
+        html += `
+            <div class="ai-section">
+                <h5 class="ai-section-title">Profit/Loss Zones</h5>
+                <div class="ai-visualization">
+                    <div class="ai-viz-item ai-viz-profit">
+                        <span class="ai-viz-icon">&#9650;</span>
+                        <div class="ai-viz-content">
+                            <span class="ai-viz-label">Profit Zone:</span>
+                            <span class="ai-viz-value">${escapeHtml(viz.profit_zone || '-')}</span>
+                        </div>
+                    </div>
+                    <div class="ai-viz-item ai-viz-transition">
+                        <span class="ai-viz-icon">&#8596;</span>
+                        <div class="ai-viz-content">
+                            <span class="ai-viz-label">Transition Zone:</span>
+                            <span class="ai-viz-value">${escapeHtml(viz.transition_zone || '-')}</span>
+                        </div>
+                    </div>
+                    <div class="ai-viz-item ai-viz-loss">
+                        <span class="ai-viz-icon">&#9660;</span>
+                        <div class="ai-viz-content">
+                            <span class="ai-viz-label">Loss Zone:</span>
+                            <span class="ai-viz-value">${escapeHtml(viz.loss_zone || '-')}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     // Strategy analysis (bullish, neutral, bearish outcomes)
     if (content.strategy_analysis) {
         const sa = content.strategy_analysis;

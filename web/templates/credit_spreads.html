@@ -221,7 +221,10 @@
             <!-- P/L Simulator Section (Right side on desktop) -->
             <section class="simulator-section" id="spreadSimulator" style="display: none;">
             <div class="simulator-header">
-                <h2 class="simulator-title">P/L Simulator</h2>
+                <div class="simulator-header-left">
+                    <h2 class="simulator-title">P/L Simulator</h2>
+                    <div class="ai-explainer-btn-container ai-explainer-btn-inline" id="aiExplainerBtnContainer"></div>
+                </div>
                 <button class="simulator-close" id="closeSimulator" aria-label="Close simulator">&times;</button>
             </div>
 
@@ -313,11 +316,8 @@
                 <span>Calculating P/L...</span>
             </div>
 
-            <!-- AI Explainer Section -->
-            <div class="ai-explainer-section">
-                <div id="aiExplainerBtnContainer" class="ai-explainer-btn-container"></div>
-                <div id="aiExplainerPanelContainer"></div>
-            </div>
+            <!-- AI Explainer Panel Container -->
+            <div id="aiExplainerPanelContainer"></div>
         </section>
         </div><!-- End page-layout -->
 
