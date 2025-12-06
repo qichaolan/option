@@ -120,6 +120,7 @@ const elements = {
 
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
+    runScreener(); // Auto-scan on page load
 });
 
 // Setup all event listeners
@@ -289,6 +290,9 @@ function updateUI(data) {
 
     // Render results
     renderResults();
+
+    // Auto-select the top spread for simulation
+    autoSelectTopSpread();
 }
 
 function renderResults() {
@@ -406,6 +410,36 @@ function getScoreClass(score) {
     if (score >= 0.7) return 'score-high';
     if (score >= 0.4) return 'score-medium';
     return 'score-low';
+}
+
+// Auto-select the top spread for simulation
+function autoSelectTopSpread() {
+    const spreadType = elements.spreadTypeSelect.value;
+    let topSpread = null;
+    let element = null;
+
+    // Determine which spread to select based on filter and availability
+    if ((spreadType === 'ALL' || spreadType === 'PCS') && state.pcsSpreads.length > 0) {
+        topSpread = state.pcsSpreads[0];
+        // Get the first row/card for PCS
+        if (isMobile()) {
+            element = elements.pcsMobileCards.querySelector('.mobile-spread-card[data-spread-idx="0"]');
+        } else {
+            element = elements.pcsBody.querySelector('tr[data-spread-idx="0"]');
+        }
+    } else if ((spreadType === 'ALL' || spreadType === 'CCS') && state.ccsSpreads.length > 0) {
+        topSpread = state.ccsSpreads[0];
+        // Get the first row/card for CCS
+        if (isMobile()) {
+            element = elements.ccsMobileCards.querySelector('.mobile-spread-card[data-spread-idx="0"]');
+        } else {
+            element = elements.ccsBody.querySelector('tr[data-spread-idx="0"]');
+        }
+    }
+
+    if (topSpread && element) {
+        selectSpreadForSimulation(topSpread, element);
+    }
 }
 
 // ============================================

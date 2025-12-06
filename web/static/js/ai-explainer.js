@@ -242,9 +242,9 @@ function renderAiExplainerButton(containerId, options = {}) {
     }
 
     const buttonHtml = `
-        <button class="ai-explainer-btn" id="aiExplainerBtn" aria-label="Explain with AI">
+        <button class="ai-explainer-btn" id="aiExplainerBtn" aria-label="Show Me AI Insights">
             <span class="ai-explainer-btn-icon">&#129302;</span>
-            <span class="ai-explainer-btn-text">Explain with AI</span>
+            <span class="ai-explainer-btn-text">Show Me AI Insights</span>
         </button>
     `;
 
@@ -584,7 +584,7 @@ class AiExplainerController {
         } else {
             this.button.disabled = false;
             this.button.classList.remove('loading');
-            this.button.querySelector('.ai-explainer-btn-text').textContent = 'Explain with AI';
+            this.button.querySelector('.ai-explainer-btn-text').textContent = 'Show Me AI Insights';
         }
     }
 

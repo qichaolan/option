@@ -26,6 +26,7 @@ COPY backtest/ ./backtest/
 COPY web/app/ ./app/
 COPY web/static/ ./static/
 COPY web/templates/ ./templates/
+COPY web/ai/ ./ai/
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
