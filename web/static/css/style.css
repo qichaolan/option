@@ -2286,7 +2286,61 @@ tr[data-contract] {
     }
 }
 
-/* Simulator Summary Cards - Compact for sidebar */
+/* Simulator Action Summary - Compact Two-Line Format */
+.simulator-action-compact {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-left: 3px solid var(--success-color);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.action-compact-line {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.action-compact-line:first-child {
+    margin-bottom: 0.25rem;
+}
+
+.action-compact-icon {
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.action-compact-text {
+    font-weight: 500;
+}
+
+.action-compact-text strong {
+    font-weight: 700;
+    color: var(--success-color);
+}
+
+.action-compact-text .action-separator {
+    margin: 0 0.5rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+/* Mobile: slightly larger compact action text */
+@media (max-width: 1023px) {
+    .simulator-action-compact {
+        padding: 0.625rem 0.875rem;
+    }
+
+    .action-compact-line {
+        font-size: 0.875rem;
+    }
+}
+
+/* Simulator Summary Cards - Compact inline layout */
 .simulator-summary {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -2294,27 +2348,16 @@ tr[data-contract] {
     margin-bottom: 0.875rem;
 }
 
-/* Stack summary cards on narrow sidebar */
-@media (min-width: 1024px) {
-    .simulator-summary {
-        grid-template-columns: 1fr;
-        gap: 0.375rem;
-    }
-
-    .sim-summary-card {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        text-align: left;
-    }
-}
-
 .sim-summary-card {
     background: var(--bg-color);
     border-radius: 6px;
-    padding: 0.5rem 0.625rem;
+    padding: 0.5rem 0.5rem;
     text-align: center;
     border: 1px solid var(--border-color);
+    min-height: 3.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .sim-summary-gain {
@@ -2338,12 +2381,6 @@ tr[data-contract] {
     letter-spacing: 0.03em;
     color: var(--text-secondary);
     margin-bottom: 0.125rem;
-}
-
-@media (min-width: 1024px) {
-    .sim-summary-label {
-        margin-bottom: 0;
-    }
 }
 
 .sim-summary-value {

@@ -258,13 +258,16 @@
                 </div>
             </div>
 
-            <!-- Action Summary - Natural language explanation -->
-            <div class="simulator-action-summary" id="simActionSummary">
-                <p class="action-profit-condition" id="simProfitCondition">-</p>
-                <ul class="action-trade-actions" id="simTradeActions">
-                    <li id="simSellAction">-</li>
-                    <li id="simBuyAction">-</li>
-                </ul>
+            <!-- Action Summary - Compact -->
+            <div class="simulator-action-compact" id="simActionSummary">
+                <div class="action-compact-line" id="simProfitCondition">
+                    <span class="action-compact-icon">💡</span>
+                    <span class="action-compact-text">Profit range at expiration: <strong id="simProfitRange">-</strong></span>
+                </div>
+                <div class="action-compact-line" id="simLegsLine">
+                    <span class="action-compact-icon">🛠</span>
+                    <span class="action-compact-text">Legs: <span id="simLegsText">-</span></span>
+                </div>
             </div>
 
             <!-- Summary Metrics -->
@@ -308,6 +311,10 @@
                         <tbody id="simTableBody"></tbody>
                     </table>
                 </div>
+                <button class="table-toggle-btn" id="togglePayoffTable" style="display: none;">
+                    <span class="toggle-icon">&#9660;</span>
+                    <span class="toggle-text">Show full P/L table</span>
+                </button>
             </div>
 
             <!-- Loading state for simulator -->

@@ -223,15 +223,16 @@
                     </div>
                 </div>
 
-                <!-- Action Summary -->
-                <div class="simulator-action-summary" id="condorActionSummary">
-                    <p class="action-profit-condition" id="payoffProfitCondition">-</p>
-                    <ul class="action-trade-actions" id="payoffTradeActions">
-                        <li id="payoffSellPutAction">-</li>
-                        <li id="payoffBuyPutAction">-</li>
-                        <li id="payoffSellCallAction">-</li>
-                        <li id="payoffBuyCallAction">-</li>
-                    </ul>
+                <!-- Action Summary - Compact -->
+                <div class="simulator-action-compact" id="condorActionSummary">
+                    <div class="action-compact-line" id="payoffProfitCondition">
+                        <span class="action-compact-icon">💡</span>
+                        <span class="action-compact-text">Profit range at expiration: <strong id="payoffProfitRange">-</strong></span>
+                    </div>
+                    <div class="action-compact-line" id="payoffLegsLine">
+                        <span class="action-compact-icon">🛠</span>
+                        <span class="action-compact-text">Legs: <span id="payoffLegsText">-</span></span>
+                    </div>
                 </div>
 
                 <!-- Summary Metrics -->

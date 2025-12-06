@@ -54,6 +54,7 @@ let state = {
     selectedSpread: null,
     simulatorData: null,
     underlyingPrice: 0,
+    payoffTableExpanded: false,  // Whether P/L table is expanded
 };
 
 // ============================================
@@ -110,9 +111,9 @@ const elements = {
     simChart: document.getElementById('simChart'),
     simTableBody: document.getElementById('simTableBody'),
     simLoadingState: document.getElementById('simLoadingState'),
-    simProfitCondition: document.getElementById('simProfitCondition'),
-    simSellAction: document.getElementById('simSellAction'),
-    simBuyAction: document.getElementById('simBuyAction'),
+    simProfitRange: document.getElementById('simProfitRange'),
+    simLegsText: document.getElementById('simLegsText'),
+    togglePayoffTable: document.getElementById('togglePayoffTable'),
 };
 
 // ============================================
@@ -206,6 +207,11 @@ function setupEventListeners() {
     // Close simulator button
     if (elements.closeSimulator) {
         elements.closeSimulator.addEventListener('click', closeSimulator);
+    }
+
+    // Toggle P/L table expand/collapse
+    if (elements.togglePayoffTable) {
+        elements.togglePayoffTable.addEventListener('click', togglePayoffTableExpand);
     }
 
     // Re-render on window resize for mobile/desktop switch
@@ -616,6 +622,7 @@ function closeSimulator() {
     }
     state.selectedSpread = null;
     state.simulatorData = null;
+    state.payoffTableExpanded = false;  // Reset to collapsed when closing
 
     // Remove selection highlighting
     document.querySelectorAll('.selected-for-sim').forEach(el => {
@@ -634,6 +641,9 @@ async function runSpreadSimulation(spread) {
     if (aiExplainerController) {
         aiExplainerController.clearExplanation();
     }
+
+    // Reset table to collapsed state when selecting a new spread
+    state.payoffTableExpanded = false;
 
     // Show simulator with loading state
     elements.spreadSimulator.style.display = 'block';
@@ -670,20 +680,18 @@ async function runSpreadSimulation(spread) {
         const data = await response.json();
         state.simulatorData = data;
 
-        // Update action summary with natural language explanation
+        // Update action summary - compact two-line format
         const breakevenFormatted = formatCurrency(data.summary.breakeven_price, 2);
         const shortStrikeFormatted = formatCurrency(spread.short_strike, 0);
         const longStrikeFormatted = formatCurrency(spread.long_strike, 0);
+        const optionType = spread.spread_type === 'PCS' ? 'puts' : 'calls';
 
         if (spread.spread_type === 'PCS') {
-            elements.simProfitCondition.textContent = `Collect credit. Profit if ${spread.symbol} stays ABOVE ${breakevenFormatted} at expiration.`;
-            elements.simSellAction.textContent = `SELL put at ${shortStrikeFormatted}`;
-            elements.simBuyAction.textContent = `BUY put at ${longStrikeFormatted}`;
+            elements.simProfitRange.textContent = `${breakevenFormatted} → ∞`;
         } else {
-            elements.simProfitCondition.textContent = `Collect credit. Profit if ${spread.symbol} stays BELOW ${breakevenFormatted} at expiration.`;
-            elements.simSellAction.textContent = `SELL call at ${shortStrikeFormatted}`;
-            elements.simBuyAction.textContent = `BUY call at ${longStrikeFormatted}`;
+            elements.simProfitRange.textContent = `-∞ → ${breakevenFormatted}`;
         }
+        elements.simLegsText.textContent = `Sell ${shortStrikeFormatted} / Buy ${longStrikeFormatted} ${optionType}`;
 
         // Update summary
         elements.simMaxGain.textContent = '+' + formatCurrency(data.summary.max_gain, 0);
@@ -757,7 +765,29 @@ function renderSimulatorChart(points) {
 function renderSimulatorTable(points) {
     if (!elements.simTableBody) return;
 
-    elements.simTableBody.innerHTML = points.map(point => {
+    if (!points || points.length === 0) {
+        elements.simTableBody.innerHTML =
+            '<tr><td colspan="3" class="text-center">No data</td></tr>';
+        if (elements.togglePayoffTable) {
+            elements.togglePayoffTable.style.display = 'none';
+        }
+        return;
+    }
+
+    // Key moves to show in collapsed state: -5%, 0%, +5%
+    const keyMoves = [-5, 0, 5];
+
+    // Filter points for collapsed view
+    let displayPoints = points;
+    if (!state.payoffTableExpanded) {
+        displayPoints = points.filter(p => keyMoves.includes(p.pct_move));
+        // Fallback: if no key points found, show first 3 points
+        if (displayPoints.length === 0) {
+            displayPoints = points.slice(0, 3);
+        }
+    }
+
+    elements.simTableBody.innerHTML = displayPoints.map(point => {
         const plClass = point.pl_per_spread >= 0 ? 'positive' : 'negative';
         const plPrefix = point.pl_per_spread >= 0 ? '+' : '';
         const pctPrefix = point.pct_move >= 0 ? '+' : '';
@@ -770,4 +800,34 @@ function renderSimulatorTable(points) {
             </tr>
         `;
     }).join('');
+
+    // Show/hide toggle button and update its text
+    if (elements.togglePayoffTable) {
+        if (points.length > displayPoints.length || state.payoffTableExpanded) {
+            elements.togglePayoffTable.style.display = 'block';
+            const icon = elements.togglePayoffTable.querySelector('.toggle-icon');
+            const text = elements.togglePayoffTable.querySelector('.toggle-text');
+            if (state.payoffTableExpanded) {
+                if (icon) icon.innerHTML = '&#9650;';  // Up arrow
+                if (text) text.textContent = 'Show less';
+            } else {
+                if (icon) icon.innerHTML = '&#9660;';  // Down arrow
+                if (text) text.textContent = 'Show full P/L table';
+            }
+        } else {
+            elements.togglePayoffTable.style.display = 'none';
+        }
+    }
+}
+
+/**
+ * Toggle P/L table between collapsed (3 key rows) and expanded (all rows) state.
+ */
+function togglePayoffTableExpand() {
+    state.payoffTableExpanded = !state.payoffTableExpanded;
+
+    // Re-render the table with current simulator data
+    if (state.simulatorData && Array.isArray(state.simulatorData.points)) {
+        renderSimulatorTable(state.simulatorData.points);
+    }
 }
