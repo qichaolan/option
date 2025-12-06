@@ -27,7 +27,7 @@ When provided with simulation metadata, focus on:
 - Emphasize the higher risk of total loss
 - Discuss the importance of the underlying reaching target
 
-### For historical returns 
+### For scenarios
 Fetech latest 20 years of historical annual returns for the underlying (IWM, SPY, QQQ, etc.) to determine:
 Medium Increase Scenario → returns in the 50% - 70% percentile
 Strong Increase Scenario → returns in the 70% - 100% percentile

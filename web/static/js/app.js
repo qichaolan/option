@@ -235,15 +235,22 @@ function formatExactDate(dateStr) {
 
 // Setup event listeners
 function setupEventListeners() {
-    // Ticker change - update default target and fetch AI score
+    // Ticker change - update default target, fetch AI score, and clear old results
     elements.tickerSelect.addEventListener('change', () => {
         const selected = elements.tickerSelect.selectedOptions[0];
         if (selected) {
             const targetPct = parseFloat(selected.dataset.target);
             elements.targetPctInput.value = (targetPct * 100).toFixed(0);
+            // Clear old results and simulator
+            clearResultsAndSimulator();
             // Fetch AI score for the new ticker
             fetchAIScore(selected.value);
         }
+    });
+
+    // Mode change - clear old results and simulator
+    elements.modeSelect.addEventListener('change', () => {
+        clearResultsAndSimulator();
     });
 
     // Fetch button
@@ -328,6 +335,44 @@ function closeSimulator() {
         row.classList.remove('selected');
     });
     // Update AI Explainer state (hide button when no simulation)
+    updateAiExplainerState();
+}
+
+// Clear results table and simulator when ticker/mode changes
+function clearResultsAndSimulator() {
+    // Clear state
+    state.contracts = [];
+    state.selectedContracts = [];
+
+    // Hide results table
+    if (elements.tableContainer) {
+        elements.tableContainer.style.display = 'none';
+    }
+
+    // Hide no results state
+    if (elements.noResultsState) {
+        elements.noResultsState.style.display = 'none';
+    }
+
+    // Show empty state
+    if (elements.emptyState) {
+        elements.emptyState.style.display = 'block';
+    }
+
+    // Hide info cards
+    if (elements.infoCards) {
+        elements.infoCards.style.display = 'none';
+    }
+
+    // Hide simulator
+    if (elements.simulator) {
+        elements.simulator.style.display = 'none';
+    }
+
+    // Clear AI Explainer
+    if (aiExplainerController) {
+        aiExplainerController.clearExplanation();
+    }
     updateAiExplainerState();
 }
 
