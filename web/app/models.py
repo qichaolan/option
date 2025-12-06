@@ -349,6 +349,27 @@ class AiExplainerWatchItem(BaseModel):
     trigger: Optional[str] = Field(None, description="Trigger condition")
 
 
+class AiExplainerScenario(BaseModel):
+    """Historical scenario analysis."""
+
+    definition: str = Field(..., description="Percentile range definition")
+    historical_range: str = Field(..., description="Historical return range (e.g., +8% to +15%)")
+    mapped_price_target: str = Field(..., description="Nearest simulator target price")
+    expected_profit: str = Field(..., description="Expected profit based on simulator")
+    frequency: str = Field(..., description="How often this occurred historically")
+
+
+class AiExplainerScenarios(BaseModel):
+    """Historical scenarios for medium and strong increases."""
+
+    medium_increase: Optional[AiExplainerScenario] = Field(
+        None, description="60-80th percentile scenario"
+    )
+    strong_increase: Optional[AiExplainerScenario] = Field(
+        None, description="80-95th percentile scenario"
+    )
+
+
 class AiExplainerContent(BaseModel):
     """Structured content from AI explanation."""
 
@@ -356,6 +377,10 @@ class AiExplainerContent(BaseModel):
     key_insights: List[AiExplainerKeyInsight] = Field(
         default_factory=list,
         description="Key insights from the analysis (3-5 items)",
+    )
+    scenarios: Optional[AiExplainerScenarios] = Field(
+        None,
+        description="Historical scenario analysis for medium and strong increases",
     )
     risks: List[AiExplainerRisk] = Field(
         default_factory=list,

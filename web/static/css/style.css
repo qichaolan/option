@@ -4032,6 +4032,65 @@ tr.selected-for-sim::after {
     margin: 0;
 }
 
+/* Scenarios (Historical Analysis) */
+.ai-scenarios-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.ai-scenario {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+.ai-scenario-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ai-scenario-icon {
+    font-size: 1rem;
+}
+
+.ai-scenario-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ai-scenario-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.375rem 1rem;
+}
+
+.ai-scenario-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.ai-scenario-key {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.ai-scenario-value {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
 /* Risks */
 .ai-risks-list {
     display: flex;

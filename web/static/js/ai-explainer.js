@@ -369,6 +369,48 @@ function renderExplanationContent(contentElement, content, cachedAt) {
         </div>
     `).join('');
 
+    // Build scenarios HTML (historical analysis)
+    let scenariosHtml = '';
+    if (content.scenarios) {
+        const scenarios = content.scenarios;
+        const renderScenario = (scenario, label, icon) => {
+            if (!scenario) return '';
+            return `
+                <div class="ai-scenario">
+                    <div class="ai-scenario-header">
+                        <span class="ai-scenario-icon">${icon}</span>
+                        <strong class="ai-scenario-label">${label}</strong>
+                    </div>
+                    <div class="ai-scenario-details">
+                        <div class="ai-scenario-row">
+                            <span class="ai-scenario-key">Historical Range:</span>
+                            <span class="ai-scenario-value">${escapeHtml(scenario.historical_range)}</span>
+                        </div>
+                        <div class="ai-scenario-row">
+                            <span class="ai-scenario-key">Target Price:</span>
+                            <span class="ai-scenario-value">${escapeHtml(scenario.mapped_price_target)}</span>
+                        </div>
+                        <div class="ai-scenario-row">
+                            <span class="ai-scenario-key">Expected Profit:</span>
+                            <span class="ai-scenario-value">${escapeHtml(scenario.expected_profit)}</span>
+                        </div>
+                        <div class="ai-scenario-row">
+                            <span class="ai-scenario-key">Frequency:</span>
+                            <span class="ai-scenario-value">${escapeHtml(scenario.frequency)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        const mediumHtml = renderScenario(scenarios.medium_increase, 'Medium Increase (60-80th %ile)', '&#128200;');
+        const strongHtml = renderScenario(scenarios.strong_increase, 'Strong Increase (80-95th %ile)', '&#128640;');
+
+        if (mediumHtml || strongHtml) {
+            scenariosHtml = mediumHtml + strongHtml;
+        }
+    }
+
     // Format cached time if available
     let cacheNote = '';
     if (cachedAt) {
@@ -390,6 +432,16 @@ function renderExplanationContent(contentElement, content, cachedAt) {
                     <h5 class="ai-section-title">Key Insights</h5>
                     <div class="ai-insights-list">
                         ${insightsHtml}
+                    </div>
+                </div>
+            ` : ''}
+
+            <!-- Historical Scenarios -->
+            ${scenariosHtml ? `
+                <div class="ai-section">
+                    <h5 class="ai-section-title">Historical Scenario Analysis</h5>
+                    <div class="ai-scenarios-list">
+                        ${scenariosHtml}
                     </div>
                 </div>
             ` : ''}
