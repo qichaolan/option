@@ -4269,3 +4269,227 @@ tr.selected-for-sim::after {
         padding: 0.5rem 0.625rem;
     }
 }
+
+/* =============================================================================
+   AI Explainer - Credit Spread Specific Styles
+   ============================================================================= */
+
+/* Strategy Name */
+.ai-strategy-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Trade Mechanics */
+.ai-trade-mechanics {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.ai-mechanic-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    padding: 0.375rem 0.5rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.8125rem;
+}
+
+.ai-mechanic-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 120px;
+}
+
+.ai-mechanic-value {
+    color: var(--text-primary);
+}
+
+.ai-mechanic-value.positive {
+    color: var(--success-color, #22c55e);
+    font-weight: 600;
+}
+
+/* Key Metrics Grid */
+.ai-key-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+.ai-metric-card {
+    padding: 0.625rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.ai-metric-card.ai-metric-positive {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.05);
+}
+
+.ai-metric-card.ai-metric-negative {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.ai-metric-label {
+    font-size: 0.6875rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+
+.ai-metric-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.ai-metric-value.positive {
+    color: var(--success-color, #22c55e);
+}
+
+.ai-metric-value.negative {
+    color: var(--danger-color, #ef4444);
+}
+
+.ai-metric-condition {
+    font-size: 0.6875rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+    line-height: 1.3;
+}
+
+/* Strategy Analysis */
+.ai-strategy-analysis {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ai-outcome {
+    padding: 0.625rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.ai-outcome.sentiment-positive {
+    border-left: 3px solid var(--success-color, #22c55e);
+}
+
+.ai-outcome.sentiment-negative {
+    border-left: 3px solid var(--danger-color, #ef4444);
+}
+
+.ai-outcome.sentiment-neutral {
+    border-left: 3px solid var(--text-secondary);
+}
+
+.ai-outcome-header {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.375rem;
+}
+
+.ai-outcome-icon {
+    font-size: 0.875rem;
+}
+
+.ai-outcome-header strong {
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+}
+
+.ai-outcome-body {
+    padding-left: 1.25rem;
+}
+
+.ai-outcome-scenario {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-bottom: 0.25rem;
+}
+
+.ai-outcome-result {
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+}
+
+/* Risk Management */
+.ai-risk-management {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.ai-rm-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0.625rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+.ai-rm-item.ai-rm-worst {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.ai-rm-icon {
+    flex-shrink: 0;
+    font-size: 0.875rem;
+}
+
+.ai-rm-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.ai-rm-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.ai-rm-text {
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+/* Mobile responsive for credit spread styles */
+@media (max-width: 640px) {
+    .ai-key-metrics-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.375rem;
+    }
+
+    .ai-metric-card {
+        padding: 0.5rem;
+    }
+
+    .ai-metric-value {
+        font-size: 0.875rem;
+    }
+
+    .ai-mechanic-label {
+        min-width: 100px;
+    }
+}

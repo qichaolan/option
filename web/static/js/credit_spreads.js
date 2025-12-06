@@ -116,11 +116,68 @@ const elements = {
 };
 
 // ============================================
+// AI EXPLAINER
+// ============================================
+
+let aiExplainerController = null;
+
+/**
+ * Get metadata for AI Explainer based on current simulation state
+ */
+function getAiExplainerMetadata() {
+    if (!state.selectedSpread || !state.simulatorData) {
+        return null;
+    }
+
+    const spread = state.selectedSpread;
+    const simData = state.simulatorData;
+
+    return {
+        symbol: spread.symbol,
+        spread_type: spread.spread_type,
+        expiration: spread.expiration,
+        short_strike: spread.short_strike,
+        long_strike: spread.long_strike,
+        net_credit: spread.credit,
+        underlying_price: state.underlyingPrice,
+        dte: spread.dte,
+        short_delta: spread.short_delta,
+        prob_profit: spread.prob_profit,
+        max_gain: simData.summary.max_gain,
+        max_loss: simData.summary.max_loss,
+        breakeven_price: simData.summary.breakeven_price,
+        breakeven_pct: simData.summary.breakeven_pct,
+        roc: spread.roc,
+        iv: spread.iv,
+        ivp: spread.ivp,
+    };
+}
+
+/**
+ * Initialize AI Explainer controller
+ */
+function initAiExplainer() {
+    if (typeof AiExplainerController === 'undefined') {
+        console.warn('AI Explainer not available');
+        return;
+    }
+
+    aiExplainerController = new AiExplainerController({
+        pageId: 'credit_spread_screener',
+        contextType: 'spread_simulator',
+        getMetadata: getAiExplainerMetadata,
+        buttonContainerId: 'aiExplainerBtnContainer',
+        panelContainerId: 'aiExplainerPanelContainer',
+    });
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
+    initAiExplainer();
     runScreener(); // Auto-scan on page load
 });
 
@@ -564,6 +621,11 @@ function closeSimulator() {
     document.querySelectorAll('.selected-for-sim').forEach(el => {
         el.classList.remove('selected-for-sim');
     });
+
+    // Clear AI Explainer
+    if (aiExplainerController) {
+        aiExplainerController.clearExplanation();
+    }
 }
 
 // Run simulation for a spread
@@ -627,6 +689,11 @@ async function runSpreadSimulation(spread) {
         // Render chart and table
         renderSimulatorChart(data.points);
         renderSimulatorTable(data.points);
+
+        // Update AI Explainer button state
+        if (aiExplainerController) {
+            aiExplainerController.render();
+        }
 
         // Scroll to simulator
         elements.spreadSimulator.scrollIntoView({ behavior: 'smooth', block: 'start' });

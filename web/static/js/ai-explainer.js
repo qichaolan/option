@@ -324,6 +324,150 @@ function renderErrorState(contentElement, errorMessage, onRetry) {
 }
 
 /**
+ * Render credit spread specific content (trade mechanics, key metrics, strategy analysis)
+ */
+function renderCreditSpreadContent(content) {
+    let html = '';
+
+    // Strategy name header
+    if (content.strategy_name) {
+        html += `<div class="ai-strategy-name">${escapeHtml(content.strategy_name)}</div>`;
+    }
+
+    // Trade mechanics
+    if (content.trade_mechanics) {
+        const tm = content.trade_mechanics;
+        html += `
+            <div class="ai-section">
+                <h5 class="ai-section-title">Trade Mechanics</h5>
+                <div class="ai-trade-mechanics">
+                    <div class="ai-mechanic-item">
+                        <span class="ai-mechanic-label">Structure:</span>
+                        <span class="ai-mechanic-value">${escapeHtml(tm.structure)}</span>
+                    </div>
+                    <div class="ai-mechanic-item">
+                        <span class="ai-mechanic-label">Credit Received:</span>
+                        <span class="ai-mechanic-value positive">${escapeHtml(tm.credit_received)}</span>
+                    </div>
+                    <div class="ai-mechanic-item">
+                        <span class="ai-mechanic-label">Margin Requirement:</span>
+                        <span class="ai-mechanic-value">${escapeHtml(tm.margin_requirement)}</span>
+                    </div>
+                    <div class="ai-mechanic-item">
+                        <span class="ai-mechanic-label">Breakeven:</span>
+                        <span class="ai-mechanic-value">${escapeHtml(tm.breakeven)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Key metrics (max profit, max loss, risk/reward)
+    if (content.key_metrics) {
+        const km = content.key_metrics;
+        html += `
+            <div class="ai-section">
+                <h5 class="ai-section-title">Key Metrics</h5>
+                <div class="ai-key-metrics-grid">
+                    <div class="ai-metric-card ai-metric-positive">
+                        <div class="ai-metric-label">Max Profit</div>
+                        <div class="ai-metric-value positive">${escapeHtml(km.max_profit?.value || '-')}</div>
+                        <div class="ai-metric-condition">${escapeHtml(km.max_profit?.condition || '')}</div>
+                    </div>
+                    <div class="ai-metric-card ai-metric-negative">
+                        <div class="ai-metric-label">Max Loss</div>
+                        <div class="ai-metric-value negative">${escapeHtml(km.max_loss?.value || '-')}</div>
+                        <div class="ai-metric-condition">${escapeHtml(km.max_loss?.condition || '')}</div>
+                    </div>
+                    <div class="ai-metric-card">
+                        <div class="ai-metric-label">Risk/Reward</div>
+                        <div class="ai-metric-value">${escapeHtml(km.risk_reward_ratio || '-')}</div>
+                    </div>
+                    <div class="ai-metric-card">
+                        <div class="ai-metric-label">Prob. of Profit</div>
+                        <div class="ai-metric-value">${escapeHtml(km.probability_of_profit || '-')}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Strategy analysis (bullish, neutral, bearish outcomes)
+    if (content.strategy_analysis) {
+        const sa = content.strategy_analysis;
+        const renderOutcome = (outcome, label, icon) => {
+            if (!outcome) return '';
+            const sentimentClass = `sentiment-${outcome.sentiment || 'neutral'}`;
+            return `
+                <div class="ai-outcome ${sentimentClass}">
+                    <div class="ai-outcome-header">
+                        <span class="ai-outcome-icon">${icon}</span>
+                        <strong>${escapeHtml(label)}</strong>
+                    </div>
+                    <div class="ai-outcome-body">
+                        <div class="ai-outcome-scenario">${escapeHtml(outcome.scenario)}</div>
+                        <div class="ai-outcome-result">${escapeHtml(outcome.result)}</div>
+                    </div>
+                </div>
+            `;
+        };
+
+        html += `
+            <div class="ai-section">
+                <h5 class="ai-section-title">Strategy Analysis</h5>
+                <div class="ai-strategy-analysis">
+                    ${renderOutcome(sa.bullish_outcome, 'Bullish Outcome', '&#128200;')}
+                    ${renderOutcome(sa.neutral_outcome, 'Neutral Outcome', '&#8596;')}
+                    ${renderOutcome(sa.bearish_outcome, 'Bearish Outcome', '&#128201;')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Risk management
+    if (content.risk_management) {
+        const rm = content.risk_management;
+        html += `
+            <div class="ai-section">
+                <h5 class="ai-section-title">Risk Management</h5>
+                <div class="ai-risk-management">
+                    <div class="ai-rm-item">
+                        <span class="ai-rm-icon">&#9888;</span>
+                        <div class="ai-rm-content">
+                            <span class="ai-rm-label">Early Exit Trigger:</span>
+                            <span class="ai-rm-text">${escapeHtml(rm.early_exit_trigger)}</span>
+                        </div>
+                    </div>
+                    <div class="ai-rm-item">
+                        <span class="ai-rm-icon">&#128260;</span>
+                        <div class="ai-rm-content">
+                            <span class="ai-rm-label">Adjustment Options:</span>
+                            <span class="ai-rm-text">${escapeHtml(rm.adjustment_options)}</span>
+                        </div>
+                    </div>
+                    <div class="ai-rm-item ai-rm-worst">
+                        <span class="ai-rm-icon">&#128683;</span>
+                        <div class="ai-rm-content">
+                            <span class="ai-rm-label">Worst Case:</span>
+                            <span class="ai-rm-text">${escapeHtml(rm.worst_case)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    return html;
+}
+
+/**
+ * Check if content is credit spread specific
+ */
+function isCreditSpreadContent(content) {
+    return content.trade_mechanics || content.strategy_analysis || content.key_metrics;
+}
+
+/**
  * Render the explanation content
  */
 function renderExplanationContent(contentElement, content, cachedAt) {
@@ -416,12 +560,18 @@ function renderExplanationContent(contentElement, content, cachedAt) {
         cacheNote = `<span class="ai-explainer-cache-note">Last updated: ${timeAgo}</span>`;
     }
 
+    // Build credit spread specific content if applicable
+    const creditSpreadHtml = isCreditSpreadContent(content) ? renderCreditSpreadContent(content) : '';
+
     contentElement.innerHTML = `
         <div class="ai-explainer-result">
             <!-- Summary -->
             <div class="ai-summary">
                 <p>${escapeHtml(content.summary)}</p>
             </div>
+
+            <!-- Credit Spread Specific Content -->
+            ${creditSpreadHtml}
 
             <!-- Key Insights -->
             ${insightsHtml ? `
@@ -433,7 +583,7 @@ function renderExplanationContent(contentElement, content, cachedAt) {
                 </div>
             ` : ''}
 
-            <!-- Historical Scenarios -->
+            <!-- Historical Scenarios (LEAPS) -->
             ${scenariosHtml ? `
                 <div class="ai-section">
                     <h5 class="ai-section-title">Historical Scenario Analysis</h5>

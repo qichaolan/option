@@ -716,6 +716,10 @@ def get_mock_explanation(
     Returns:
         Mock explanation response
     """
+    # Handle credit spread context
+    if context_type == "spread_simulator" or page_id == "credit_spread_screener":
+        return _get_credit_spread_mock(page_id, context_type, metadata)
+
     # Extract key values from metadata for mock response
     symbol = metadata.get("symbol", "SPY")
     underlying = metadata.get("underlying_price", 600)
@@ -780,6 +784,158 @@ def get_mock_explanation(
                 },
             ],
             "disclaimer": "This analysis is for educational purposes only and should not be considered financial advice. LEAPS options involve significant risk including potential loss of entire premium. Always do your own research and consult with a qualified financial advisor.",
+        },
+        "cached": False,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+def _get_credit_spread_mock(
+    page_id: str,
+    context_type: str,
+    metadata: dict,
+) -> Dict[str, Any]:
+    """
+    Get mock explanation for credit spread simulator.
+
+    Args:
+        page_id: Page identifier
+        context_type: Context type
+        metadata: Credit spread simulation metadata
+
+    Returns:
+        Mock explanation response for credit spreads
+    """
+    # Extract credit spread specific values
+    symbol = metadata.get("symbol", "SPY")
+    spread_type = metadata.get("spread_type", "PCS")
+    short_strike = metadata.get("short_strike", 580)
+    long_strike = metadata.get("long_strike", 575)
+    net_credit = metadata.get("net_credit", 1.25)
+    underlying = metadata.get("underlying_price", 600)
+    expiration = metadata.get("expiration", "2025-01-17")
+
+    width = abs(short_strike - long_strike)
+    max_loss = (width - net_credit) * 100
+    max_profit = net_credit * 100
+
+    if spread_type == "PCS":
+        strategy_name = f"Bull Put Spread on {symbol}"
+        breakeven = short_strike - net_credit
+        profit_condition = f"Stock above ${short_strike} at expiration"
+        loss_condition = f"Stock below ${long_strike} at expiration"
+        profit_zone = f"Above ${short_strike}"
+        loss_zone = f"Below ${long_strike}"
+        bullish_result = f"Spread expires worthless, keep full ${max_profit:.0f} credit"
+        bearish_scenario = "Stock drops below short strike"
+    else:
+        strategy_name = f"Bear Call Spread on {symbol}"
+        breakeven = short_strike + net_credit
+        profit_condition = f"Stock below ${short_strike} at expiration"
+        loss_condition = f"Stock above ${long_strike} at expiration"
+        profit_zone = f"Below ${short_strike}"
+        loss_zone = f"Above ${long_strike}"
+        bullish_result = f"Spread expires worthless, keep full ${max_profit:.0f} credit"
+        bearish_scenario = "Stock rises above short strike"
+
+    return {
+        "success": True,
+        "pageId": page_id,
+        "contextType": context_type,
+        "content": {
+            "strategy_name": strategy_name,
+            "summary": f"This {spread_type} on {symbol} collects ${net_credit:.2f} credit per share (${max_profit:.0f} total) with a maximum risk of ${max_loss:.0f}. The spread expires on {expiration} and achieves max profit if {symbol} stays {'above' if spread_type == 'PCS' else 'below'} ${short_strike}.",
+            "trade_mechanics": {
+                "structure": f"Sell ${short_strike} {'put' if spread_type == 'PCS' else 'call'}, buy ${long_strike} {'put' if spread_type == 'PCS' else 'call'}, {expiration}",
+                "credit_received": f"${net_credit:.2f} per share (${max_profit:.0f} total)",
+                "margin_requirement": f"Spread width minus credit = ${max_loss:.0f}",
+                "breakeven": f"${breakeven:.2f} at expiration",
+            },
+            "key_metrics": {
+                "max_profit": {
+                    "value": f"${max_profit:.0f}",
+                    "condition": profit_condition,
+                },
+                "max_loss": {
+                    "value": f"${max_loss:.0f}",
+                    "condition": loss_condition,
+                },
+                "risk_reward_ratio": f"{max_loss / max_profit:.1f}:1",
+                "probability_of_profit": "68%",
+            },
+            "visualization": {
+                "profit_zone": profit_zone,
+                "loss_zone": loss_zone,
+                "transition_zone": f"${long_strike} to ${short_strike}",
+            },
+            "risk_management": {
+                "early_exit_trigger": "Close if spread reaches 50% of max profit or if underlying breaks key support",
+                "adjustment_options": "Roll down/out if position goes against you",
+                "worst_case": f"Full ${max_loss:.0f} loss if stock {'crashes below' if spread_type == 'PCS' else 'rallies above'} long strike",
+            },
+            "strategy_analysis": {
+                "bullish_outcome": {
+                    "scenario": "Stock rallies or stays flat" if spread_type == "PCS" else "Stock drops or stays flat",
+                    "result": bullish_result,
+                    "sentiment": "positive",
+                },
+                "neutral_outcome": {
+                    "scenario": "Stock drifts near current price",
+                    "result": "Spread likely profitable, may close early for partial profit",
+                    "sentiment": "neutral",
+                },
+                "bearish_outcome": {
+                    "scenario": bearish_scenario,
+                    "result": f"Increasing losses up to max loss of ${max_loss:.0f}",
+                    "sentiment": "negative",
+                },
+            },
+            "key_insights": [
+                {
+                    "title": "Risk/Reward Profile",
+                    "description": f"This spread risks ${max_loss:.0f} to make ${max_profit:.0f}, a {max_loss / max_profit:.1f}:1 risk/reward ratio. Credit spreads typically have higher probability of profit but asymmetric risk.",
+                    "sentiment": "neutral",
+                },
+                {
+                    "title": "Time Decay Advantage",
+                    "description": "As a net credit position, theta (time decay) works in your favor. Each passing day reduces the spread's value, benefiting the seller.",
+                    "sentiment": "positive",
+                },
+                {
+                    "title": "Defined Risk Trade",
+                    "description": f"Maximum loss is capped at ${max_loss:.0f} regardless of how far the stock moves against the position. No margin calls or unlimited risk.",
+                    "sentiment": "positive",
+                },
+            ],
+            "risks": [
+                {
+                    "risk": f"Maximum loss of ${max_loss:.0f} if {symbol} {'drops below' if spread_type == 'PCS' else 'rises above'} ${long_strike} at expiration.",
+                    "severity": "medium",
+                },
+                {
+                    "risk": "Early assignment risk on the short option, particularly around ex-dividend dates for call spreads.",
+                    "severity": "low",
+                },
+                {
+                    "risk": "Implied volatility spike could increase spread value, making it harder to close at a profit.",
+                    "severity": "medium",
+                },
+            ],
+            "watch_items": [
+                {
+                    "item": "Underlying price vs short strike",
+                    "trigger": f"Consider adjustment if {symbol} {'drops below' if spread_type == 'PCS' else 'rises above'} ${short_strike}",
+                },
+                {
+                    "item": "Days to expiration",
+                    "trigger": "Consider closing for 50% profit or rolling if less than 7 DTE",
+                },
+                {
+                    "item": "Earnings and events",
+                    "trigger": "Check for any scheduled events before expiration that could cause volatility",
+                },
+            ],
+            "disclaimer": "This analysis is for educational purposes only and should not be considered financial advice. Credit spreads involve significant risk including potential loss of the entire spread width minus premium received. Always do your own research and consult with a qualified financial advisor.",
         },
         "cached": False,
         "timestamp": datetime.utcnow().isoformat(),

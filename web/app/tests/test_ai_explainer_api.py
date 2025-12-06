@@ -1015,3 +1015,127 @@ class TestInputValidationEdgeCases:
         )
 
         assert request.metadata is not None
+
+
+# =============================================================================
+# Test Credit Spread Mock Data
+# =============================================================================
+
+class TestCreditSpreadMockData:
+    """Tests for credit spread specific mock data."""
+
+    def test_credit_spread_mock_returns_correct_structure(self):
+        """Should return credit spread specific fields in mock response."""
+        from app.services.ai_explainer_service import get_mock_explanation
+
+        result = get_mock_explanation(
+            page_id="credit_spread_screener",
+            context_type="spread_simulator",
+            metadata={
+                "symbol": "SPY",
+                "spread_type": "PCS",
+                "short_strike": 580,
+                "long_strike": 575,
+                "net_credit": 1.25,
+                "underlying_price": 600,
+                "expiration": "2025-01-17",
+            },
+        )
+
+        assert result["success"] is True
+        assert result["pageId"] == "credit_spread_screener"
+        assert result["contextType"] == "spread_simulator"
+
+        content = result["content"]
+        assert "strategy_name" in content
+        assert "Bull Put Spread" in content["strategy_name"]
+        assert "trade_mechanics" in content
+        assert "key_metrics" in content
+        assert "strategy_analysis" in content
+        assert "risk_management" in content
+
+    def test_credit_spread_mock_trade_mechanics(self):
+        """Should return correct trade mechanics for PCS."""
+        from app.services.ai_explainer_service import get_mock_explanation
+
+        result = get_mock_explanation(
+            page_id="credit_spread_screener",
+            context_type="spread_simulator",
+            metadata={
+                "symbol": "SPY",
+                "spread_type": "PCS",
+                "short_strike": 580,
+                "long_strike": 575,
+                "net_credit": 1.25,
+            },
+        )
+
+        tm = result["content"]["trade_mechanics"]
+        assert "structure" in tm
+        assert "credit_received" in tm
+        assert "margin_requirement" in tm
+        assert "breakeven" in tm
+        assert "put" in tm["structure"].lower()
+
+    def test_credit_spread_mock_key_metrics(self):
+        """Should return correct key metrics for credit spread."""
+        from app.services.ai_explainer_service import get_mock_explanation
+
+        result = get_mock_explanation(
+            page_id="credit_spread_screener",
+            context_type="spread_simulator",
+            metadata={
+                "symbol": "SPY",
+                "spread_type": "PCS",
+                "short_strike": 580,
+                "long_strike": 575,
+                "net_credit": 1.25,
+            },
+        )
+
+        km = result["content"]["key_metrics"]
+        assert "max_profit" in km
+        assert "max_loss" in km
+        assert "risk_reward_ratio" in km
+        assert "probability_of_profit" in km
+
+    def test_credit_spread_mock_ccs_type(self):
+        """Should return correct structure for CCS (Call Credit Spread)."""
+        from app.services.ai_explainer_service import get_mock_explanation
+
+        result = get_mock_explanation(
+            page_id="credit_spread_screener",
+            context_type="spread_simulator",
+            metadata={
+                "symbol": "SPY",
+                "spread_type": "CCS",
+                "short_strike": 620,
+                "long_strike": 625,
+                "net_credit": 1.50,
+            },
+        )
+
+        content = result["content"]
+        assert "Bear Call Spread" in content["strategy_name"]
+        assert "call" in content["trade_mechanics"]["structure"].lower()
+
+    def test_credit_spread_mock_includes_standard_fields(self):
+        """Should include standard AI Explainer fields."""
+        from app.services.ai_explainer_service import get_mock_explanation
+
+        result = get_mock_explanation(
+            page_id="credit_spread_screener",
+            context_type="spread_simulator",
+            metadata={"symbol": "SPY", "spread_type": "PCS"},
+        )
+
+        content = result["content"]
+        # Standard fields should be present
+        assert "summary" in content
+        assert "key_insights" in content
+        assert "risks" in content
+        assert "watch_items" in content
+        assert "disclaimer" in content
+        assert len(content["key_insights"]) >= 1
+        assert len(content["risks"]) >= 1
+        assert len(content["watch_items"]) >= 1
