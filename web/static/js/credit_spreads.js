@@ -108,7 +108,6 @@ const elements = {
     simMaxLoss: document.getElementById('simMaxLoss'),
     simBreakeven: document.getElementById('simBreakeven'),
     simBreakevenPct: document.getElementById('simBreakevenPct'),
-    simChart: document.getElementById('simChart'),
     simTableBody: document.getElementById('simTableBody'),
     simLoadingState: document.getElementById('simLoadingState'),
     simProfitRange: document.getElementById('simProfitRange'),
@@ -221,10 +220,6 @@ function setupEventListeners() {
         resizeTimeout = setTimeout(() => {
             if (state.spreads.length > 0) {
                 renderResults();
-            }
-            // Re-render simulator chart if visible
-            if (state.simulatorData && elements.spreadSimulator.style.display !== 'none') {
-                renderSimulatorChart(state.simulatorData.points);
             }
         }, 250);
     });
@@ -688,9 +683,9 @@ async function runSpreadSimulation(spread) {
 
         if (elements.simProfitRange) {
             if (spread.spread_type === 'PCS') {
-                elements.simProfitRange.textContent = `${breakevenFormatted} → ∞`;
+                elements.simProfitRange.textContent = `Above ${breakevenFormatted}`;
             } else {
-                elements.simProfitRange.textContent = `-∞ → ${breakevenFormatted}`;
+                elements.simProfitRange.textContent = `Below ${breakevenFormatted}`;
             }
         }
         if (elements.simLegsText) {
@@ -703,8 +698,7 @@ async function runSpreadSimulation(spread) {
         elements.simBreakeven.textContent = formatCurrency(data.summary.breakeven_price, 2);
         elements.simBreakevenPct.textContent = (data.summary.breakeven_pct >= 0 ? '+' : '') + formatNumber(data.summary.breakeven_pct, 1) + '% from current';
 
-        // Render chart and table
-        renderSimulatorChart(data.points);
+        // Render table
         renderSimulatorTable(data.points);
 
         // Update AI Explainer button state
@@ -722,47 +716,6 @@ async function runSpreadSimulation(spread) {
     } finally {
         elements.simLoadingState.style.display = 'none';
     }
-}
-
-// Render the P/L chart
-function renderSimulatorChart(points) {
-    if (!elements.simChart) return;
-
-    // Find max absolute P/L for scaling
-    const maxAbsPL = Math.max(...points.map(p => Math.abs(p.pl_per_spread)));
-    const chartHeight = isMobile() ? 120 : 180;
-    const halfHeight = chartHeight / 2;
-
-    // Generate bar chart HTML
-    let barsHtml = '<div class="pl-chart-zero-line"></div>';
-
-    points.forEach((point, idx) => {
-        const isPositive = point.pl_per_spread >= 0;
-        const barHeight = (Math.abs(point.pl_per_spread) / maxAbsPL) * halfHeight * 0.9; // 90% max to leave room for labels
-
-        const barStyle = isPositive
-            ? `height: ${barHeight}px; bottom: 50%;`
-            : `height: ${barHeight}px; top: 50%;`;
-
-        const valueClass = isPositive ? 'positive' : 'negative';
-        const valueStyle = isPositive
-            ? `bottom: calc(50% + ${barHeight + 3}px);`
-            : `top: calc(50% + ${barHeight + 3}px);`;
-
-        barsHtml += `
-            <div class="pl-chart-bar-container">
-                <div class="pl-chart-bar ${valueClass}" style="${barStyle}" title="${point.pct_move}%: ${formatCurrency(point.pl_per_spread, 0)}"></div>
-                <div class="pl-chart-value ${valueClass}" style="${valueStyle}">${formatCurrency(point.pl_per_spread, 0)}</div>
-                <div class="pl-chart-label">${point.pct_move >= 0 ? '+' : ''}${point.pct_move}%</div>
-            </div>
-        `;
-    });
-
-    elements.simChart.innerHTML = `
-        <div class="pl-chart-bars" style="height: ${chartHeight}px;">
-            ${barsHtml}
-        </div>
-    `;
 }
 
 // Render the P/L table
