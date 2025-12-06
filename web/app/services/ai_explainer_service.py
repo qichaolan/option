@@ -636,6 +636,7 @@ Please analyze this simulation data and provide your explanation in the required
         content = {
             "summary": parsed_response.get("summary", ""),
             "key_insights": parsed_response.get("key_insights", []),
+            "scenarios": parsed_response.get("scenarios"),
             "risks": parsed_response.get("risks", []),
             "watch_items": parsed_response.get("watch_items", []),
             "disclaimer": parsed_response.get(
@@ -744,6 +745,22 @@ def get_mock_explanation(
                     "sentiment": "neutral",
                 },
             ],
+            "scenarios": {
+                "medium_increase": {
+                    "definition": "50-75th percentile historical return range",
+                    "historical_range": "+8% to +15%",
+                    "mapped_price_target": f"${underlying * 1.10:.2f}",
+                    "expected_profit": f"+${(underlying * 0.10 - 50) * 100:.0f} per contract",
+                    "frequency": "Occurred in 5 of 20 years",
+                },
+                "strong_increase": {
+                    "definition": "75-95th percentile historical return range",
+                    "historical_range": "+15% to +28%",
+                    "mapped_price_target": f"${underlying * 1.20:.2f}",
+                    "expected_profit": f"+${(underlying * 0.20 - 50) * 100:.0f} per contract",
+                    "frequency": "Occurred in 4 of 20 years",
+                },
+            },
             "risks": [
                 {
                     "risk": "Maximum loss limited to premium paid, but represents 100% of the investment if the option expires worthless.",
