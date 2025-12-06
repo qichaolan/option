@@ -369,42 +369,39 @@ function renderExplanationContent(contentElement, content, cachedAt) {
         </div>
     `).join('');
 
-    // Build scenarios HTML (historical analysis)
+    // Build scenarios HTML (narrative format with historical analysis)
     let scenariosHtml = '';
     if (content.scenarios) {
         const scenarios = content.scenarios;
-        const renderScenario = (scenario, label, icon) => {
+        const renderScenario = (scenario, scenarioType, icon) => {
             if (!scenario) return '';
+            const scenarioLabel = scenarioType === 'medium' ? 'Medium Increase Scenario' : 'Strong Increase Scenario';
             return `
                 <div class="ai-scenario">
                     <div class="ai-scenario-header">
                         <span class="ai-scenario-icon">${icon}</span>
-                        <strong class="ai-scenario-label">${label}</strong>
+                        <strong class="ai-scenario-label">${scenarioLabel} (Min. <span class="ai-scenario-return">${escapeHtml(scenario.min_annual_return)}</span> Annual Return)</strong>
                     </div>
-                    <div class="ai-scenario-details">
-                        <div class="ai-scenario-row">
-                            <span class="ai-scenario-key">Historical Range:</span>
-                            <span class="ai-scenario-value">${escapeHtml(scenario.historical_range)}</span>
+                    <div class="ai-scenario-body">
+                        <div class="ai-scenario-paragraph">
+                            <span class="ai-scenario-paragraph-label">Projected Price Target:</span>
+                            <span class="ai-scenario-paragraph-text">${escapeHtml(scenario.projected_price_target)}</span>
                         </div>
-                        <div class="ai-scenario-row">
-                            <span class="ai-scenario-key">Target Price:</span>
-                            <span class="ai-scenario-value">${escapeHtml(scenario.mapped_price_target)}</span>
+                        <div class="ai-scenario-paragraph">
+                            <span class="ai-scenario-paragraph-label">Payoff Realism:</span>
+                            <span class="ai-scenario-paragraph-text">${escapeHtml(scenario.payoff_realism)}</span>
                         </div>
-                        <div class="ai-scenario-row">
-                            <span class="ai-scenario-key">Expected Profit:</span>
-                            <span class="ai-scenario-value">${escapeHtml(scenario.expected_profit)}</span>
-                        </div>
-                        <div class="ai-scenario-row">
-                            <span class="ai-scenario-key">Frequency:</span>
-                            <span class="ai-scenario-value">${escapeHtml(scenario.frequency)}</span>
+                        <div class="ai-scenario-paragraph">
+                            <span class="ai-scenario-paragraph-label">Option Payoff:</span>
+                            <span class="ai-scenario-paragraph-text">${escapeHtml(scenario.option_payoff)}</span>
                         </div>
                     </div>
                 </div>
             `;
         };
 
-        const mediumHtml = renderScenario(scenarios.medium_increase, 'Medium Increase (60-80th %ile)', '&#128200;');
-        const strongHtml = renderScenario(scenarios.strong_increase, 'Strong Increase (80-95th %ile)', '&#128640;');
+        const mediumHtml = renderScenario(scenarios.medium_increase, 'medium', '&#128200;');
+        const strongHtml = renderScenario(scenarios.strong_increase, 'strong', '&#128640;');
 
         if (mediumHtml || strongHtml) {
             scenariosHtml = mediumHtml + strongHtml;

@@ -34,8 +34,10 @@ Strong Increase Scenario → returns in the 70% - 100% percentile
 
 Then:
 Convert these percentile ranges into % increases from today's price.
-Map these % increases to the nearest simulator target prices.
-Highlight how often these moves occurred historically.
+Map these % increases to the nearest simulator target prices
+Then, the projected target price will be calculated using the compound growth:
+Compounded Price Target = Current Price * (1 + {Annual Return})^ (Time to Expiration in years)
+Count the number of years where the annual return was greater than or equal to the minimum annual return for the scenario
 Evaluate payoff realism for Medium and Strong scenarios.
 
 ## Output Format
@@ -54,18 +56,16 @@ You MUST respond with valid JSON matching this exact structure:
   ],
   "scenarios": {
     "medium_increase": {
-      "definition": "50-75th percentile historical return range",
-      "historical_range": "e.g., +8% to +15%",
-      "mapped_price_target": "Nearest simulator target price",
-      "expected_profit": "Profit based on simulator",
-      "frequency": "Occurred in X of 20 years"
+      "min_annual_return": "+16.00%",
+      "projected_price_target": "A compounded move results in a target of $907.39.",
+      "payoff_realism": "This scenario requires an average annual return of at least 16.00%, which historically occurred 50% of the time over any given year in the last two decades. For a 2.13-year period, this is a reasonable, non-extreme outcome.",
+      "option_payoff": "The projected ROI of +105% means the premium is expected to double, achieving a profit of $17,731 at this price level."
     },
     "strong_increase": {
-      "definition": "75-95th percentile historical return range",
-      "historical_range": "e.g., +15% to +28%",
-      "mapped_price_target": "Nearest simulator target price",
-      "expected_profit": "Profit based on simulator",
-      "frequency": "Occurred in X of 20 years"
+      "min_annual_return": "+21.83%",
+      "projected_price_target": "A compounded move results in a target of $1,102.34.",
+      "payoff_realism": "This scenario requires an exceptional annual return of at least 21.83%, which historically occurred 30% of the time. While ambitious, it is not outside the realm of possibility for a long-term bull market move over two years.",
+      "option_payoff": "The projected ROI of +207% means the premium is expected to more than triple, achieving a profit of $34,873 at this price level, demonstrating the substantial leverage of the LEAPS."
     }
   },
   "risks": [

@@ -747,18 +747,16 @@ def get_mock_explanation(
             ],
             "scenarios": {
                 "medium_increase": {
-                    "definition": "50-75th percentile historical return range",
-                    "historical_range": "+8% to +15%",
-                    "mapped_price_target": f"${underlying * 1.10:.2f}",
-                    "expected_profit": f"+${(underlying * 0.10 - 50) * 100:.0f} per contract",
-                    "frequency": "Occurred in 5 of 20 years",
+                    "min_annual_return": "+16.00%",
+                    "projected_price_target": f"A compounded move results in a target of ${underlying * 1.35:.2f}.",
+                    "payoff_realism": "This scenario requires an average annual return of at least 16.00%, which historically occurred 50% of the time over any given year in the last two decades. For a 2-year period, this is a reasonable, non-extreme outcome.",
+                    "option_payoff": f"The projected ROI of +{((underlying * 1.35 - strike) / 50 - 1) * 100:.0f}% means the premium is expected to double, achieving a profit of ${((underlying * 1.35 - strike) - 50) * 100:.0f} at this price level." if underlying * 1.35 > strike else "At this price level, the option would expire worthless, resulting in a total loss of premium.",
                 },
                 "strong_increase": {
-                    "definition": "75-95th percentile historical return range",
-                    "historical_range": "+15% to +28%",
-                    "mapped_price_target": f"${underlying * 1.20:.2f}",
-                    "expected_profit": f"+${(underlying * 0.20 - 50) * 100:.0f} per contract",
-                    "frequency": "Occurred in 4 of 20 years",
+                    "min_annual_return": "+21.83%",
+                    "projected_price_target": f"A compounded move results in a target of ${underlying * 1.60:.2f}.",
+                    "payoff_realism": "This scenario requires an exceptional annual return of at least 21.83%, which historically occurred 30% of the time. While ambitious, it is not outside the realm of possibility for a long-term bull market move over two years.",
+                    "option_payoff": f"The projected ROI of +{((underlying * 1.60 - strike) / 50 - 1) * 100:.0f}% means the premium is expected to more than triple, achieving a profit of ${((underlying * 1.60 - strike) - 50) * 100:.0f} at this price level, demonstrating the substantial leverage of the LEAPS." if underlying * 1.60 > strike else "At this price level, the option would expire worthless, resulting in a total loss of premium.",
                 },
             },
             "risks": [

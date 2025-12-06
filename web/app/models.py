@@ -350,23 +350,22 @@ class AiExplainerWatchItem(BaseModel):
 
 
 class AiExplainerScenario(BaseModel):
-    """Historical scenario analysis."""
+    """Historical scenario analysis with narrative format."""
 
-    definition: str = Field(..., description="Percentile range definition")
-    historical_range: str = Field(..., description="Historical return range (e.g., +8% to +15%)")
-    mapped_price_target: str = Field(..., description="Nearest simulator target price")
-    expected_profit: str = Field(..., description="Expected profit based on simulator")
-    frequency: str = Field(..., description="How often this occurred historically")
+    min_annual_return: str = Field(..., description="Minimum annual return for header (e.g., +16.00%)")
+    projected_price_target: str = Field(..., description="Narrative about the compounded price target")
+    payoff_realism: str = Field(..., description="Narrative about historical likelihood and reasonableness")
+    option_payoff: str = Field(..., description="Narrative about expected ROI and profit")
 
 
 class AiExplainerScenarios(BaseModel):
     """Historical scenarios for medium and strong increases."""
 
     medium_increase: Optional[AiExplainerScenario] = Field(
-        None, description="60-80th percentile scenario"
+        None, description="50-70th percentile scenario"
     )
     strong_increase: Optional[AiExplainerScenario] = Field(
-        None, description="80-95th percentile scenario"
+        None, description="70-100th percentile scenario"
     )
 
 
