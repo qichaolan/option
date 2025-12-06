@@ -369,6 +369,72 @@ class AiExplainerScenarios(BaseModel):
     )
 
 
+class AiExplainerTradeMechanics(BaseModel):
+    """Trade mechanics for credit spread or iron condor."""
+
+    structure: str = Field(..., description="Trade structure description")
+    credit_received: str = Field(..., description="Credit received per share and total")
+    margin_requirement: str = Field(..., description="Margin/capital requirement")
+    breakeven: Optional[str] = Field(None, description="Breakeven price (credit spread)")
+    breakevens: Optional[str] = Field(None, description="Breakeven prices (iron condor)")
+
+
+class AiExplainerKeyMetricValue(BaseModel):
+    """Key metric with value and condition."""
+
+    value: str = Field(..., description="Metric value")
+    condition: Optional[str] = Field(None, description="Condition for this value")
+
+
+class AiExplainerKeyMetrics(BaseModel):
+    """Key metrics for credit spread or iron condor."""
+
+    max_profit: Optional[AiExplainerKeyMetricValue] = Field(None, description="Maximum profit")
+    max_loss: Optional[AiExplainerKeyMetricValue] = Field(None, description="Maximum loss")
+    risk_reward_ratio: Optional[str] = Field(None, description="Risk/reward ratio")
+    probability_of_profit: Optional[str] = Field(None, description="Probability of profit")
+
+
+class AiExplainerVisualization(BaseModel):
+    """Profit/loss zone visualization."""
+
+    profit_zone: Optional[str] = Field(None, description="Profit zone description")
+    loss_zone: Optional[str] = Field(None, description="Loss zone (credit spread)")
+    lower_loss_zone: Optional[str] = Field(None, description="Lower loss zone (iron condor)")
+    upper_loss_zone: Optional[str] = Field(None, description="Upper loss zone (iron condor)")
+    transition_zone: Optional[str] = Field(None, description="Transition zone (credit spread)")
+    transition_zones: Optional[str] = Field(None, description="Transition zones (iron condor)")
+
+
+class AiExplainerStrategyOutcome(BaseModel):
+    """Strategy outcome for a market scenario."""
+
+    scenario: str = Field(..., description="Market scenario description")
+    result: str = Field(..., description="Expected result")
+    sentiment: Literal["positive", "neutral", "negative"] = Field(
+        default="neutral", description="Outcome sentiment"
+    )
+
+
+class AiExplainerStrategyAnalysis(BaseModel):
+    """Strategy analysis for different market scenarios."""
+
+    bullish_outcome: Optional[AiExplainerStrategyOutcome] = Field(None, description="Bullish outcome")
+    neutral_outcome: Optional[AiExplainerStrategyOutcome] = Field(None, description="Neutral outcome")
+    bearish_outcome: Optional[AiExplainerStrategyOutcome] = Field(None, description="Bearish outcome")
+    extreme_move_outcome: Optional[AiExplainerStrategyOutcome] = Field(
+        None, description="Extreme move outcome (iron condor)"
+    )
+
+
+class AiExplainerRiskManagement(BaseModel):
+    """Risk management guidelines."""
+
+    early_exit_trigger: Optional[str] = Field(None, description="When to exit early")
+    adjustment_options: Optional[str] = Field(None, description="Adjustment strategies")
+    worst_case: Optional[str] = Field(None, description="Worst case scenario")
+
+
 class AiExplainerContent(BaseModel):
     """Structured content from AI explanation."""
 
@@ -392,6 +458,23 @@ class AiExplainerContent(BaseModel):
     disclaimer: str = Field(
         default="This analysis is for educational purposes only and should not be considered financial advice. Always do your own research and consult with a qualified financial advisor before making investment decisions.",
         description="Legal disclaimer",
+    )
+    # Credit Spread and Iron Condor specific fields
+    strategy_name: Optional[str] = Field(None, description="Strategy name (e.g., 'Put Credit Spread on SPY')")
+    trade_mechanics: Optional[AiExplainerTradeMechanics] = Field(
+        None, description="Trade mechanics details"
+    )
+    key_metrics: Optional[AiExplainerKeyMetrics] = Field(
+        None, description="Key metrics (max profit, max loss, etc.)"
+    )
+    visualization: Optional[AiExplainerVisualization] = Field(
+        None, description="Profit/loss zone visualization"
+    )
+    strategy_analysis: Optional[AiExplainerStrategyAnalysis] = Field(
+        None, description="Strategy analysis for different market scenarios"
+    )
+    risk_management: Optional[AiExplainerRiskManagement] = Field(
+        None, description="Risk management guidelines"
     )
 
 

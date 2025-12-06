@@ -33,6 +33,7 @@ let state = {
     underlyingPrice: 0,
     fetchInProgress: false,  // Prevents double-clicking
     aiExplainerController: null,  // AI Explainer controller instance
+    payoffTableExpanded: false,  // Whether P/L table is expanded
 };
 
 // ============================================
@@ -83,6 +84,7 @@ const elements = {
     payoffBreakevens: document.getElementById('payoffBreakevens'),
     payoffTableBody: document.getElementById('payoffTableBody'),
     payoffLoadingState: document.getElementById('payoffLoadingState'),
+    togglePayoffTable: document.getElementById('togglePayoffTable'),
 };
 
 // ============================================
@@ -122,6 +124,11 @@ function setupEventListeners() {
     // Close payoff button
     if (elements.closePayoff) {
         elements.closePayoff.addEventListener('click', closePayoffChart);
+    }
+
+    // Toggle P/L table expand/collapse
+    if (elements.togglePayoffTable) {
+        elements.togglePayoffTable.addEventListener('click', togglePayoffTableExpand);
     }
 
     // Re-render on window resize (debounced)
@@ -246,6 +253,9 @@ async function fetchPayoff(condorId) {
     if (state.aiExplainerController) {
         state.aiExplainerController.clearPanel();
     }
+
+    // Reset table to collapsed state when selecting a new condor
+    state.payoffTableExpanded = false;
 
     state.selectedCondorId = condorId;
 
@@ -631,10 +641,29 @@ function renderPayoffTable(points) {
     if (!points || points.length === 0) {
         elements.payoffTableBody.innerHTML =
             '<tr><td colspan="4" class="text-center">No data</td></tr>';
+        if (elements.togglePayoffTable) {
+            elements.togglePayoffTable.style.display = 'none';
+        }
         return;
     }
 
-    elements.payoffTableBody.innerHTML = points.map(point => {
+    // Key moves to show in collapsed state: -5%, 0%, +5%
+    const keyMoves = [-0.05, 0, 0.05];
+
+    // Filter points for collapsed view
+    let displayPoints = points;
+    if (!state.payoffTableExpanded) {
+        displayPoints = points.filter(p => {
+            const movePct = safeNumber(p.move_pct, 0);
+            return keyMoves.some(key => Math.abs(movePct - key) < 0.005);
+        });
+        // Fallback: if no key points found, show first 3 points
+        if (displayPoints.length === 0) {
+            displayPoints = points.slice(0, 3);
+        }
+    }
+
+    elements.payoffTableBody.innerHTML = displayPoints.map(point => {
         const payoff = safeNumber(point.payoff, 0);
         const price = safeNumber(point.price, 0);
         const movePct = safeNumber(point.move_pct, 0) * 100;
@@ -654,6 +683,37 @@ function renderPayoffTable(points) {
             </tr>
         `;
     }).join('');
+
+    // Show/hide toggle button and update its text
+    if (elements.togglePayoffTable) {
+        // Only show toggle if there are more points than displayed
+        if (points.length > displayPoints.length || state.payoffTableExpanded) {
+            elements.togglePayoffTable.style.display = 'block';
+            const icon = elements.togglePayoffTable.querySelector('.toggle-icon');
+            const text = elements.togglePayoffTable.querySelector('.toggle-text');
+            if (state.payoffTableExpanded) {
+                if (icon) icon.innerHTML = '&#9650;';  // Up arrow
+                if (text) text.textContent = 'Show less';
+            } else {
+                if (icon) icon.innerHTML = '&#9660;';  // Down arrow
+                if (text) text.textContent = 'Show full P/L table';
+            }
+        } else {
+            elements.togglePayoffTable.style.display = 'none';
+        }
+    }
+}
+
+/**
+ * Toggle P/L table between collapsed (3 key rows) and expanded (all rows) state.
+ */
+function togglePayoffTableExpand() {
+    state.payoffTableExpanded = !state.payoffTableExpanded;
+
+    // Re-render the table with current payoff data
+    if (state.payoffData && Array.isArray(state.payoffData.points)) {
+        renderPayoffTable(state.payoffData.points);
+    }
 }
 
 function closePayoffChart() {
@@ -662,6 +722,7 @@ function closePayoffChart() {
     }
     state.selectedCondorId = null;
     state.payoffData = null;
+    state.payoffTableExpanded = false;  // Reset to collapsed when closing
 
     // Remove selection highlighting
     document.querySelectorAll('.selected-for-sim').forEach(el => {

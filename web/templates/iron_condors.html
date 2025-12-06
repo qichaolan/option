@@ -186,10 +186,9 @@
             <!-- P/L Simulator Section (Right side on desktop) -->
             <section class="simulator-section" id="payoffSection" style="display: none;">
                 <div class="simulator-header">
-                    <div class="simulator-title-row">
+                    <div class="simulator-header-left">
                         <h2 class="simulator-title">P/L Simulator</h2>
-                        <!-- AI Explainer Button Container (populated by ai-explainer.js) -->
-                        <div id="aiExplainerButtonContainer"></div>
+                        <div class="ai-explainer-btn-container ai-explainer-btn-inline" id="aiExplainerButtonContainer"></div>
                     </div>
                     <button class="simulator-close" id="closePayoff" aria-label="Close simulator">&times;</button>
                 </div>
@@ -267,6 +266,10 @@
                             <tbody id="payoffTableBody"></tbody>
                         </table>
                     </div>
+                    <button class="table-toggle-btn" id="togglePayoffTable" style="display: none;">
+                        <span class="toggle-icon">&#9660;</span>
+                        <span class="toggle-text">Show full P/L table</span>
+                    </button>
                 </div>
 
                 <!-- Loading state for payoff -->
