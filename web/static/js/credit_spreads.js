@@ -111,7 +111,8 @@ const elements = {
     simTableBody: document.getElementById('simTableBody'),
     simLoadingState: document.getElementById('simLoadingState'),
     simProfitCondition: document.getElementById('simProfitCondition'),
-    simTradeExplanation: document.getElementById('simTradeExplanation'),
+    simSellAction: document.getElementById('simSellAction'),
+    simBuyAction: document.getElementById('simBuyAction'),
 };
 
 // ============================================
@@ -609,10 +610,12 @@ async function runSpreadSimulation(spread) {
 
         if (spread.spread_type === 'PCS') {
             elements.simProfitCondition.textContent = `Collect credit. Profit if ${spread.symbol} stays ABOVE ${breakevenFormatted} at expiration.`;
-            elements.simTradeExplanation.textContent = `You are SELLING a put at ${shortStrikeFormatted} and BUYING a put at ${longStrikeFormatted}.`;
+            elements.simSellAction.textContent = `SELL put at ${shortStrikeFormatted}`;
+            elements.simBuyAction.textContent = `BUY put at ${longStrikeFormatted}`;
         } else {
             elements.simProfitCondition.textContent = `Collect credit. Profit if ${spread.symbol} stays BELOW ${breakevenFormatted} at expiration.`;
-            elements.simTradeExplanation.textContent = `You are SELLING a call at ${shortStrikeFormatted} and BUYING a call at ${longStrikeFormatted}.`;
+            elements.simSellAction.textContent = `SELL call at ${shortStrikeFormatted}`;
+            elements.simBuyAction.textContent = `BUY call at ${longStrikeFormatted}`;
         }
 
         // Update summary

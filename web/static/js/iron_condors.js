@@ -73,7 +73,10 @@ const elements = {
     payoffCredit: document.getElementById('payoffCredit'),
     payoffRiskReward: document.getElementById('payoffRiskReward'),
     payoffProfitCondition: document.getElementById('payoffProfitCondition'),
-    payoffTradeExplanation: document.getElementById('payoffTradeExplanation'),
+    payoffSellPutAction: document.getElementById('payoffSellPutAction'),
+    payoffBuyPutAction: document.getElementById('payoffBuyPutAction'),
+    payoffSellCallAction: document.getElementById('payoffSellCallAction'),
+    payoffBuyCallAction: document.getElementById('payoffBuyCallAction'),
     payoffMaxGain: document.getElementById('payoffMaxGain'),
     payoffMaxLoss: document.getElementById('payoffMaxLoss'),
     payoffBreakevens: document.getElementById('payoffBreakevens'),
@@ -548,10 +551,17 @@ function updatePayoffUI(data) {
             `Profit if ${escapeHtml(symbol)} stays between ` +
             `${formatCurrency(breakEvenLow, 2)} and ${formatCurrency(breakEvenHigh, 2)} at expiration.`;
     }
-    if (elements.payoffTradeExplanation) {
-        elements.payoffTradeExplanation.textContent =
-            `Sell put ${formatCurrency(shortPut, 0)}, buy put ${formatCurrency(longPut, 0)} + ` +
-            `Sell call ${formatCurrency(shortCall, 0)}, buy call ${formatCurrency(longCall, 0)}.`;
+    if (elements.payoffSellPutAction) {
+        elements.payoffSellPutAction.textContent = `SELL put at ${formatCurrency(shortPut, 0)}`;
+    }
+    if (elements.payoffBuyPutAction) {
+        elements.payoffBuyPutAction.textContent = `BUY put at ${formatCurrency(longPut, 0)}`;
+    }
+    if (elements.payoffSellCallAction) {
+        elements.payoffSellCallAction.textContent = `SELL call at ${formatCurrency(shortCall, 0)}`;
+    }
+    if (elements.payoffBuyCallAction) {
+        elements.payoffBuyCallAction.textContent = `BUY call at ${formatCurrency(longCall, 0)}`;
     }
 
     // Update summary cards (these are per-contract values)
