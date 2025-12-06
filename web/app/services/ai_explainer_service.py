@@ -632,17 +632,26 @@ Please analyze this simulation data and provide your explanation in the required
         # Record successful request for rate limiting
         record_request(user_key)
 
-        # Prepare content
+        # Prepare content - include all fields from LEAPS, Credit Spreads, and Iron Condors
         content = {
+            # Common fields (all pages)
             "summary": parsed_response.get("summary", ""),
             "key_insights": parsed_response.get("key_insights", []),
-            "scenarios": parsed_response.get("scenarios"),
             "risks": parsed_response.get("risks", []),
             "watch_items": parsed_response.get("watch_items", []),
             "disclaimer": parsed_response.get(
                 "disclaimer",
                 "This analysis is for educational purposes only and should not be considered financial advice."
             ),
+            # LEAPS-specific fields
+            "scenarios": parsed_response.get("scenarios"),
+            # Credit Spread and Iron Condor specific fields
+            "strategy_name": parsed_response.get("strategy_name"),
+            "trade_mechanics": parsed_response.get("trade_mechanics"),
+            "key_metrics": parsed_response.get("key_metrics"),
+            "visualization": parsed_response.get("visualization"),
+            "strategy_analysis": parsed_response.get("strategy_analysis"),
+            "risk_management": parsed_response.get("risk_management"),
         }
 
         # Cache the response
