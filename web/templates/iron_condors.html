@@ -186,7 +186,11 @@
             <!-- P/L Simulator Section (Right side on desktop) -->
             <section class="simulator-section" id="payoffSection" style="display: none;">
                 <div class="simulator-header">
-                    <h2 class="simulator-title">P/L Simulator</h2>
+                    <div class="simulator-title-row">
+                        <h2 class="simulator-title">P/L Simulator</h2>
+                        <!-- AI Explainer Button Container (populated by ai-explainer.js) -->
+                        <div id="aiExplainerButtonContainer"></div>
+                    </div>
                     <button class="simulator-close" id="closePayoff" aria-label="Close simulator">&times;</button>
                 </div>
 
@@ -247,15 +251,6 @@
                     </div>
                 </div>
 
-                <!-- P/L Chart -->
-                <div class="simulator-chart-container">
-                    <h3 class="simulator-chart-title">P/L at Expiration by % Move</h3>
-                    <p class="simulator-chart-subtitle">Shows profit/loss for 1 contract from -8% to +8% move</p>
-                    <div class="simulator-chart" id="payoffChart">
-                        <!-- Chart will be rendered here -->
-                    </div>
-                </div>
-
                 <!-- P/L Table -->
                 <div class="simulator-table-container">
                     <h3 class="simulator-table-title">P/L by Price Move</h3>
@@ -279,6 +274,9 @@
                     <div class="loading-spinner"></div>
                     <span>Loading payoff...</span>
                 </div>
+
+                <!-- AI Explainer Panel Container (populated by ai-explainer.js) -->
+                <div id="aiExplainerPanelContainer"></div>
             </section>
         </div>
 
@@ -321,6 +319,7 @@
         <p>Option Chain Analysis - For educational purposes only. Not financial advice.</p>
     </footer>
 
+    <script src="/static/js/ai-explainer.js"></script>
     <script src="/static/js/iron_condors.js"></script>
 </body>
 </html>

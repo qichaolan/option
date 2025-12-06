@@ -608,3 +608,197 @@ class TestGetMockExplanation:
         )
 
         assert "AAPL" in result["content"]["summary"]
+
+
+class TestCreditSpreadMock:
+    """Tests for credit spread mock explanation."""
+
+    def test_returns_credit_spread_mock_for_spread_simulator(self):
+        """Should return credit spread mock for spread_simulator context."""
+        result = ai_explainer_service.get_mock_explanation(
+            page_id="credit_spread_screener",
+            context_type="spread_simulator",
+            metadata={
+                "symbol": "SPY",
+                "spread_type": "PCS",
+                "short_strike": 580,
+                "long_strike": 575,
+                "net_credit": 1.25,
+                "underlying_price": 600,
+            },
+        )
+
+        assert result["success"] is True
+        assert result["pageId"] == "credit_spread_screener"
+        assert "strategy_name" in result["content"]
+        assert "trade_mechanics" in result["content"]
+        assert "key_metrics" in result["content"]
+        assert "visualization" in result["content"]
+        assert "strategy_analysis" in result["content"]
+        assert "risk_management" in result["content"]
+
+    def test_credit_spread_mock_has_correct_structure(self):
+        """Should have correct credit spread structure."""
+        result = ai_explainer_service.get_mock_explanation(
+            page_id="credit_spread_screener",
+            context_type="spread_simulator",
+            metadata={"symbol": "QQQ", "spread_type": "CCS"},
+        )
+
+        # Trade mechanics
+        tm = result["content"]["trade_mechanics"]
+        assert "structure" in tm
+        assert "credit_received" in tm
+        assert "margin_requirement" in tm
+        assert "breakeven" in tm
+
+        # Key metrics
+        km = result["content"]["key_metrics"]
+        assert "max_profit" in km
+        assert "max_loss" in km
+        assert "risk_reward_ratio" in km
+
+        # Strategy analysis
+        sa = result["content"]["strategy_analysis"]
+        assert "bullish_outcome" in sa
+        assert "neutral_outcome" in sa
+        assert "bearish_outcome" in sa
+
+
+class TestIronCondorMock:
+    """Tests for iron condor mock explanation."""
+
+    def test_returns_iron_condor_mock_for_iron_condor_page(self):
+        """Should return iron condor mock for iron_condor_screener page."""
+        result = ai_explainer_service.get_mock_explanation(
+            page_id="iron_condor_screener",
+            context_type="spread_simulator",
+            metadata={
+                "symbol": "SPY",
+                "short_put_strike": 570,
+                "long_put_strike": 565,
+                "short_call_strike": 630,
+                "long_call_strike": 635,
+                "net_credit": 2.50,
+                "underlying_price": 600,
+            },
+        )
+
+        assert result["success"] is True
+        assert result["pageId"] == "iron_condor_screener"
+        assert "strategy_name" in result["content"]
+        assert "Iron Condor" in result["content"]["strategy_name"]
+
+    def test_iron_condor_mock_has_correct_structure(self):
+        """Should have correct iron condor structure with 4 outcomes."""
+        result = ai_explainer_service.get_mock_explanation(
+            page_id="iron_condor_screener",
+            context_type="spread_simulator",
+            metadata={
+                "symbol": "QQQ",
+                "short_put_strike": 470,
+                "long_put_strike": 465,
+                "short_call_strike": 530,
+                "long_call_strike": 535,
+            },
+        )
+
+        # Trade mechanics with breakevens (plural)
+        tm = result["content"]["trade_mechanics"]
+        assert "structure" in tm
+        assert "credit_received" in tm
+        assert "margin_requirement" in tm
+        assert "breakevens" in tm  # Iron Condor has breakevens (plural)
+
+        # Key metrics
+        km = result["content"]["key_metrics"]
+        assert "max_profit" in km
+        assert "max_loss" in km
+        assert "risk_reward_ratio" in km
+
+        # Visualization with two loss zones
+        viz = result["content"]["visualization"]
+        assert "profit_zone" in viz
+        assert "lower_loss_zone" in viz  # Iron Condor specific
+        assert "upper_loss_zone" in viz  # Iron Condor specific
+        assert "transition_zones" in viz
+
+        # Strategy analysis with 4 outcomes
+        sa = result["content"]["strategy_analysis"]
+        assert "bullish_outcome" in sa
+        assert "neutral_outcome" in sa
+        assert "bearish_outcome" in sa
+        assert "extreme_move_outcome" in sa  # Iron Condor specific
+
+        # Risk management
+        rm = result["content"]["risk_management"]
+        assert "early_exit_trigger" in rm
+        assert "adjustment_options" in rm
+        assert "worst_case" in rm
+
+    def test_iron_condor_mock_calculates_metrics_correctly(self):
+        """Should calculate iron condor metrics correctly."""
+        result = ai_explainer_service.get_mock_explanation(
+            page_id="iron_condor_screener",
+            context_type="spread_simulator",
+            metadata={
+                "symbol": "SPY",
+                "short_put_strike": 570,
+                "long_put_strike": 565,  # 5 point width
+                "short_call_strike": 630,
+                "long_call_strike": 635,  # 5 point width
+                "net_credit": 2.50,
+                "underlying_price": 600,
+            },
+        )
+
+        content = result["content"]
+
+        # Max profit = net_credit * 100 = $250
+        assert "$250" in content["key_metrics"]["max_profit"]["value"]
+
+        # Max loss = (5 - 2.50) * 100 = $250
+        assert "$250" in content["key_metrics"]["max_loss"]["value"]
+
+        # Profit zone should be between short strikes
+        assert "570" in content["visualization"]["profit_zone"]
+        assert "630" in content["visualization"]["profit_zone"]
+
+    def test_iron_condor_mock_uses_symbol_from_metadata(self):
+        """Should use symbol from metadata."""
+        result = ai_explainer_service.get_mock_explanation(
+            page_id="iron_condor_screener",
+            context_type="spread_simulator",
+            metadata={"symbol": "AAPL"},
+        )
+
+        assert "AAPL" in result["content"]["summary"]
+        assert "Iron Condor on AAPL" in result["content"]["strategy_name"]
+
+    def test_iron_condor_mock_has_key_insights(self):
+        """Should have iron condor specific key insights."""
+        result = ai_explainer_service.get_mock_explanation(
+            page_id="iron_condor_screener",
+            context_type="spread_simulator",
+            metadata={"symbol": "SPY"},
+        )
+
+        insights = result["content"]["key_insights"]
+        assert len(insights) >= 3
+        titles = [i["title"] for i in insights]
+        assert "Profit Zone Width" in titles
+        assert "Time Decay Advantage" in titles
+
+    def test_iron_condor_mock_has_risks(self):
+        """Should have iron condor specific risks."""
+        result = ai_explainer_service.get_mock_explanation(
+            page_id="iron_condor_screener",
+            context_type="spread_simulator",
+            metadata={"symbol": "SPY"},
+        )
+
+        risks = result["content"]["risks"]
+        assert len(risks) >= 2
+        # Check that risks mention both sides
+        risk_texts = " ".join([r["risk"] for r in risks])
+        assert "assignment" in risk_texts.lower() or "loss" in risk_texts.lower()

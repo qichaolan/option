@@ -8,7 +8,7 @@ model:
   name: "gemini-2.5-flash-lite"
 
   # Generation parameters
-  temperature: 0.3  # Lower for more consistent, factual responses
+  temperature: 0.2  # Lower for more consistent, factual responses
   max_output_tokens: 10000  # Sufficient for structured JSON responses
   top_p: 0.8  # Nucleus sampling parameter
   top_k: 40  # Top-k sampling parameter

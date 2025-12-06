@@ -630,6 +630,11 @@ function closeSimulator() {
 
 // Run simulation for a spread
 async function runSpreadSimulation(spread) {
+    // Clear AI Explainer panel when selecting a new spread
+    if (aiExplainerController) {
+        aiExplainerController.clearExplanation();
+    }
+
     // Show simulator with loading state
     elements.spreadSimulator.style.display = 'block';
     elements.simLoadingState.style.display = 'flex';

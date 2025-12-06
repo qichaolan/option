@@ -32,6 +32,7 @@ let state = {
     payoffCache: {},  // Cache payoff data by condor ID
     underlyingPrice: 0,
     fetchInProgress: false,  // Prevents double-clicking
+    aiExplainerController: null,  // AI Explainer controller instance
 };
 
 // ============================================
@@ -80,7 +81,6 @@ const elements = {
     payoffMaxGain: document.getElementById('payoffMaxGain'),
     payoffMaxLoss: document.getElementById('payoffMaxLoss'),
     payoffBreakevens: document.getElementById('payoffBreakevens'),
-    payoffChart: document.getElementById('payoffChart'),
     payoffTableBody: document.getElementById('payoffTableBody'),
     payoffLoadingState: document.getElementById('payoffLoadingState'),
 };
@@ -91,9 +91,27 @@ const elements = {
 
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
+    initializeAiExplainer();
     // Auto-fetch on page load
     fetchIronCondors();
 });
+
+/**
+ * Initialize the AI Explainer controller for Iron Condor Simulator.
+ */
+function initializeAiExplainer() {
+    // Check if AiExplainerController is available
+    if (typeof AiExplainerController !== 'undefined') {
+        state.aiExplainerController = new AiExplainerController({
+            pageId: 'iron_condor_screener',
+            contextType: 'spread_simulator',
+            buttonContainerId: 'aiExplainerButtonContainer',
+            panelContainerId: 'aiExplainerPanelContainer',
+        });
+    } else {
+        console.warn('AiExplainerController not found. AI Explainer disabled.');
+    }
+}
 
 function setupEventListeners() {
     // Run screener button
@@ -113,10 +131,6 @@ function setupEventListeners() {
         resizeTimeout = setTimeout(() => {
             if (state.condors.length > 0) {
                 renderResults();
-            }
-            if (state.payoffData && elements.payoffSection &&
-                elements.payoffSection.style.display !== 'none') {
-                renderPayoffChart(state.payoffData.points);
             }
         }, 250);
     });
@@ -227,6 +241,11 @@ async function fetchIronCondors() {
 
 async function fetchPayoff(condorId) {
     if (!condorId) return;
+
+    // Clear AI Explainer panel when selecting a new condor
+    if (state.aiExplainerController) {
+        state.aiExplainerController.clearPanel();
+    }
 
     state.selectedCondorId = condorId;
 
@@ -576,70 +595,34 @@ function updatePayoffUI(data) {
             `${formatCurrency(breakEvenLow, 2)} - ${formatCurrency(breakEvenHigh, 2)}`;
     }
 
-    // Render chart and table
+    // Render table
     const points = Array.isArray(data.points) ? data.points : [];
-    renderPayoffChart(points);
     renderPayoffTable(points);
-}
 
-function renderPayoffChart(points) {
-    if (!elements.payoffChart) return;
-
-    if (!points || points.length === 0) {
-        elements.payoffChart.innerHTML = '<div class="chart-no-data">No data available</div>';
-        return;
+    // Update AI Explainer with Iron Condor context
+    if (state.aiExplainerController) {
+        state.aiExplainerController.setMetadata({
+            symbol: symbol,
+            underlying_price: state.underlyingPrice,
+            expiration: expiration,
+            short_put_strike: shortPut,
+            long_put_strike: longPut,
+            short_call_strike: shortCall,
+            long_call_strike: longCall,
+            net_credit: totalCredit,
+            max_profit: maxProfit,
+            max_loss: maxLoss,
+            breakeven_low: breakEvenLow,
+            breakeven_high: breakEvenHigh,
+            risk_reward_ratio: riskReward,
+            points: points.map(p => ({
+                move_pct: p.move_pct,
+                price: p.price,
+                payoff: p.payoff,
+                roi: p.roi,
+            })),
+        });
     }
-
-    // Find max absolute P/L for scaling (avoid division by zero)
-    const payoffs = points.map(p => safeNumber(p.payoff, 0));
-    const maxAbsPL = Math.max(...payoffs.map(p => Math.abs(p)), 1);
-    const chartHeight = isMobile() ? 120 : 180;
-    const halfHeight = chartHeight / 2;
-
-    // Limit number of bars to avoid overcrowding
-    const maxBars = isMobile() ? 7 : 11;
-    const step = points.length > maxBars ? Math.ceil(points.length / maxBars) : 1;
-    const displayPoints = points.filter((_, idx) => idx % step === 0);
-
-    // Generate bar chart HTML
-    let barsHtml = '<div class="pl-chart-zero-line"></div>';
-
-    displayPoints.forEach((point) => {
-        const payoff = safeNumber(point.payoff, 0);
-        const isPositive = payoff >= 0;
-        const barHeight = (Math.abs(payoff) / maxAbsPL) * halfHeight * 0.85;
-
-        const barStyle = isPositive
-            ? `height: ${barHeight}px; bottom: 50%;`
-            : `height: ${barHeight}px; top: 50%;`;
-
-        const valueClass = isPositive ? 'positive' : 'negative';
-        const valueStyle = isPositive
-            ? `bottom: calc(50% + ${barHeight + 3}px);`
-            : `top: calc(50% + ${barHeight + 3}px);`;
-
-        const movePct = safeNumber(point.move_pct, 0) * 100;
-        const pctLabel = movePct >= 0 ? `+${movePct.toFixed(0)}%` : `${movePct.toFixed(0)}%`;
-
-        barsHtml += `
-            <div class="pl-chart-bar-container">
-                <div class="pl-chart-bar ${valueClass}"
-                     style="${barStyle}"
-                     title="${pctLabel}: ${formatCurrency(payoff, 0)}">
-                </div>
-                <div class="pl-chart-value ${valueClass}" style="${valueStyle}">
-                    ${formatCurrency(payoff, 0)}
-                </div>
-                <div class="pl-chart-label">${pctLabel}</div>
-            </div>
-        `;
-    });
-
-    elements.payoffChart.innerHTML = `
-        <div class="pl-chart-bars" style="height: ${chartHeight}px;">
-            ${barsHtml}
-        </div>
-    `;
 }
 
 function renderPayoffTable(points) {
@@ -684,6 +667,11 @@ function closePayoffChart() {
     document.querySelectorAll('.selected-for-sim').forEach(el => {
         el.classList.remove('selected-for-sim');
     });
+
+    // Clear AI Explainer panel
+    if (state.aiExplainerController) {
+        state.aiExplainerController.clearPanel();
+    }
 }
 
 // ============================================

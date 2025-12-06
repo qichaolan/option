@@ -716,6 +716,10 @@ def get_mock_explanation(
     Returns:
         Mock explanation response
     """
+    # Handle iron condor context
+    if page_id == "iron_condor_screener":
+        return _get_iron_condor_mock(page_id, context_type, metadata)
+
     # Handle credit spread context
     if context_type == "spread_simulator" or page_id == "credit_spread_screener":
         return _get_credit_spread_mock(page_id, context_type, metadata)
@@ -936,6 +940,164 @@ def _get_credit_spread_mock(
                 },
             ],
             "disclaimer": "This analysis is for educational purposes only and should not be considered financial advice. Credit spreads involve significant risk including potential loss of the entire spread width minus premium received. Always do your own research and consult with a qualified financial advisor.",
+        },
+        "cached": False,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+def _get_iron_condor_mock(
+    page_id: str,
+    context_type: str,
+    metadata: dict,
+) -> Dict[str, Any]:
+    """
+    Get mock explanation for iron condor simulator.
+
+    Args:
+        page_id: Page identifier
+        context_type: Context type
+        metadata: Iron condor simulation metadata
+
+    Returns:
+        Mock explanation response for iron condors
+    """
+    # Extract iron condor specific values
+    symbol = metadata.get("symbol", "SPY")
+    underlying = metadata.get("underlying_price", 600)
+    expiration = metadata.get("expiration", "2025-01-17")
+
+    # Iron condor has 4 legs
+    short_put = metadata.get("short_put_strike", 570)
+    long_put = metadata.get("long_put_strike", 565)
+    short_call = metadata.get("short_call_strike", 630)
+    long_call = metadata.get("long_call_strike", 635)
+    net_credit = metadata.get("net_credit", 2.50)
+
+    # Calculate key metrics
+    put_width = abs(short_put - long_put)
+    call_width = abs(long_call - short_call)
+    max_width = max(put_width, call_width)
+    max_loss = (max_width - net_credit) * 100
+    max_profit = net_credit * 100
+
+    # Breakeven points
+    lower_breakeven = short_put - net_credit
+    upper_breakeven = short_call + net_credit
+
+    return {
+        "success": True,
+        "pageId": page_id,
+        "contextType": context_type,
+        "content": {
+            "strategy_name": f"Iron Condor on {symbol}",
+            "summary": f"This Iron Condor on {symbol} collects ${net_credit:.2f} credit per share (${max_profit:.0f} total) with a maximum risk of ${max_loss:.0f}. The trade profits if {symbol} stays between ${short_put} and ${short_call} through {expiration}. This is a neutral strategy ideal for range-bound markets.",
+            "trade_mechanics": {
+                "structure": f"Sell ${short_put} put, buy ${long_put} put, sell ${short_call} call, buy ${long_call} call, {expiration}",
+                "credit_received": f"${net_credit:.2f} per share (${max_profit:.0f} total)",
+                "margin_requirement": f"Max width minus credit = ${max_loss:.0f}",
+                "breakevens": f"${lower_breakeven:.2f} (lower) - ${upper_breakeven:.2f} (upper)",
+            },
+            "key_metrics": {
+                "max_profit": {
+                    "value": f"${max_profit:.0f}",
+                    "condition": f"Stock between ${short_put} and ${short_call} at expiration",
+                },
+                "max_loss": {
+                    "value": f"${max_loss:.0f}",
+                    "condition": f"Stock below ${long_put} or above ${long_call} at expiration",
+                },
+                "risk_reward_ratio": f"{max_loss / max_profit:.1f}:1",
+                "probability_of_profit": "65%",
+            },
+            "visualization": {
+                "profit_zone": f"Between ${short_put} and ${short_call}",
+                "lower_loss_zone": f"Below ${long_put}",
+                "upper_loss_zone": f"Above ${long_call}",
+                "transition_zones": f"${long_put} to ${short_put} (lower) and ${short_call} to ${long_call} (upper)",
+            },
+            "risk_management": {
+                "early_exit_trigger": "Close if spread reaches 50% of max profit or if underlying approaches a short strike",
+                "adjustment_options": "Roll untested side closer or roll entire position out in time",
+                "worst_case": f"Full ${max_loss:.0f} loss if stock breaks through either long strike",
+            },
+            "strategy_analysis": {
+                "bullish_outcome": {
+                    "scenario": "Stock rallies but stays below short call",
+                    "result": f"Keep full credit as both spreads expire worthless - ${max_profit:.0f} profit",
+                    "sentiment": "positive",
+                },
+                "neutral_outcome": {
+                    "scenario": "Stock stays flat between short strikes",
+                    "result": f"Maximum profit - keep full ${max_profit:.0f} credit",
+                    "sentiment": "positive",
+                },
+                "bearish_outcome": {
+                    "scenario": "Stock drops but stays above short put",
+                    "result": f"Keep full credit as both spreads expire worthless - ${max_profit:.0f} profit",
+                    "sentiment": "positive",
+                },
+                "extreme_move_outcome": {
+                    "scenario": "Stock breaks beyond long put or long call",
+                    "result": f"Maximum loss of ${max_loss:.0f} on the breached side",
+                    "sentiment": "negative",
+                },
+            },
+            "key_insights": [
+                {
+                    "title": "Profit Zone Width",
+                    "description": f"Your profit zone spans ${short_call - short_put} points (${short_put} to ${short_call}). The wider this range relative to current volatility, the higher your probability of profit.",
+                    "sentiment": "neutral",
+                },
+                {
+                    "title": "Time Decay Advantage",
+                    "description": f"As a net credit position collecting ${max_profit:.0f}, theta (time decay) works double in your favor. Both short options decay simultaneously, accelerating profits as expiration approaches.",
+                    "sentiment": "positive",
+                },
+                {
+                    "title": "Defined Risk Trade",
+                    "description": f"Maximum loss is capped at ${max_loss:.0f} on either side, regardless of how far the stock moves. The long wings provide protection against catastrophic moves.",
+                    "sentiment": "positive",
+                },
+                {
+                    "title": "Volatility Impact",
+                    "description": "High implied volatility at entry means more premium collected. A subsequent IV crush benefits the position as both spreads decrease in value.",
+                    "sentiment": "positive",
+                },
+            ],
+            "risks": [
+                {
+                    "risk": f"Maximum loss of ${max_loss:.0f} if {symbol} drops below ${long_put} or rises above ${long_call} at expiration.",
+                    "severity": "medium",
+                },
+                {
+                    "risk": "Early assignment risk on either short option, particularly around ex-dividend dates.",
+                    "severity": "low",
+                },
+                {
+                    "risk": "A strong directional move can turn a neutral position into a losing one quickly, requiring active management.",
+                    "severity": "medium",
+                },
+                {
+                    "risk": "Implied volatility spike could increase spread values, making it harder to close at a profit before expiration.",
+                    "severity": "medium",
+                },
+            ],
+            "watch_items": [
+                {
+                    "item": "Underlying price vs short strikes",
+                    "trigger": f"Consider adjustment if {symbol} approaches ${short_put} or ${short_call}",
+                },
+                {
+                    "item": "Days to expiration",
+                    "trigger": "Consider closing for 50% profit or rolling if less than 7 DTE",
+                },
+                {
+                    "item": "Earnings and major events",
+                    "trigger": "Check for any scheduled events before expiration that could cause a breakout",
+                },
+            ],
+            "disclaimer": "This analysis is for educational purposes only and should not be considered financial advice. Iron Condors involve significant risk including potential loss of the entire spread width minus premium received. Always do your own research and consult with a qualified financial advisor.",
         },
         "cached": False,
         "timestamp": datetime.utcnow().isoformat(),

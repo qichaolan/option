@@ -337,6 +337,9 @@ function renderCreditSpreadContent(content) {
     // Trade mechanics
     if (content.trade_mechanics) {
         const tm = content.trade_mechanics;
+        // Handle both breakeven (credit spread) and breakevens (iron condor)
+        const breakevenLabel = tm.breakevens ? 'Breakevens' : 'Breakeven';
+        const breakevenValue = tm.breakevens || tm.breakeven;
         html += `
             <div class="ai-section">
                 <h5 class="ai-section-title">Trade Mechanics</h5>
@@ -354,8 +357,8 @@ function renderCreditSpreadContent(content) {
                         <span class="ai-mechanic-value">${escapeHtml(tm.margin_requirement)}</span>
                     </div>
                     <div class="ai-mechanic-item">
-                        <span class="ai-mechanic-label">Breakeven:</span>
-                        <span class="ai-mechanic-value">${escapeHtml(tm.breakeven)}</span>
+                        <span class="ai-mechanic-label">${breakevenLabel}:</span>
+                        <span class="ai-mechanic-value">${escapeHtml(breakevenValue)}</span>
                     </div>
                 </div>
             </div>
@@ -392,40 +395,82 @@ function renderCreditSpreadContent(content) {
         `;
     }
 
-    // Visualization (profit zone, loss zone, transition zone)
+    // Visualization (profit zone, loss zone(s), transition zone(s))
     if (content.visualization) {
         const viz = content.visualization;
-        html += `
-            <div class="ai-section">
-                <h5 class="ai-section-title">Profit/Loss Zones</h5>
-                <div class="ai-visualization">
-                    <div class="ai-viz-item ai-viz-profit">
-                        <span class="ai-viz-icon">&#9650;</span>
-                        <div class="ai-viz-content">
-                            <span class="ai-viz-label">Profit Zone:</span>
-                            <span class="ai-viz-value">${escapeHtml(viz.profit_zone || '-')}</span>
+        const isIronCondor = viz.lower_loss_zone || viz.upper_loss_zone;
+
+        if (isIronCondor) {
+            // Iron Condor: two loss zones (lower and upper) and transition zones
+            html += `
+                <div class="ai-section">
+                    <h5 class="ai-section-title">Profit/Loss Zones</h5>
+                    <div class="ai-visualization">
+                        <div class="ai-viz-item ai-viz-loss">
+                            <span class="ai-viz-icon">&#9660;</span>
+                            <div class="ai-viz-content">
+                                <span class="ai-viz-label">Lower Loss Zone:</span>
+                                <span class="ai-viz-value">${escapeHtml(viz.lower_loss_zone || '-')}</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="ai-viz-item ai-viz-transition">
-                        <span class="ai-viz-icon">&#8596;</span>
-                        <div class="ai-viz-content">
-                            <span class="ai-viz-label">Transition Zone:</span>
-                            <span class="ai-viz-value">${escapeHtml(viz.transition_zone || '-')}</span>
+                        <div class="ai-viz-item ai-viz-transition">
+                            <span class="ai-viz-icon">&#8596;</span>
+                            <div class="ai-viz-content">
+                                <span class="ai-viz-label">Transition Zones:</span>
+                                <span class="ai-viz-value">${escapeHtml(viz.transition_zones || '-')}</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="ai-viz-item ai-viz-loss">
-                        <span class="ai-viz-icon">&#9660;</span>
-                        <div class="ai-viz-content">
-                            <span class="ai-viz-label">Loss Zone:</span>
-                            <span class="ai-viz-value">${escapeHtml(viz.loss_zone || '-')}</span>
+                        <div class="ai-viz-item ai-viz-profit">
+                            <span class="ai-viz-icon">&#9650;</span>
+                            <div class="ai-viz-content">
+                                <span class="ai-viz-label">Profit Zone:</span>
+                                <span class="ai-viz-value">${escapeHtml(viz.profit_zone || '-')}</span>
+                            </div>
+                        </div>
+                        <div class="ai-viz-item ai-viz-loss">
+                            <span class="ai-viz-icon">&#9660;</span>
+                            <div class="ai-viz-content">
+                                <span class="ai-viz-label">Upper Loss Zone:</span>
+                                <span class="ai-viz-value">${escapeHtml(viz.upper_loss_zone || '-')}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            // Credit Spread: single loss zone and transition zone
+            html += `
+                <div class="ai-section">
+                    <h5 class="ai-section-title">Profit/Loss Zones</h5>
+                    <div class="ai-visualization">
+                        <div class="ai-viz-item ai-viz-profit">
+                            <span class="ai-viz-icon">&#9650;</span>
+                            <div class="ai-viz-content">
+                                <span class="ai-viz-label">Profit Zone:</span>
+                                <span class="ai-viz-value">${escapeHtml(viz.profit_zone || '-')}</span>
+                            </div>
+                        </div>
+                        <div class="ai-viz-item ai-viz-transition">
+                            <span class="ai-viz-icon">&#8596;</span>
+                            <div class="ai-viz-content">
+                                <span class="ai-viz-label">Transition Zone:</span>
+                                <span class="ai-viz-value">${escapeHtml(viz.transition_zone || '-')}</span>
+                            </div>
+                        </div>
+                        <div class="ai-viz-item ai-viz-loss">
+                            <span class="ai-viz-icon">&#9660;</span>
+                            <div class="ai-viz-content">
+                                <span class="ai-viz-label">Loss Zone:</span>
+                                <span class="ai-viz-value">${escapeHtml(viz.loss_zone || '-')}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
     }
 
-    // Strategy analysis (bullish, neutral, bearish outcomes)
+    // Strategy analysis (bullish, neutral, bearish, and extreme move outcomes)
     if (content.strategy_analysis) {
         const sa = content.strategy_analysis;
         const renderOutcome = (outcome, label, icon) => {
@@ -452,6 +497,7 @@ function renderCreditSpreadContent(content) {
                     ${renderOutcome(sa.bullish_outcome, 'Bullish Outcome', '&#128200;')}
                     ${renderOutcome(sa.neutral_outcome, 'Neutral Outcome', '&#8596;')}
                     ${renderOutcome(sa.bearish_outcome, 'Bearish Outcome', '&#128201;')}
+                    ${renderOutcome(sa.extreme_move_outcome, 'Extreme Move', '&#128165;')}
                 </div>
             </div>
         `;
@@ -494,10 +540,18 @@ function renderCreditSpreadContent(content) {
 }
 
 /**
- * Check if content is credit spread specific
+ * Check if content is credit spread or iron condor specific
  */
 function isCreditSpreadContent(content) {
     return content.trade_mechanics || content.strategy_analysis || content.key_metrics;
+}
+
+/**
+ * Check if content is specifically an Iron Condor (has two loss zones)
+ */
+function isIronCondorContent(content) {
+    return content.visualization?.lower_loss_zone || content.visualization?.upper_loss_zone ||
+           content.strategy_analysis?.extreme_move_outcome;
 }
 
 /**
@@ -700,14 +754,41 @@ class AiExplainerController {
     constructor(options) {
         this.pageId = options.pageId;
         this.contextType = options.contextType;
-        this.getMetadata = options.getMetadata; // Function to get current simulation state
+        this.getMetadata = options.getMetadata; // Function to get current simulation state (optional)
         this.buttonContainerId = options.buttonContainerId;
         this.panelContainerId = options.panelContainerId;
 
         this.button = null;
         this.panelElements = null;
+        this._storedMetadata = null; // Stored metadata for when setMetadata() is used
 
         this._init();
+    }
+
+    /**
+     * Set metadata directly (alternative to getMetadata function)
+     * @param {object} metadata - The simulation metadata to use for AI analysis
+     */
+    setMetadata(metadata) {
+        this._storedMetadata = metadata;
+    }
+
+    /**
+     * Clear the AI panel (hides panel and clears stored metadata)
+     */
+    clearPanel() {
+        this._hidePanel();
+        this._storedMetadata = null;
+    }
+
+    /**
+     * Get the current metadata (from function or stored value)
+     */
+    _getCurrentMetadata() {
+        if (typeof this.getMetadata === 'function') {
+            return this.getMetadata();
+        }
+        return this._storedMetadata;
     }
 
     /**
@@ -738,7 +819,7 @@ class AiExplainerController {
             return; // Prevent double-clicks
         }
 
-        const metadata = this.getMetadata();
+        const metadata = this._getCurrentMetadata();
         if (!metadata) {
             this._showError('No simulation data available. Please run a simulation first.');
             return;
@@ -910,7 +991,7 @@ class AiExplainerController {
     render() {
         if (!this.button) return;
 
-        const metadata = this.getMetadata();
+        const metadata = this._getCurrentMetadata();
         const buttonContainer = document.getElementById(this.buttonContainerId);
 
         if (metadata) {
