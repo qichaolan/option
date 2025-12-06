@@ -698,6 +698,13 @@ class AiExplainerController {
     }
 
     /**
+     * Clear the current explanation (hide panel when new data is selected)
+     */
+    clearExplanation() {
+        this._hidePanel();
+    }
+
+    /**
      * Destroy the controller and clean up
      */
     destroy() {

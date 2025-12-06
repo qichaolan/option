@@ -529,7 +529,10 @@ function showSimulator(contract) {
     // Run simulation automatically
     runSimulation();
 
-    // Update AI Explainer state
+    // Clear previous AI explanation and update state
+    if (aiExplainerController) {
+        aiExplainerController.clearExplanation();
+    }
     updateAiExplainerState();
 }
 
